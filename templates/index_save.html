@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="{% static 'bryntum-grid/grid.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'bryntum-grid/svalbard-light.css' %}"/>
+
+    <style>
+        body,
+        html {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-family: Poppins, "Open Sans", Helvetica, Arial, sans-serif;
+            font-size: 14px;
+        }
+    </style>
+    <title>Player Information</title>
+</head>
+<body>
+<script type="module" src="{% static 'bryntum-grid/grid.config.js' %}"></script>
+</body>
+</html>
+</html>
+

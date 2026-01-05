@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{%load static %}
+{% block title %}estimate list{% endblock %}
+{% block header %}
+<div class="container">
+    <header>
+        <div class="row">
+            <div class="col-sm-4">
+            </div>
+            <div class="my-div-style col-sm">
+                <h3>estimate list</h3>
+            </div>
+        </div>
+    </header>
+    <div class="col-8 offset-2 justify-content-center">
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.media }}
+            <div class="row">
+            </div>
+            <div class="row">
+                <div class="d-flex flex-row mx-4 my-2">
+                    <a class="btn btn-primary btn-sm mx-2" href="{% url 'estimate:estimate_add' %}">add</a>
+
+                    <p><a href="#" onClick="history.back(); return false;">history back</a></p>
+                </div>
+            </div>
+        </form>
+
+        <div class="container-fluid">
+            {% if estimate_list|length == 0 %}
+            <p>検索結果が存在しません。</p>
+            {% else %}
+            <table class="table table-hover table-bordered text-nowrap .thead-dark">
+                <tr align="center">
+                    <th>done</th>
+                    <th>detail</th>
+                    <th>estimate no</th>
+                    <th>estimate name</th>
+                </tr>
+                <tbody>
+                {% for item in estimate_list %}
+                <tr>
+                    <td align="center" width="20%">
+                        <a href="{% url 'estimate:estimate_edit' item.pk %}" class="btn btn-outline-warning btn-sm">edit</a>
+                    </td>
+                    <td align="center" width="20%">
+                        <a href="#" class="btn btn-outline-success btn-sm">detail</a>
+                    </td>
+
+                    <td align="center">{{item.estimate_no}}</td>
+                    <td align="center">{{item.estimate_name}}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+

@@ -1,0 +1,82 @@
+body, #wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+footer {
+    margin-top: auto;
+}
+
+ /*  一行下げる -------*/
+.my-div-style {
+    margin-top:8rem;
+}
+
+html {
+font-size:70%}
+
+/*  必須を表示させる ---------------*/
+.required::after{
+  content: "必須";
+  background-color: white;
+  color: #4682b4;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 10px;
+  padding: 3px 7px;
+  margin: 0px 5px;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+  text-align: center;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* ドロップゾーン --------*/
+.dropzone{
+    width:400px;
+    height:250px;
+    border:2px dashed #ccc;
+    color:#ccc;
+    line-height:300px;
+    text-align:center;
+    }
+.dropzone.dragover{
+    border-color:#000;
+    color:#000;
+}
+
+    /* 親要素に設定 */
+    .form-row {
+        display: flex; /* 横並びにする */
+        align-items: center; /* 垂直方向の揃え */
+        margin-bottom: 8px;
+    }
+
+    /* 各フィールドに設定 */
+    .form-row label {
+        margin-right: 5px; /* ラベルと入力フィールドの間の余白 */
+
+    }
+
+    /* マージンのセット */
+    .flex-fill {
+        margin-bottom: 8px;
+    }
+
+    .flex {
+        margin-bottom: 8px;
+    }
+
+    .field {
+        margin-bottom: 8px;
+        margin-left: 0px;
+    }
+
+    label {
+        margin-bottom: 1px;
+        display:inline-block;
+    }
+
