@@ -3,17 +3,21 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from api.serializers import EstimateSerializer
-from app.models import Estimate
+from api.serializers import EstimateDSerializer
+from app.models import Estimate, EstimateD
+
+
+def estimate_tree(request):
+    return render(request, 'estimate:estimate_tree.html')
 
 
 def test_page(request):
-    return render(request, 'estimate:testPage.html')
+    return render(request, 'testPage.html')
 
 
 class EstimateDViewSet(viewsets.ModelViewSet):
-    queryset = Estimate.objects.all()
-    serializer_class = EstimateSerializer
+    queryset = EstimateD.objects.all()
+    serializer_class = EstimateDSerializer
 
     def create(self, request, *args, **kwargs):
         try:

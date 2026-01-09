@@ -7,7 +7,7 @@ router = routers.DefaultRouter(trailing_slash=True)
 router.register(r'estimate_info', views.EstimateDViewSet)
 
 urlpatterns = [
-    path('', views.test_page, name='testPage'),
+    path('', views.test_page, name='tesPage'),
 ]
 
 urlpatterns += router.urls

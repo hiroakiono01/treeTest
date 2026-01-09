@@ -1,13 +1,15 @@
-import {AjaxStore, Grid, StringHelper} from './grid.module.js';
+import {AjaxStore, TreeGrid, StringHelper} from './grid.module.js';
 
 const store = new AjaxStore({
-  createUrl: "/api/estimate_info/",
+  createUrl: "http://127.0.0.1:8000/api/estimate_info/",
   readUrl: "/api/estimate_info/",
-  updateUrl: "/api/estimate_info/",
-  deleteUrl: "/estimate_info/",
+  updateUrl: "http://127.0.0.1:8000/api/estimate_info/",
+  deleteUrl: "http://127.0.0.1:8000/api/estimate_info/",
   autoLoad: true,
   autoCommit: true,
   useRestfulMethods: true,
+  tree: true,
+  children: true,
   httpMethods: {
     read: "GET",
     create: "POST",
@@ -26,15 +28,16 @@ const store = new AjaxStore({
         const itemId = updatedItem.id;
         delete updatedItem.id;
         event.body = updatedItem;
-        store.updateUrl = `/api/estimate_info/${itemId}/`;
+        store.updateUrl = `estimate_info/${itemId}/`;
       }
     },
   },
 
 });
 
+let newEstimateCount = 0;
 
-const grid = new Grid({
+const tree = new TreeGrid({
   appendTo: document.body,
   features: {
     filter: true,
@@ -91,24 +94,14 @@ const grid = new Grid({
   store,
 
   columns: [
-    {type: "rownumber"},
-    {
-      text: "Estimate Name",
-      field: "estimate_name",
-      width: 260,
-      editor: {
-        type: 'textfield',
-        required: true
-      },
-    },
-
-    {
-      text: "Estimate No",
-      field: "estimate_no",
-      width: 250,
-    },
-
-
+        { field : 'id', text : 'id', flex : 1 },
+        { field : 'parentId', text : 'parent', flex : 1 },
+        { field : 'estimate_no', text : 'estimate_no', flex : 1 },
+        { type : 'tree', field : 'detail_name', text : 'detail_name', flex : 1 },
+        { field : 'budget_quantity', text : 'budget_quantity', flex : 1 },
+        { field : 'budget_unit', text : 'budget_unit', flex : 1 },
+        { field : 'budget_price', text : 'budget_price', flex : 1 },
+        { field : 'budget_amount', text : 'budget_amount', flex : 1 },
   ],
 
 });

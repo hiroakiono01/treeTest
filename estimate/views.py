@@ -66,3 +66,7 @@ class EstimateDel(generic.DeleteView):
 
 def test_page(request):
     return render(request, 'testPage.html')
+
+
+def estimate_tree(request):
+    return render(request, 'estimate_tree.html')

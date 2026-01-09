@@ -11,7 +11,5 @@ urlpatterns = [
     path('edit/<int:pk>/', views.EstimateEdit.as_view(), name='estimate_edit'),  # 修正
     path('del/<int:pk>/', views.EstimateDel.as_view(), name='estimate_del'),  # 削除
     path('testPage/', views.test_page, name='testPage'),
-    # path('api/<int:pk>/', views.estimat_detail_add, name='estimateD_add'),
-    # path('estimateD_tree_list/<int:pk>/', views.show_estimate, name='estimateD_tree_list'),
-
+    path('estimate_tree/', views.estimate_tree, name='estimate_tree'),
 ]

@@ -30,7 +30,6 @@ class EstimateD(OrderableTreeNode):
 
     id = models.AutoField(primary_key=True)
     estimate_no = models.ForeignKey(Estimate, null=True, blank=True, on_delete=models.PROTECT)
-    seq_no = models.IntegerField(null=True, blank=True, verbose_name='順位')
     detail_name = models.CharField(max_length=50, null=True, blank=True, verbose_name='明細名称')
     budget_quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算数量')
     budget_unit = models.ForeignKey(Unit, blank=True, null=True, verbose_name='予算単位', related_name='unit1', on_delete=models.PROTECT)
@@ -38,4 +37,4 @@ class EstimateD(OrderableTreeNode):
     budget_amount = models.IntegerField(null=True, blank=True, verbose_name='予算金額')
 
     def __str__(self):
-        return str(self.detail_name)
+        return str(self.detail_name) + str(self.tree_path)
