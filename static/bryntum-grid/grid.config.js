@@ -1,21 +1,47 @@
-import {AjaxStore, TreeGrid, StringHelper} from './grid.module.js';
+import {AjaxStore, TreeGrid, StringHelper, Combo, GridRowModel, Toast} from './grid.module.js';
 
-const store = new AjaxStore({
-  createUrl: "http://127.0.0.1:8000/api/estimate_info/",
+
+
+// 金額の計算
+class Item extends GridRowModel {
+    static fields = [
+        { name : 'estimate_no' },
+        { name : 'detail_name' },
+        { name : 'budget_price', type : 'number', defaultValue : 0 },
+        { name : 'budget_quantity', type : 'number', defaultValue : 0 },
+        // Calculated field
+        { name : 'budget_amount', type : 'number', defaultValue : 0, calculate : record => record.budget_price * record.budget_quantity }
+    ];
+}
+
+// Transform a parent node to a leaf node when all its children are removed
+Item.convertEmptyParentToLeaf = true;
+
+// 単位のデータをサーバーから取得
+const response = await fetch("/api/unit_info/");
+const unitItems = await response.json();
+
+const treeStore = new AjaxStore({
+  createUrl: "/api/estimate_info/",
   readUrl: "/api/estimate_info/",
-  updateUrl: "http://127.0.0.1:8000/api/estimate_info/",
-  deleteUrl: "http://127.0.0.1:8000/api/estimate_info/",
+  updateUrl: "/api/estimate_info/",
+  deleteUrl: "/api/estimate_info/",
   autoLoad: true,
-  autoCommit: true,
+  autoCommit: false,
   useRestfulMethods: true,
+  transformFlatData : true,
+  sendAsFormData : true,
   tree: true,
-  children: true,
+  modelClass : Item,
+  parentIdParamName : "parent",
+
   httpMethods: {
     read: "GET",
     create: "POST",
     update: "PATCH",
     delete: "DELETE",
   },
+
   listeners: {
     beforeRequest: (event) => {
       if (event.action === "create") {
@@ -28,22 +54,29 @@ const store = new AjaxStore({
         const itemId = updatedItem.id;
         delete updatedItem.id;
         event.body = updatedItem;
-        store.updateUrl = `estimate_info/${itemId}/`;
+        store.updateUrl = `/estimate_info/${itemId}/`;
       }
     },
   },
-
 });
 
-let newEstimateCount = 0;
+let newPlayerCount = 0;
 
-const tree = new TreeGrid({
+
+
+const　grid = new TreeGrid({
   appendTo: document.body,
+  store     :treeStore,
+  modelClass : Item,
   features: {
-    filter: true,
+    filter: false,
     stripe: true,
     summary: true,
+    sort    :false,
+    rowReorder : true,
   },
+
+
 
   tbar: [
     {
@@ -53,25 +86,48 @@ const tree = new TreeGrid({
           type: "button",
           ref: "addButton",
           color: "b-green",
-          icon: "b-fa-plus-circle",
+          icon: "fa-plus-circle",
           margin: "0 8 0 0",
           text: "Add",
           tooltip: "Adds a new row (at bottom)",
           onAction: () => {
-            const counter = ++newEstimateCount,
+            const counter = ++newPlayerCount,
               added = grid.store.add({
-                estimate_name: `New estimate ${counter}`,
-                cls: `new_estimate_${counter}`,
+                name: `New player ${counter}`,
+                cls: `new_player_${counter}`,
               });
 
             grid.selectedRecord = added[0];
           },
         },
         {
+            type     : 'button',
+            ref      : 'insertButton',
+            icon     : 'fa fa-plus-square',
+            text     : 'Insert',
+            tooltip  : 'Inserts a new row (below selected or at top)',
+            onAction : () => {
+                let index = 0;
+
+                if (grid.selectedRecords) {
+                    index = Math.max(...grid.selectedRecords.map(record => grid.store.indexOf(record))) + 1;
+                }
+
+                const
+                    counter = ++newPlayerCount,
+                    added   = grid.store.insert(index, {
+                        name : `New player ${counter}`,
+                        cls  : `new_player_${counter}`
+                    });
+                grid.selectedRecord = added[0];
+            }
+        },
+
+        {
           type: "button",
           ref: "removeButton",
-          color: "b-red",
-          icon: "b-fa b-fa-trash",
+          color: "red",
+          icon: "fa-trash",
           text: "Remove",
           tooltip: "Removes selected record(s)",
           onAction: () => {
@@ -80,30 +136,87 @@ const tree = new TreeGrid({
               const store = grid.store,
                 nextRecord = store.getNext(selected[selected.length - 1]),
                 prevRecord = store.getPrev(selected[0]);
-
               store.remove(selected);
               grid.selectedRecord = nextRecord || prevRecord;
             }
           },
         },
+
+        {
+            type     : 'button',
+            ref      : 'submitButton',
+            text     : 'Submit',
+            icon     : "fa-pen-to-square",
+            cls      : 'b-green',
+            tooltip  : 'Sync changes to the server (added, modified and removed rows)',
+            onAction : async() => {
+                // Logic to sync change to the server
+                await grid.store.commit();
+                Toast.show('Changes synced to server');
+            }
+        },
+        {
+            type     : 'button',
+            ref      : 'expandAllButton',
+            icon     : 'fa-angle-double-down',
+            text     : 'Expand all',
+            onAction : () => grid.expandAll()
+        },
+        {
+            type     : 'button',
+            ref      : 'collapseAllButton',
+            icon     : 'fa-angle-double-up',
+            text     : 'Collapse all',
+            onAction : () => grid.collapseAll()
+        },
+        '->',
+        {
+            type     : 'button',
+            ref      : 'resetButton',
+            color    : 'b-red',
+            icon     : 'fa fa-recycle',
+            text     : 'Reset',
+            tooltip  : 'Reset rows',
+            onAction : () => grid.store.load({ reset : true }).then(() => Toast.show('Database was reset'))
+        }
       ],
     },
 
   ],
 
-  store,
-
   columns: [
-        { field : 'id', text : 'id', flex : 1 },
-        { field : 'parentId', text : 'parent', flex : 1 },
+        { type :  "tree" , field : 'detail_name', text : 'detail_name', flex : 1 },
+        { text : 'ParentIndex', field : 'parentIndex', width : 40, hidden : false },
         { field : 'estimate_no', text : 'estimate_no', flex : 1 },
-        { type : 'tree', field : 'detail_name', text : 'detail_name', flex : 1 },
-        { field : 'budget_quantity', text : 'budget_quantity', flex : 1 },
-        { field : 'budget_unit', text : 'budget_unit', flex : 1 },
-        { field : 'budget_price', text : 'budget_price', flex : 1 },
-        { field : 'budget_amount', text : 'budget_amount', flex : 1 },
+        { type : 'number', field : 'budget_quantity', text : 'budget_quantity', flex : 1 },
+        {
+        field : 'budget_unit',
+        text : 'budget_unit',
+        editor : {
+            type :'combo',
+            editable: false,
+            autoExpand :true,
+            items:unitItems,
+            valueField :'id',
+            displayField:'unit_name',
+            flex : 1 },
+        },
+        { type : 'number', field : 'budget_price', text : 'budget_price', flex : 1 },
+//        { type : 'aggregate', field : 'budget_amount', text : 'budget_amount', flex : 1 },
+        {
+            type : 'aggregate',
+            text : 'budget_amount',
+            field : 'budget_amount',
+            width : 190,
+            sum : 'sum',
+            align : 'end',
+            summaryRenderer : ({ sum }) => `Total amount: ${sum}`,
+        }
   ],
 
+onChange() {
+        this.features.summary.selectedOnly = !this.features.summary.selectedOnly;
+    }
 });
 
 const {addButton, removeButton} = grid.widgetMap;

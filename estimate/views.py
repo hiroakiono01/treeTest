@@ -1,10 +1,9 @@
 from django.contrib import messages
 from django.db import models
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import generic
 
-# from estimate.forms import SearchEstimateForm
 from app.models import Estimate
 from estimate.forms import EstimateAddForm
 
@@ -62,11 +61,3 @@ class EstimateDel(generic.DeleteView):
         except models.ProtectedError as e:
             messages.error(request, f'「{obj}」estimate use other')
             return redirect('estimate:estimate_list')
-
-
-def test_page(request):
-    return render(request, 'testPage.html')
-
-
-def estimate_tree(request):
-    return render(request, 'estimate_tree.html')

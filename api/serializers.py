@@ -2,7 +2,17 @@
 
 from rest_framework import serializers
 
-from app.models import EstimateD, Estimate
+from app.models import EstimateD, Estimate, Unit
+
+
+class UnitSerializer(serializers.HyperlinkedModelSerializer):
+    id = serializers.IntegerField(required=False)
+    unit_no = serializers.CharField(required=True)
+    unit_name = serializers.CharField(required=True)
+
+    class Meta:
+        model = Unit
+        fields = ('id', 'unit_no', 'unit_name')
 
 
 class EstimateSerializer(serializers.HyperlinkedModelSerializer):
@@ -30,13 +40,15 @@ class EstimateSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class EstimateDSerializer(serializers.ModelSerializer):
+    # parentId = serializers.IntegerField(source='parent')
+
     class Meta:
 
         model = EstimateD
 
         fields = ('id', 'estimate_no', 'detail_name',
-                  # 'parent',
-                  # 'children',
+                  'parentId', 'tree_seq',
+                  'parentIndex',
                   # 'position',
                   'budget_quantity', 'budget_unit',
                   'budget_price', 'budget_amount')
