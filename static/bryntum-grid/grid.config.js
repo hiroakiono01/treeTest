@@ -43,19 +43,22 @@ const treeStore = new AjaxStore({
   },
 
   listeners: {
-    beforeRequest: (event) => {
-      if (event.action === "create") {
-        const newItem = event.body.data[0];
-        delete newItem.id;
-        event.body = newItem;
-      }
-      if (event.action === "update") {
-        const updatedItem = event.body.data[0];
-        const itemId = updatedItem.id;
-        delete updatedItem.id;
-        event.body = updatedItem;
-        store.updateUrl = `/estimate_info/${itemId}/`;
-      }
+    selectionChange({ selection }) {
+        removeButton.disabled = !selection.length;
+
+//    beforeRequest: (event) => {
+//      if (event.action === "create") {
+//        const newItem = event.body.data[0];
+//        delete newItem.id;
+//        event.body = newItem;
+//      }
+//      if (event.action === "update") {
+//        const updatedItem = event.body.data[0];
+//        const itemId = updatedItem.id;
+//        delete updatedItem.id;
+//        event.body = updatedItem;
+//        store.updateUrl = `/estimate_info/${itemId}/`;
+//      }
     },
   },
 });
@@ -81,6 +84,7 @@ const　grid = new TreeGrid({
   tbar: [
     {
       type: "buttongroup",
+      ref:'addButtonGroup',
       items: [
         {
           type: "button",
@@ -130,6 +134,7 @@ const　grid = new TreeGrid({
           icon: "fa-trash",
           text: "Remove",
           tooltip: "Removes selected record(s)",
+          disabled : true,
           onAction: () => {
             const selected = grid.selectedRecords;
             if (selected && selected.length) {
@@ -149,6 +154,7 @@ const　grid = new TreeGrid({
             icon     : "fa-pen-to-square",
             cls      : 'b-green',
             tooltip  : 'Sync changes to the server (added, modified and removed rows)',
+            disabled : true,
             onAction : async() => {
                 // Logic to sync change to the server
                 await grid.store.commit();
@@ -177,6 +183,7 @@ const　grid = new TreeGrid({
             icon     : 'fa fa-recycle',
             text     : 'Reset',
             tooltip  : 'Reset rows',
+            disabled : true,
             onAction : () => grid.store.load({ reset : true }).then(() => Toast.show('Database was reset'))
         }
       ],
