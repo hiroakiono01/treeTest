@@ -6,6 +6,7 @@ from api.serializers import EstimateDSerializer, UnitSerializer
 from app.models import EstimateD, Unit
 
 
+
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
@@ -15,6 +16,7 @@ class EstimateDViewSet(viewsets.ModelViewSet):
     serializer_class = EstimateDSerializer
     renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
     template_name = 'estimate_tree.html'
+    EstimateD.objects.rebuild()
 
     def get_queryset(self):
         # estimate_no = self.kwargs.get('estimate_no')

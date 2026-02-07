@@ -39,6 +39,7 @@ class EstimateD(MPTTModel):
     parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     parentId = models.IntegerField(null=True, blank=True, )
     parentIndex = models.IntegerField(null=True, blank=True, )
+
     calcu_cls = models.IntegerField(null=True, blank=True, verbose_name='計算区分')
 
     class MPTTMeta:

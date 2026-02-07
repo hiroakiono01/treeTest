@@ -24,6 +24,7 @@ admin.site.register(
         'level',
         'lft',
         'rght',
+        # 'children',
     ),
     list_disple_link=(
         'indented_title',

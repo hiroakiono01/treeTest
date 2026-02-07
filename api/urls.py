@@ -4,7 +4,7 @@ from rest_framework import routers
 from . import views
 
 router = routers.DefaultRouter(trailing_slash=True)
-router.register(r'estimate_info', views.EstimateDViewSet, 'estimate_tree')
+router.register(r'estimateD_read', views.EstimateDViewSet, 'estimate_tree')
 router.register(r'unit_info', views.UnitViewSet)
 
 urlpatterns = [

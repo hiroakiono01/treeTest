@@ -22,10 +22,10 @@ const response = await fetch("/api/unit_info/");
 const unitItems = await response.json();
 
 const treeStore = new AjaxStore({
-  createUrl: "/api/estimate_info/",
-  readUrl: "/api/estimate_info/",
-  updateUrl: "/api/estimate_info/",
-  deleteUrl: "/api/estimate_info/",
+  createUrl: "/api/estimateD_create/",
+  readUrl: "/api/estimateD_read/",
+  updateUrl: "/api/estimateD_update/",
+  deleteUrl: "/api/estimateD_delete/",
   autoLoad: true,
   autoCommit: false,
   useRestfulMethods: true,
@@ -41,6 +41,9 @@ const treeStore = new AjaxStore({
     update: "PATCH",
     delete: "DELETE",
   },
+
+
+
 
   listeners: {
     selectionChange({ selection }) {
@@ -193,20 +196,21 @@ const　grid = new TreeGrid({
 
   columns: [
         { type :  "tree" , field : 'detail_name', text : 'detail_name', flex : 1 },
-        { text : 'ParentIndex', field : 'parentIndex', width : 40, hidden : false },
+        { text : 'ParentIndex', field : 'parentIndex', hidden : false , flex : 1},
         { field : 'estimate_no', text : 'estimate_no', flex : 1 },
         { type : 'number', field : 'budget_quantity', text : 'budget_quantity', flex : 1 },
         {
-        field : 'budget_unit',
-        text : 'budget_unit',
-        editor : {
-            type :'combo',
-            editable: false,
-            autoExpand :true,
-            items:unitItems,
-            valueField :'id',
-            displayField:'unit_name',
-            flex : 1 },
+            field : 'budget_unit',
+            text : 'budget_unit',
+            editor : {
+                type :'combo',
+                editable: false,
+                autoExpand :true,
+                items:unitItems,
+                valueField :'id',
+                displayField:'unit_name',
+                },
+                flex : 1 ,
         },
         { type : 'number', field : 'budget_price', text : 'budget_price', flex : 1 },
 //        { type : 'aggregate', field : 'budget_amount', text : 'budget_amount', flex : 1 },
