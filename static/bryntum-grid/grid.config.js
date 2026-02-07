@@ -1,7 +1,6 @@
 import {AjaxStore, TreeGrid, StringHelper, Combo, GridRowModel, Toast} from './grid.module.js';
 
 
-
 // 金額の計算
 class Item extends GridRowModel {
     static fields = [
@@ -22,132 +21,135 @@ const response = await fetch("/api/unit_info/");
 const unitItems = await response.json();
 
 const treeStore = new AjaxStore({
-  createUrl: "/api/estimateD_create/",
-  readUrl: "/api/estimateD_read/",
-  updateUrl: "/api/estimateD_update/",
-  deleteUrl: "/api/estimateD_delete/",
-  autoLoad: true,
-  autoCommit: false,
-  useRestfulMethods: true,
-  transformFlatData : true,
-  sendAsFormData : true,
-  tree: true,
-  modelClass : Item,
-  parentIdParamName : "parent",
+    createUrl: "/api/estimateD_create/",
+    readUrl: "/api/estimateD_read/",
+    updateUrl: "/api/estimateD_update/",
+    deleteUrl: "/api/estimateD_delete/",
+    autoLoad: true,
+    autoCommit: false,
+    useRestfulMethods: true,
+    transformFlatData : true,
+    sendAsFormData : true,
+    tree: true,
+    modelClass : Item,
+    parentIdParamName : "parent",
 
-  httpMethods: {
+    httpMethods: {
     read: "GET",
     create: "POST",
     update: "PATCH",
     delete: "DELETE",
-  },
-
-
-
-
-  listeners: {
-    selectionChange({ selection }) {
-        removeButton.disabled = !selection.length;
-
-//    beforeRequest: (event) => {
-//      if (event.action === "create") {
-//        const newItem = event.body.data[0];
-//        delete newItem.id;
-//        event.body = newItem;
-//      }
-//      if (event.action === "update") {
-//        const updatedItem = event.body.data[0];
-//        const itemId = updatedItem.id;
-//        delete updatedItem.id;
-//        event.body = updatedItem;
-//        store.updateUrl = `/estimate_info/${itemId}/`;
-//      }
     },
-  },
+    listeners: {
+        beforeRequest: (event) => {
+            if (event.action === "create") {
+                const newItem = event.body.data[0];
+                delete newItem.id;
+                event.body = newItem;
+            }
+            if (event.action === "update") {
+                const updatedItem = event.body.data[0];
+                const itemId = updatedItem.id;
+                delete updatedItem.id;
+                event.body = updatedItem;
+                store.updateUrl = `/estimate_info/${itemId}/`;
+            }
+                if (event.action === "delete") {
+                const itemIds = event.body.ids;
+                store.deleteUrl = `/player_info/${itemIds[0]}/`;
+            }
+        },
+    },
 });
 
 let newPlayerCount = 0;
 
-
-
 const　grid = new TreeGrid({
-  appendTo: document.body,
-  store     :treeStore,
-  modelClass : Item,
-  features: {
-    filter: false,
-    stripe: true,
-    summary: true,
-    sort    :false,
-    rowReorder : true,
-  },
-
-
-
-  tbar: [
-    {
-      type: "buttongroup",
-      ref:'addButtonGroup',
-      items: [
+    appendTo: document.body,
+    store     :treeStore,
+    modelClass : Item,
+    features: {
+        filter: false,
+        stripe: true,
+        summary: true,
+        sort    :false,
+        rowReorder : true,
+    },
+    // Show changed cells
+    showDirty : true,
+    listeners : {
+        selectionChange({ selection }) {
+            removeButton.disabled = !selection.length;
+            resetButton.disabled = false;
+    }
+    },
+    tbar: [
         {
-          type: "button",
-          ref: "addButton",
-          color: "b-green",
-          icon: "fa-plus-circle",
-          margin: "0 8 0 0",
-          text: "Add",
-          tooltip: "Adds a new row (at bottom)",
-          onAction: () => {
-            const counter = ++newPlayerCount,
-              added = grid.store.add({
-                name: `New player ${counter}`,
-                cls: `new_player_${counter}`,
-              });
+            type: "buttongroup",
+            ref:'addButtonGroup',
+            items: [
+                {
+                    type: "button",
+                    ref: "addButton",
+                    color: "b-green",
+                    icon: "fa-plus-circle",
+                    margin: "0 8 0 0",
+                    text: "Add",
+                    tooltip: "Adds a new row (at bottom)",
+                    onAction: () => {
 
-            grid.selectedRecord = added[0];
-          },
+                        const counter = ++newPlayerCount,
+                        added = grid.store.add({
+                            name: `New player ${counter}`,
+                            cls: `new_player_${counter}`,
+                        });
+                    grid.selectedRecord = added[0];
+                    submitButton.disabled = false;
+                    resetButton.disabled = false;
+                    },
+                },
+                {
+                    type     : 'button',
+                    ref      : 'insertButton',
+                    icon     : 'fa fa-plus-square',
+                    text     : 'Insert',
+                    tooltip  : 'Inserts a new row (below selected or at top)',
+                    onAction : () => {
+                        let index = 0;
+                        if (grid.selectedRecords) {
+                            index = Math.max(...grid.selectedRecords.map(record => grid.store.indexOf(record))) + 1;
+                        }
+                        const
+                            counter = ++newPlayerCount,
+                            added   = grid.store.insert(index, {
+                                name : `New player ${counter}`,
+                                cls  : `new_player_${counter}`
+                            });
+                        grid.selectedRecord = added[0];
+                        submitButton.disabled = false;
+                        resetButton.disabled = false;
+                    }
+                },
+            ]
         },
         {
-            type     : 'button',
-            ref      : 'insertButton',
-            icon     : 'fa fa-plus-square',
-            text     : 'Insert',
-            tooltip  : 'Inserts a new row (below selected or at top)',
-            onAction : () => {
-                let index = 0;
-
-                if (grid.selectedRecords) {
-                    index = Math.max(...grid.selectedRecords.map(record => grid.store.indexOf(record))) + 1;
+            type: "button",
+            ref: "removeButton",
+            color: "red",
+            icon: "fa-trash",
+            text: "Remove",
+            tooltip: "Removes selected record(s)",
+            disabled : true,
+            onAction: () => {
+                const selected = grid.selectedRecords;
+                if (selected && selected.length) {
+                    const store = grid.store,
+                    nextRecord = store.getNext(selected[selected.length - 1]),
+                    prevRecord = store.getPrev(selected[0]);
+                    store.remove(selected);
+                    grid.selectedRecord = nextRecord || prevRecord;
                 }
-
-                const
-                    counter = ++newPlayerCount,
-                    added   = grid.store.insert(index, {
-                        name : `New player ${counter}`,
-                        cls  : `new_player_${counter}`
-                    });
-                grid.selectedRecord = added[0];
-            }
-        },
-
-        {
-          type: "button",
-          ref: "removeButton",
-          color: "red",
-          icon: "fa-trash",
-          text: "Remove",
-          tooltip: "Removes selected record(s)",
-          disabled : true,
-          onAction: () => {
-            const selected = grid.selectedRecords;
-            if (selected && selected.length) {
-              const store = grid.store,
-                nextRecord = store.getNext(selected[selected.length - 1]),
-                prevRecord = store.getPrev(selected[0]);
-              store.remove(selected);
-              grid.selectedRecord = nextRecord || prevRecord;
-            }
-          },
+            },
         },
 
         {
@@ -189,12 +191,12 @@ const　grid = new TreeGrid({
             disabled : true,
             onAction : () => grid.store.load({ reset : true }).then(() => Toast.show('Database was reset'))
         }
-      ],
-    },
+    ],
 
-  ],
 
-  columns: [
+
+
+    columns: [
         { type :  "tree" , field : 'detail_name', text : 'detail_name', flex : 1 },
         { text : 'ParentIndex', field : 'parentIndex', hidden : false , flex : 1},
         { field : 'estimate_no', text : 'estimate_no', flex : 1 },
@@ -210,10 +212,11 @@ const　grid = new TreeGrid({
                 valueField :'id',
                 displayField:'unit_name',
                 },
-                flex : 1 ,
+            flex : 1
+
         },
         { type : 'number', field : 'budget_price', text : 'budget_price', flex : 1 },
-//        { type : 'aggregate', field : 'budget_amount', text : 'budget_amount', flex : 1 },
+    //        { type : 'aggregate', field : 'budget_amount', text : 'budget_amount', flex : 1 },
         {
             type : 'aggregate',
             text : 'budget_amount',
@@ -223,11 +226,13 @@ const　grid = new TreeGrid({
             align : 'end',
             summaryRenderer : ({ sum }) => `Total amount: ${sum}`,
         }
-  ],
+    ],
 
-onChange() {
-        this.features.summary.selectedOnly = !this.features.summary.selectedOnly;
-    }
+    onChange() {
+        submitButton.disabled = false;
+        resetButton.disabled =  false;
+//            this.features.summary.selectedOnly = !this.features.summary.selectedOnly;
+        }
 });
 
-const {addButton, removeButton} = grid.widgetMap;
+const {addButtonGroup, removeButton, submitButton, resetButton} = grid.widgetMap;
