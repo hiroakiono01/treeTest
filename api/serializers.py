@@ -28,6 +28,7 @@ class EstimateSerializer(serializers.HyperlinkedModelSerializer):
         """
         Create and return a new `Snippet` instance, given the validated data.
         """
+
         return Estimate.objects.create(**validated_data)
 
     def update(self, instance, validated_data):

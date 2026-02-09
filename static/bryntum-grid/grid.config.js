@@ -197,7 +197,7 @@ const　grid = new TreeGrid({
 
 
     columns: [
-        { type :  "tree" , field : 'detail_name', text : 'detail_name', flex : 1 },
+        { type :  "tree" , field : 'detail_name', text : 'detail_name', flex : 1, required: true},
         { text : 'ParentIndex', field : 'parentIndex', hidden : false , flex : 1},
         { field : 'estimate_no', text : 'estimate_no', flex : 1 },
         { type : 'number', field : 'budget_quantity', text : 'budget_quantity', flex : 1 },

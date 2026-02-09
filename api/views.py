@@ -1,10 +1,10 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.renderers import JSONOpenAPIRenderer
 from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.response import Response
 
 from api.serializers import EstimateDSerializer, UnitSerializer
 from app.models import EstimateD, Unit
-
 
 
 class UnitViewSet(viewsets.ModelViewSet):
@@ -54,3 +54,20 @@ class EstimateDViewSet(viewsets.ModelViewSet):
     #         return Response({'success': True}, status=status.HTTP_200_OK)
     #     except Exception as e:
     #         return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EstimateDCreateViewSet(viewsets.ModelViewSet):
+    serializer_class = EstimateDSerializer
+    renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
+    template_name = 'estimate_tree.html'
+    # EstimateD.objects.rebuild()
+
+
+def create(self, request, *args, **kwargs):
+    try:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({'success': True, 'data': [serializer.data]}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
