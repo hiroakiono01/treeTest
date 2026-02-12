@@ -21,10 +21,10 @@ const response = await fetch("/api/unit_info/");
 const unitItems = await response.json();
 
 const treeStore = new AjaxStore({
-    createUrl: "/api/estimateD_create/",
-    readUrl: "/api/estimateD_read/",
-    updateUrl: "/api/estimateD_update/",
-    deleteUrl: "/api/estimateD_delete/",
+    createUrl: "/api/estimateD_info/",
+    readUrl: "/api/estimateD_info/",
+    updateUrl: "/api/estimateD_info/",
+    deleteUrl: "/api/estimateD_info/",
     autoLoad: true,
     autoCommit: false,
     useRestfulMethods: true,
@@ -41,24 +41,25 @@ const treeStore = new AjaxStore({
     delete: "DELETE",
     },
     listeners: {
-        beforeRequest: (event) => {
-            if (event.action === "create") {
-                const newItem = event.body.data[0];
-                delete newItem.id;
-                event.body = newItem;
-            }
-            if (event.action === "update") {
-                const updatedItem = event.body.data[0];
-                const itemId = updatedItem.id;
-                delete updatedItem.id;
-                event.body = updatedItem;
-                store.updateUrl = `/estimate_info/${itemId}/`;
-            }
-                if (event.action === "delete") {
-                const itemIds = event.body.ids;
-                store.deleteUrl = `/player_info/${itemIds[0]}/`;
-            }
-        },
+//        beforeRequest: (event) => {
+//            if (event.action === "create") {
+//                const newItem = event.body.data[0];
+//                delete newItem.id;
+//                event.body = newItem;
+//                store.createUrl = `/api/estimateD_info/`;
+//            }
+//            if (event.action === "update") {
+//                const updatedItem = event.body.data[0];
+//                const itemId = updatedItem.id;
+//                delete updatedItem.id;
+//                event.body = updatedItem;
+//                store.updateUrl = `/api/estimateD_update/${itemId}/`;
+//            }
+//                if (event.action === "delete") {
+//                const itemIds = event.body.ids;
+//                store.deleteUrl = `/api/estimateD_delete/${itemIds[0]}/`;
+//            }
+//        },
     },
 });
 
@@ -159,7 +160,7 @@ const　grid = new TreeGrid({
             icon     : "fa-pen-to-square",
             cls      : 'b-green',
             tooltip  : 'Sync changes to the server (added, modified and removed rows)',
-            disabled : true,
+            disabled : false,
             onAction : async() => {
                 // Logic to sync change to the server
                 await grid.store.commit();
@@ -197,7 +198,7 @@ const　grid = new TreeGrid({
 
 
     columns: [
-        { type :  "tree" , field : 'detail_name', text : 'detail_name', flex : 1, required: true},
+        { type :  "tree" , field : 'detail_name', text : 'detail_name', required: true, flex : 1},
         { text : 'ParentIndex', field : 'parentIndex', hidden : false , flex : 1},
         { field : 'estimate_no', text : 'estimate_no', flex : 1 },
         { type : 'number', field : 'budget_quantity', text : 'budget_quantity', flex : 1 },
