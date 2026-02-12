@@ -1,14 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}単位の編集{% endblock %}
-{% block active_user %}active{% endblock %}
+{% block title %}項目マスタの編集{% endblock %}
 {% block contents %}
 
 <div class="container">
     <div class="row">
         <div class="col-sm-12 col-lg-6 w-100">
-            <h3 class="my-div-style">単位の編集</h3>
-            <p><a href="#" onClick="history.back(); return false;">前のページにもどる</a></p>
+            <h3 class="my-div-style">edit Detail Master</h3>
+            <p><a href="#" onClick="history.back(); return false;">return back page</a></p>
             <form method="POST" enctype='multipart/form-data' name="form">
                 {% csrf_token %}
                 {{ form.non_field_errors }}
@@ -23,10 +22,10 @@
                 </div>
                 {% endfor %}
                 <div class="d-flex flex-row">
-                    <button class="btn btn-primary btn-sm mx-2" type="submit" id="button-submit">更新</button>
-                    <button class="btn btn-secondary btn-sm mx-2" type="reset">リセット</button>
-                    <a class="btn btn-danger btn-sm mx-2" href="{% url 'unit:unit_del' unit.pk %}">削除</a>
-                    <a class="btn btn-warning btn-sm mx-2" href="{% url 'unit:unit_list' %}">単位一覧</a>
+                    <button class="btn btn-primary btn-sm mx-2" type="submit" id="button-submit">submit</button>
+                    <button class="btn btn-secondary btn-sm mx-2" type="reset">rest</button>
+                    <a class="btn btn-danger btn-sm mx-2" href="{% url 'detailMaster:detailMaster_del' pk %}">delete</a>
+                    <a class="btn btn-warning btn-sm mx-2" href="{% url 'detailMaster:detailMaster_list' %}">DetailMasterList</a>
                 </div>
             </form>
         </div>

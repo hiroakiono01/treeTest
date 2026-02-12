@@ -41,25 +41,25 @@ const treeStore = new AjaxStore({
     delete: "DELETE",
     },
     listeners: {
-//        beforeRequest: (event) => {
-//            if (event.action === "create") {
-//                const newItem = event.body.data[0];
-//                delete newItem.id;
-//                event.body = newItem;
-//                store.createUrl = `/api/estimateD_info/`;
-//            }
-//            if (event.action === "update") {
-//                const updatedItem = event.body.data[0];
-//                const itemId = updatedItem.id;
-//                delete updatedItem.id;
-//                event.body = updatedItem;
-//                store.updateUrl = `/api/estimateD_update/${itemId}/`;
-//            }
-//                if (event.action === "delete") {
-//                const itemIds = event.body.ids;
-//                store.deleteUrl = `/api/estimateD_delete/${itemIds[0]}/`;
-//            }
-//        },
+
+        beforeRequest: (event) => {
+            if (event.action === "create") {
+                const newItem = event.body.data[0];
+                delete newItem.id;
+                event.body = newItem;
+            }
+            if (event.action === "update") {
+                const updatedItem = event.body.data[0];
+                const itemId = updatedItem.id;
+                delete updatedItem.id;
+                event.body = updatedItem;
+                store.updateUrl = `/estimate_info/${itemId}/`;
+            }
+                if (event.action === "delete") {
+                const itemIds = event.body.ids;
+                store.deleteUrl = `/estimate_info/${itemIds[0]}/`;
+            }
+        },
     },
 });
 
@@ -115,17 +115,28 @@ const　grid = new TreeGrid({
                     icon     : 'fa fa-plus-square',
                     text     : 'Insert',
                     tooltip  : 'Inserts a new row (below selected or at top)',
-                    onAction : () => {
-                        let index = 0;
-                        if (grid.selectedRecords) {
-                            index = Math.max(...grid.selectedRecords.map(record => grid.store.indexOf(record))) + 1;
-                        }
-                        const
-                            counter = ++newPlayerCount,
-                            added   = grid.store.insert(index, {
-                                name : `New player ${counter}`,
-                                cls  : `new_player_${counter}`
-                            });
+                    onAction : async () => {
+                                            const counter = ++newPlayerCount;
+                                            let added;
+
+                                            if (grid.selectedRecords) {
+                                                const selectedRecord = grid.selectedRecord;
+
+                                                added = selectedRecord.appendChild({
+                                                    name : `New player ${counter}`,
+                                                    cls  : `new_player_${counter}`
+                                                });
+                                                if (!selectedRecord.isLeaf && !selectedRecord.isExpanded(grid.store)){
+                                                    await grid.expand(selectedRecord);
+                                                }
+                                            } else {
+
+                                            added   = grid.store.insert(0, {
+                                                name : `New player ${counter}`,
+                                                cls  : `new_player_${counter}`
+                                            });
+
+                                        }
                         grid.selectedRecord = added[0];
                         submitButton.disabled = false;
                         resetButton.disabled = false;
@@ -205,6 +216,10 @@ const　grid = new TreeGrid({
         {
             field : 'budget_unit',
             text : 'budget_unit',
+            renderer : ({ value, column }) => {
+                const editor = column.editor;
+                return editor.store.getById(value)?.[editor.displayField] || value;
+            },
             editor : {
                 type :'combo',
                 editable: false,
