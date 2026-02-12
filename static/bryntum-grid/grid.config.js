@@ -21,10 +21,10 @@ const response = await fetch("/api/unit_info/");
 const unitItems = await response.json();
 
 const treeStore = new AjaxStore({
-    createUrl: "/api/estimateD_create/",
-    readUrl: "/api/estimateD_read/",
-    updateUrl: "/api/estimateD_update/",
-    deleteUrl: "/api/estimateD_delete/",
+    createUrl: "/api/estimateD_info/",
+    readUrl: "/api/estimateD_info/",
+    updateUrl: "/api/estimateD_info/",
+    deleteUrl: "/api/estimateD_info/",
     autoLoad: true,
     autoCommit: false,
     useRestfulMethods: true,
@@ -56,7 +56,7 @@ const treeStore = new AjaxStore({
             }
                 if (event.action === "delete") {
                 const itemIds = event.body.ids;
-                store.deleteUrl = `/player_info/${itemIds[0]}/`;
+                store.deleteUrl = `/estimate_info/${itemIds[0]}/`;
             }
         },
     },
@@ -114,17 +114,28 @@ const　grid = new TreeGrid({
                     icon     : 'fa fa-plus-square',
                     text     : 'Insert',
                     tooltip  : 'Inserts a new row (below selected or at top)',
-                    onAction : () => {
-                        let index = 0;
-                        if (grid.selectedRecords) {
-                            index = Math.max(...grid.selectedRecords.map(record => grid.store.indexOf(record))) + 1;
-                        }
-                        const
-                            counter = ++newPlayerCount,
-                            added   = grid.store.insert(index, {
-                                name : `New player ${counter}`,
-                                cls  : `new_player_${counter}`
-                            });
+                    onAction : async () => {
+                                            const counter = ++newPlayerCount;
+                                            let added;
+
+                                            if (grid.selectedRecords) {
+                                                const selectedRecord = grid.selectedRecord;
+
+                                                added = selectedRecord.appendChild({
+                                                    name : `New player ${counter}`,
+                                                    cls  : `new_player_${counter}`
+                                                });
+                                                if (!selectedRecord.isLeaf && !selectedRecord.isExpanded(grid.store)){
+                                                    await grid.expand(selectedRecord);
+                                                }
+                                            } else {
+
+                                            added   = grid.store.insert(0, {
+                                                name : `New player ${counter}`,
+                                                cls  : `new_player_${counter}`
+                                            });
+
+                                        }
                         grid.selectedRecord = added[0];
                         submitButton.disabled = false;
                         resetButton.disabled = false;
@@ -159,7 +170,7 @@ const　grid = new TreeGrid({
             icon     : "fa-pen-to-square",
             cls      : 'b-green',
             tooltip  : 'Sync changes to the server (added, modified and removed rows)',
-            disabled : true,
+            disabled : false,
             onAction : async() => {
                 // Logic to sync change to the server
                 await grid.store.commit();
@@ -204,6 +215,10 @@ const　grid = new TreeGrid({
         {
             field : 'budget_unit',
             text : 'budget_unit',
+            renderer : ({ value, column }) => {
+                const editor = column.editor;
+                return editor.store.getById(value)?.[editor.displayField] || value;
+            },
             editor : {
                 type :'combo',
                 editable: false,

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}項目マスタ一覧 | eco見積{% endblock %}
+
+{% block header %}
+<header class="sticky-top" style="width:1180px;margin-left:auto; margin-right:auto;">
+    <div class="container-fluid">
+        <div class="my-div-style">
+            <h3 class="mx-3 ">Detail Master List</h3>
+        </div>
+        <div class="d-flex flex-row">
+            <div>
+                <a href="{% url 'detailMaster:detailMaster_add' %}" class="btn btn-primary btn-sm my-3">add</a>
+            </div>
+            {% if unit_list|length != 0 %}
+            <div class="col-6 offset-3 justify-content-center">
+                {% if is_paginated %}
+                {% include 'pagination.html' %}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <table class="table table-hover table-bordered text-nowrap" style="margin-bottom:10px;">
+            <tr align="center">
+                <th width="150rem" scope="col" style="">Do</th>
+                <th width="190rem" scope="col">detail name</th>
+                <th width="300rem" scope="col">unit name</th>
+                <th width="190rem" scope="col">budget price</th>
+
+            </tr>
+        </table>
+    </div>
+</header>
+
+{% if detailMaster_list|length != 0 %}
+<div class="container-fluid">
+    <div style="width:1150px; margin-left:auto; margin-right:auto;">
+        <table class="table table-striped table-bordered  sc-table">
+            <tbody>
+            {% for item in detailMaster_list %}
+            <tr>
+                <td width="150rem" align="center">
+                    <a href="{% url 'detailMaster:detailMaster_edit' item.pk %}"
+                       class="btn btn-outline-warning btn-sm">edit</a>
+                </td>
+                <td width="190rem">{{ item.detail_name | default_if_none:"" }}</td>
+                <td width="300rem">{{ item.unit_name | default_if_none:"" }}</td>
+                <td width="300rem">{{ item.budget_price | default_if_none:"" }}</td>
+                <td width="300rem">{{ item.get_calcu_cls_cha | default_if_none:"" }}</td>
+             </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    <div class="col-6 offset-3 justify-content-center">
+        {% if is_paginated %}
+        {% include 'pagination.html' %}
+        {% endif %}
+    </div>
+</div>
+</div>
+<style>
+
+
+
+    .table th:first-child, td:first-child {
+      position: sticky;
+      position: -webkit-sticky;
+      left: 0;
+      background-color : #FFFFFF
+    }
+
+
+    .text-nowrap { white-space: nowrap !important; }
+
+    // はみだした部分の背景を処理する
+    #wrap {
+     width:100%;
+     min-width:1150px;
+    }
+    .content {
+     width:1150px;
+     margin:0 auto;
+    }
+    .content-out {
+     width:100%;
+     min-width:1150px;
+}
+
+
+    <!--#wrap {-->
+     <!--min-width:1150rem;-->
+    <!--}-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</style>
+
+{% endblock %}

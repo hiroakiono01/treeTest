@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/', include(estimate_router.urls)),  # api call
     path('unit/', include('unit.urls')),
     # path('api/', include('api.urls'))
+    path('detailMaster/', include('detailMaster.urls')),
 ]
