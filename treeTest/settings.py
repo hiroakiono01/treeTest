@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'api',
     'unit',
-    'detailMaster',
+    'reference',
     'django_bootstrap5',
 ]
 

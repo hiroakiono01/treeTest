@@ -1,20 +1,21 @@
 from django import forms
 from django.forms import ModelForm
 
-from app.models import DetailMaster, Calc_clas_select
+from app.models import Reference, Calc_clas_select
 
 
-class DetailMasterForm(ModelForm):
-    """項目マスタのフォーム"""
+class ReferenceForm(ModelForm):
+    """参照マスタのフォーム"""
     # 必須項目の表示
     required_css_class = 'required'
 
-    detail_name = forms.CharField(required=True, label='項目名称:')
+    detail_name = forms.CharField(required=False, label='項目名称:')
     # calcu_cls = forms.CharField(required=True, label='計算区分:')
     calcu_cls = forms.ChoiceField(choices=Calc_clas_select, required=True,label="")
 
+
     class Meta:
-        model = DetailMaster
+        model = Reference
 
         fields = ('detail_name', 'calcu_cls', 'unit_name', 'budget_price')
 

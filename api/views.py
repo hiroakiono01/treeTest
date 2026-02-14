@@ -1,8 +1,8 @@
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.renderers import JSONOpenAPIRenderer
 from rest_framework.renderers import TemplateHTMLRenderer
-from rest_framework.response import Response
-from rest_framework.decorators import action
 
 from api.serializers import EstimateDSerializer, UnitSerializer
 from app.models import EstimateD, Unit
@@ -15,11 +15,17 @@ class UnitViewSet(viewsets.ModelViewSet):
 
 class EstimateDViewSet(viewsets.ModelViewSet):
     serializer_class = EstimateDSerializer
+
     renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
     template_name = 'estimate_tree.html'
-    queryset = EstimateD.objects.all()
 
     # EstimateD.objects.rebuild()
+    def get_queryset(self):
+        estimate_no = self.kwargs.get('estimate_no')
+        # estimate_no = '001'
+        if estimate_no is not None:
+            queryset = EstimateD.objects.filter(estimate_no=estimate_no)
+            return queryset
 
     def create(self, request, *args, **kwargs):
         try:

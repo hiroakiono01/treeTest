@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}unit delete{% endblock title %}
+{% block active_unite_delete %}active{% endblock %}
+
+{% block contents %}
+<div class="container">
+    <div class="row  justify-content-center">
+        <div class="my-div-style w-50">
+            <form method="POST">
+                {% csrf_token %}
+                <p>delete sure？</p>
+                <div class="d-flex flex-row">
+                    <button class="btn btn-danger btn-sm mx-2" type="submit">delete</button>
+                    <a href="{% url 'unit:unit_edit' pk }" class="btn btn-secondary btn-sm mx-2">reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
