@@ -20,13 +20,13 @@ Item.convertEmptyParentToLeaf = true;
 const response = await fetch("/api/unit_info/");
 const unitItems = await response.json();
 
-const treeStore = new AjaxStore({
+const store = new AjaxStore({
     createUrl: "/api/estimateD_info/",
     readUrl: "/api/estimateD_info/",
     updateUrl: "/api/estimateD_info/",
     deleteUrl: "/api/estimateD_info/",
     autoLoad: true,
-    autoCommit: false,
+    autoCommit: true,
     useRestfulMethods: true,
     transformFlatData : true,
     sendAsFormData : true,
@@ -67,7 +67,7 @@ let newPlayerCount = 0;
 
 const　grid = new TreeGrid({
     appendTo: document.body,
-    store     :treeStore,
+    store,
     modelClass : Item,
     features: {
         filter: false,
