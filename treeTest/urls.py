@@ -15,15 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
+#
 from api.urls import router as estimate_router  # ルーターに名前をつける
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('app.urls')),
     path('estimate/', include('estimate.urls')),
-    path('api/', include(estimate_router.urls)),  # api call
+    # path('api/', include(estimate_router.urls)),  # api call
     path('unit/', include('unit.urls')),
-    # path('api/', include('api.urls'))
+    path('api/', include('api.urls')),
     path('reference/', include('reference.urls')),
 ]

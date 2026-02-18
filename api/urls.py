@@ -2,12 +2,15 @@ from django.urls import path, include
 from rest_framework import routers
 
 from . import views
-
+name = 'api'
 router = routers.DefaultRouter(trailing_slash=True)
-router.register(r'estimateD_info', views.EstimateDViewSet, 'estimate_tree')
+# router.register(r'estimateD_info', views.EstimateDViewSet, 'estimate_tree')
 router.register(r'unit_info', views.UnitViewSet)
-
+#
+# urlpatterns = [
+#     path('', include(router.urls)),
+#     # path('estimate_tree/<str:estimate_no>/', views.EstimateDViewSet.as_view({"get": 'list'}), name='estimate_tree_view'),
+# ]
 urlpatterns = [
-    path('', include(router.urls)),
-    # path('estimate_tree/<str:estimate_no>/', views.EstimateDViewSet.as_view({"get": 'list'}), name='estimate_tree_view'),
+    path('', views.EstimateDViewSet.as_view(), name='estimate_info'),
 ]
