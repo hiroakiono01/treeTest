@@ -49,6 +49,23 @@
                         <a class="nav-link{% block active_detailMaster %}{% endblock %}" href="{% url 'reference:reference_list' %}">reference</a>
                     </li>
                 </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link">ユーザー名：{{ user.get_username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account_logout' %}">Log Out</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item {% block active_signup %}{% endblock %}">
+                        <a class="nav-link" href="{% url 'account_signup' %}">Sign Up</a>
+                    </li>
+                    <li class="nav-item {% block active_login %}{% endblock %}">
+                        <a class="nav-link" href="{% url 'account_login' %}">Log In</a>
+                    </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </nav>

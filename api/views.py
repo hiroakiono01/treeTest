@@ -1,15 +1,22 @@
-import django_filters
-from rest_framework import viewsets, status, generics
-from rest_framework.decorators import action
-from rest_framework.renderers import JSONOpenAPIRenderer
-from rest_framework.renderers import TemplateHTMLRenderer
-from rest_framework.response import Response
-from rest_framework import generics
 from django.http import Http404
-from rest_framework.views import APIView
+from django.shortcuts import render
+from rest_framework import generics
+from rest_framework import renderers
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 from api.serializers import EstimateDSerializer, UnitSerializer
 from app.models import EstimateD, Unit
+
+global estimate_no_counter, estimate_no_first
+
+estimate_no_counter = 1
+
+
+def index(request):
+    return render(request, 'index.html')
 
 
 class UnitViewSet(viewsets.ModelViewSet):
@@ -17,75 +24,93 @@ class UnitViewSet(viewsets.ModelViewSet):
     serializer_class = UnitSerializer
 
 
-class OrderFilter(django_filters.FilterSet):
-    estimate_no = django_filters.CharFilter(field_name="estimate_no", lookup_expr="iexact")
+# class FilterEstimateD(filters.FilterSet):
+#     estimate_no = filters.CharFilter(lookup_expr='iexact')
+#
+#     class Meta:
+#         model = EstimateD
+#         fields = ['estimate_no', 'id']
 
-    class Meta:
-        model = EstimateD
-        fields = ['estimate_no']
 
-
-class EstimateDViewSet(generics.ListAPIView):
-    serializer_class = EstimateDSerializer
+class EstimateDViewSet(viewsets.ModelViewSet):
     queryset = EstimateD.objects.all()
-    renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
-    # template_name = 'estimate_tree.html'
-    # filter_backends = [DjangoFilterBackend]
-    # filterset_class = OrderFilter
+    serializer_class = EstimateDSerializer
+    # # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
+    renderer_classes = [renderers.JSONRenderer, renderers.TemplateHTMLRenderer]
+    template_name = 'estimate_tree.html'
 
-    # EstimateD.objects.rebuild()
+    def get_queryset(self):
+        global estimate_no_counter, estimate_no_first
 
-    # def get_queryset(self):
-    #     estimate_no = self.kwargs.get('estimate_no')
-    #     # estimate_no = '002'
-    #     if estimate_no is not None:
-    #         queryset = EstimateD.objects.filter(estimate_no=estimate_no)
-    #         return queryset
+        estimate_no = self.request.query_params.get('estimate_no')
+        if estimate_no_counter < 2:
+            estimate_no_first = estimate_no
+            estimate_no_counter += 1
+            queryset = EstimateD.objects.filter(estimate_no=estimate_no_first)
+        else:
+            queryset = EstimateD.objects.filter(estimate_no=estimate_no_first)
+            estimate_no_counter = 1
+        return queryset
 
-    # def create(self, request, *args, **kwargs):
-    #     try:
-    #         serializer = self.get_serializer(data=request.data)
-    #         serializer.is_valid(raise_exception=True)
-    #         self.perform_create(serializer)
-    #         return Response({'success': True, 'data': [serializer.data]}, status=status.HTTP_200_OK)
-    #     except Exception as e:
-    #         return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    # def update(self, request, *args, **kwargs):
-    #     try:
-    #         partial = kwargs.pop('partial', False)
-    #         instance = self.get_object()
-    #         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-    #         serializer.is_valid(raise_exception=True)
-    #         self.perform_update(serializer)
-    #         return Response({'success': True, 'data': [serializer.data]}, status=status.HTTP_200_OK)
-    #     except Exception as e:
-    #         return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    # @action(detail=False, methods=['DELETE'])
-    # def delete(self, request, *args, **kwargs):
-    #     try:
-    #         ids_to_delete = request.data.get('ids', [])  # Get list of identifiers from request data
-    #         instances_to_delete = self.queryset.filter(pk__in=ids_to_delete)
-    #         instances_to_delete.delete()
-    #         return Response({'success': True}, status=status.HTTP_200_OK)
-    #     except Exception as e:
-    #         return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response({'success': True, 'data': [serializer.data]}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# EstimateD.objects.rebuild()
+    def update(self, request, *args, **kwargs):
+        try:
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response({'success': True, 'data': [serializer.data]}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# class EstimateDCreateViewSet(viewsets.ModelViewSet):
-#     serializer_class = EstimateDSerializer
-#     renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
-#     template_name = 'estimate_tree.html'
-#     # EstimateD.objects.rebuild()
-#
-#
-#     def create(self, request, *args, **kwargs):
-#         try:
-#             serializer = self.get_serializer(data=request.data)
-#             serializer.is_valid(raise_exception=True)
-#             self.perform_create(serializer)
-#             return Response({'success': True, 'data': [serializer.data]}, status=status.HTTP_200_OK)
-#         except Exception as e:
-#             return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=False, methods=['DELETE'])
+    def delete(self, request, *args, **kwargs):
+        try:
+            ids_to_delete = request.data.get('ids', [])  # Get list of identifiers from request data
+            instances_to_delete = self.queryset.filter(pk__in=ids_to_delete)
+            instances_to_delete.delete()
+            return Response({'success': True}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EstimateDDetail(generics.RetrieveAPIView):
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    """
+    Retrieve, update or delete a snippet instance.
+    """
+    serializer_class = EstimateDSerializer
+
+    def get_object(self, pk):
+        try:
+            return EstimateD.objects.get(pk=pk)
+        except EstimateD.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        estimateD = self.get_object(pk)
+        serializer = EstimateDSerializer(estimateD)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        estimateD = self.get_object(pk)
+        serializer = EstimateDSerializer(estimateD, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        estimateD = self.get_object(pk)
+        estimateD.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

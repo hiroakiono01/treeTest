@@ -1,5 +1,5 @@
 from django.urls import path
-
+from django.views.generic import RedirectView
 from unit import views
 
 app_name = 'unit'
