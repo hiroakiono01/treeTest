@@ -26,7 +26,7 @@ const store = new AjaxStore({
     updateUrl: "/api/estimateD_info/",
     deleteUrl: "/api/estimateD_info/",
     autoLoad: true,
-    autoCommit: true,
+    autoCommit: false,
     useRestfulMethods: true,
     transformFlatData : true,
     sendAsFormData : true,

@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'unit',
     'reference',
     'django_bootstrap5',
-    # 'django_filters',
+    'django_filters',
     # 認証機能
     'accounts.apps.AccountsConfig',
     'django.contrib.sites',

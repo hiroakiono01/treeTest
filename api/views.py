@@ -1,10 +1,13 @@
 from django.http import Http404
 from django.shortcuts import render
+from django_filters import rest_framework as filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
-from rest_framework import renderers
+# from rest_framework import renderers
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.renderers import JSONOpenAPIRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
 
 from api.serializers import EstimateDSerializer, UnitSerializer
@@ -12,7 +15,8 @@ from app.models import EstimateD, Unit
 
 global estimate_no_counter, estimate_no_first
 
-estimate_no_counter = 1
+estimateD_counter = 1
+global_param = ''
 
 
 def index(request):
@@ -24,33 +28,44 @@ class UnitViewSet(viewsets.ModelViewSet):
     serializer_class = UnitSerializer
 
 
-# class FilterEstimateD(filters.FilterSet):
-#     estimate_no = filters.CharFilter(lookup_expr='iexact')
-#
-#     class Meta:
-#         model = EstimateD
-#         fields = ['estimate_no', 'id']
+class FilterEstimateD(filters.FilterSet):
+    estimate_no = filters.CharFilter(lookup_expr='iexact')
+    id = filters.UUIDFilter()
+
+    class Meta:
+        model = EstimateD
+        fields = ['estimate_no', 'id']
 
 
 class EstimateDViewSet(viewsets.ModelViewSet):
     queryset = EstimateD.objects.all()
     serializer_class = EstimateDSerializer
-    # # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    # renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
-    renderer_classes = [renderers.JSONRenderer, renderers.TemplateHTMLRenderer]
+    filter_backends = [DjangoFilterBackend]
+    renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
     template_name = 'estimate_tree.html'
 
     def get_queryset(self):
-        global estimate_no_counter, estimate_no_first
 
-        estimate_no = self.request.query_params.get('estimate_no')
-        if estimate_no_counter < 2:
-            estimate_no_first = estimate_no
-            estimate_no_counter += 1
-            queryset = EstimateD.objects.filter(estimate_no=estimate_no_first)
+        global estimateD_counter, global_param
+
+        if estimateD_counter < 2:
+            global_param = self.request.query_params
+            if 'estimate_no' in global_param:
+                estimate_no = global_param.get('estimate_no')
+                estimateD_counter += 1
+                queryset = EstimateD.objects.filter(estimate_no=estimate_no)
+            if 'id' in global_param:
+                key = global_param.get('id')
+                estimateD_counter += 1
+                queryset = EstimateD.objects.filter(id=int(key))
         else:
-            queryset = EstimateD.objects.filter(estimate_no=estimate_no_first)
-            estimate_no_counter = 1
+            if 'estimate_no' in global_param:
+                estimate_no = global_param.get('estimate_no')
+                queryset = EstimateD.objects.filter(estimate_no=estimate_no)
+            if 'id' in global_param:
+                key = global_param.get('id')
+                queryset = EstimateD.objects.filter(id=int(key))
+            estimateD_counter = 1
         return queryset
 
     def create(self, request, *args, **kwargs):
