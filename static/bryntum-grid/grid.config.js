@@ -4,6 +4,7 @@ import {AjaxStore, TreeGrid, StringHelper, Combo, GridRowModel, Toast} from './g
 // 金額の計算
 class Item extends GridRowModel {
     static fields = [
+        { name : 'id' },
         { name : 'estimate_no' },
         { name : 'detail_name' },
         { name : 'budget_price', type : 'number', defaultValue : 0 },
@@ -23,10 +24,10 @@ const unitItems = await response.json();
 const store = new AjaxStore({
     createUrl: "/api/estimateD_info/",
     readUrl: "/api/estimateD_info/",
-    updateUrl: "/api/estimateD_info/",
-    deleteUrl: "/api/estimateD_info/",
+    updateUrl: "/api/estimateD_retrieve/",
+    deleteUrl: "/api/estimateD_retrieve/",
     autoLoad: true,
-    autoCommit: false,
+    autoCommit: true,
     useRestfulMethods: true,
     transformFlatData : true,
     sendAsFormData : true,
@@ -41,7 +42,6 @@ const store = new AjaxStore({
     delete: "DELETE",
     },
     listeners: {
-
         beforeRequest: (event) => {
             if (event.action === "create") {
                 const newItem = event.body.data[0];
