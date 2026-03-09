@@ -44,8 +44,8 @@ class EstimateDViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     EstimateD.objects.rebuild()
     # lookup_field = 'id'
-    renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
-    template_name = 'estimate_tree.html'
+    # renderer_classes = [JSONOpenAPIRenderer, TemplateHTMLRenderer]
+    # template_name = 'estimate_tree.html'
 
     def get_queryset(self):
 
