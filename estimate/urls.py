@@ -11,6 +11,4 @@ urlpatterns = [
     path('add/', views.EstimateAdd.as_view(), name='estimate_add'),  # 登録
     path('edit/<int:pk>/', views.EstimateEdit.as_view(), name='estimate_edit'),  # 修正
     path('del/<int:pk>/', views.EstimateDel.as_view(), name='estimate_del'),  # 削除
-    re_path('^estimate_tree/$', apiViews.EstimateDViewSet.as_view({'get': 'list', 'post': "create"}), name='estimateD_list'),
-    re_path('^estimate_tree/$<int:id>/', apiViews.EstimateDViewSet.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}), name='estimateD_detail'),
 ]

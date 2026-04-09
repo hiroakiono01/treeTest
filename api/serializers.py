@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from app.models import EstimateD, Estimate, Unit
+from app.models import Task, Estimate, Unit
 
 
 class UnitSerializer(serializers.HyperlinkedModelSerializer):
@@ -40,12 +40,12 @@ class EstimateSerializer(serializers.HyperlinkedModelSerializer):
         return instance
 
 
-class EstimateDSerializer(serializers.ModelSerializer):
+class TaskSerializer(serializers.ModelSerializer):
     # parentId = serializers.IntegerField(source='parent')
 
     class Meta:
 
-        model = EstimateD
+        model = Task
 
         fields = ('id', 'estimate_no', 'detail_name',
                   'parentId', 'tree_seq',
@@ -58,7 +58,7 @@ class EstimateDSerializer(serializers.ModelSerializer):
         """
         Create and return a new `Snippet` instance, given the validated data.
         """
-        return EstimateD.objects.create(**validated_data)
+        return Task.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():

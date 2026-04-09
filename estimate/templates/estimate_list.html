@@ -46,7 +46,7 @@
                         <a href="{% url 'estimate:estimate_edit' item.pk %}" class="btn btn-outline-warning btn-sm">edit</a>
                     </td>
                     <td align="center" width="20%">
-                        <a href="{% url 'estimate:estimateD_list'  %}?estimate_no={{ item.estimate_no }}" class="btn btn-outline-success btn-sm">detail</a>
+                        <a href="estimate:estimate_tree" class="btn btn-outline-success btn-sm">detail</a>
                     </td>
 
                     <td align="center">{{item.estimate_no}}</td>

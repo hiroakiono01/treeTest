@@ -1,6 +1,4 @@
 from django.db import models
-from mptt.models import MPTTModel, TreeForeignKey
-
 Calc_clas_select = [
     ('0', 'Items to include in The total　amount'),
     ('1', 'Aggregate within the hierarchy but do not include in The total amount'),
@@ -62,6 +60,7 @@ class Estimate(models.Model):
     class Meta:
         db_table = 'estimate'
 
+    id = models.AutoField(primary_key=True)
     estimate_no = models.CharField(max_length=15, null=True, blank=True, verbose_name='estimate no')
     estimate_name = models.CharField(max_length=60, null=True, blank=True, verbose_name='estimate name')
 
@@ -69,26 +68,28 @@ class Estimate(models.Model):
         return str(self.estimate_name)
 
 
-class EstimateD(MPTTModel):
+class Task(models.Model):
     class Meta:
-        db_table = 'estimateD'
+        db_table = 'task'
 
     id = models.AutoField(primary_key=True)
     estimate_no = models.ForeignKey(Estimate, null=True, blank=True, on_delete=models.PROTECT)
-    detail_name = models.CharField(max_length=50, null=True, blank=True, verbose_name='明細名称')
-    tree_seq = models.CharField(max_length=50, null=True, blank=True)
+    task_name = models.CharField(max_length=50, null=True, blank=True, verbose_name='明細名称')
+    material_dimensions = models.CharField(max_length=50, null=True, blank=True, verbose_name='材質・寸法')
     budget_quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算数量')
     budget_unit = models.ForeignKey(Unit, blank=True, null=True, verbose_name='予算単位', related_name='+', on_delete=models.PROTECT)
     budget_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算単価')
     budget_amount = models.IntegerField(null=True, blank=True, verbose_name='予算金額')
-    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
-    parentId = models.IntegerField(null=True, blank=True, )
-    parentIndex = models.IntegerField(null=True, blank=True, )
-
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='見積数量')
+    unit = models.ForeignKey(Unit, blank=True, null=True, verbose_name='見積単位', related_name='+', on_delete=models.PROTECT)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='見積単価')
+    amount = models.IntegerField(null=True, blank=True, verbose_name='見積金額')
+    markup_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='掛率')
     calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分')
 
-    class MPTTMeta:
-        order_insertion_by = ['detail_name']
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    sort_order = models.IntegerField(default=0)
+
 
     def __str__(self):
-        return str(self.detail_name)
+        return str(self.task_name)

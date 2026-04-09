@@ -61,3 +61,5 @@ class EstimateDel(generic.DeleteView):
         except models.ProtectedError as e:
             messages.error(request, f'「{obj}」estimate use other')
             return redirect('estimate:estimate_list')
+
+
