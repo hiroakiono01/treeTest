@@ -10,11 +10,8 @@
 </head>
 <body>
 <div id="controls" style="padding: 10px 10px 10px 0px; width: 70%; ">
-    <div class="button-bar" style="margin-bottom: 10px; display: flex; gap: 8px;">
-        <button id="add_btn" class="dhx_button dhx_button--color-primary">追加</button>
-    </div>
 </div>
-
+<div id="toolbar_container"></div>
 <div id="grid_container" style="width: 70%; height: 700px;"></div>
 <script>
     // 1. ツールバー設定（Unitの時と同じ構成）
@@ -33,7 +30,7 @@
     //  3. ウィンドウとフォームの準備
         const dhxWindow = new dhx.Window({
             width: 400,
-            height: 300,
+            height: 700,
             title: "新規",
             modal: true
         });
@@ -111,19 +108,14 @@
                 options: [] // 後でAPIから取得して流し込む
             },
             { id: "budget_price", header: [{ text: "予算単価" }], editable: true, type: "number" },
-            { id: "unit_no", header: [{ text: "unit_no" }],  },
-            { id: "unit_name", header: [{ text: "unit_name" }], },
-            { id: "action", header: [{ text: "操作" }], align: "center", width: 80, htmlEnable: true,
-                template:() => "<button class='edit-btn'>編集</button>"
-            },
-            { id: "delete", header: [{ text: "削除" }], align: "center",  width: 80, htmlEnable: true,
+            { id: "delete", header: [{ text: "削除" }], align: "center", editable: true,  width: 80, htmlEnable: true,
                 template: () => "<button class='delete-btn' >削除</button>"
                 }
         ],
         autoWidth: true,
         data: dataset, // 作成した DataCollection を直接紐付ける
         // 行単位の選択モードに変更
-        //selection: "row",
+        selection: "cell",
     });
 
     // 3. Unit一覧を取得してGridのプルダウンに反映
@@ -149,6 +141,16 @@
             dhxWindow.paint();
             dhxWindow.show();
         });
+
+        function addRow() {
+                    if (form) {
+                form.clear({});
+                }
+            dhxWindow.header.data.update("title", { value: "新規登録" });
+            dhxWindow.setPosition(100, 50);
+            dhxWindow.paint();
+            dhxWindow.show();
+            }
 
         // 4.2 グリッド内の「編集」ボタンクリック時
         grid.events.on("cellClick", (row, col) => {
@@ -257,14 +259,12 @@
 
 
         // 5. 削除処理
-        document.getElementById("del_btn").onclick = function() {
-            const selection = grid.selection.getCell();
-            if (selection && selection.row) {
-                const rowId = selection.row.id; // これがDjangoのpkになります
+        grid.events.on("cellClick", (row, col) => {
+            if (col.id === "delete") {
 
                 if (confirm("選択した行を削除してもよろしいですか？")) {
                     // 1. サーバー側のデータを削除
-                    fetch(`/reference/update/${rowId}`, {
+                    fetch(`/references/${rowId}`, {
                         method: 'DELETE',
                         headers: {
                             "Content-Type": "application/json",
@@ -281,10 +281,9 @@
                         console.error('Error:', error);
                     });
                 }
-            } else {
-                alert("削除する行を選択してください。");
             }
         };
+
 
         // 6. 一括保存ボタンのイベント
         document.getElementById("save_btn").onclick =
