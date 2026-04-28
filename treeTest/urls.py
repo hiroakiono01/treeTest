@@ -14,10 +14,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.views.generic import RedirectView
 
-from api.urls import router as estimate_router  # ルーターに名前をつける
+# from api.urls import router as estimate_router  # ルーターに名前をつける
 
 #
 
@@ -26,9 +26,10 @@ urlpatterns = [
     path('', include('app.urls')),
     path('accounts/', include('allauth.urls')),
     path('estimate/', include('estimate.urls')),
-    path('api/', include(estimate_router.urls)),  # api call
+    # path('api/', include('unit.urls')),  # api call
+    # re_path(r'', include('unit.urls')),
     path('unit/', include('unit.urls')),
-    # path('api/', include('api.urls')),
+    path('api/', include('api.urls')),
     path('reference/', include('reference.urls')),
-    path('unit_list/', RedirectView.as_view(url='/static/API_list.html')),
+    # path('unit_list/', RedirectView.as_view(url='/static/API_list.html')),
 ]

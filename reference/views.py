@@ -1,13 +1,103 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
+from rest_framework import status, generics
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from api.serializers import ReferenceSerializer
 from app.models import Unit, Reference
 from django.urls import reverse_lazy
 from django.contrib import messages
 
 from reference.forms import ReferenceForm
 from unit.forms import UnitForm
-from django.db import models
+from django.db import models, transaction
+
+
+class ReferenceListView(TemplateView):
+    template_name = "reference_list.html"
+class ReferenceListCreateView(generics.ListCreateAPIView):
+    queryset = Reference.objects.all()
+    serializer_class = ReferenceSerializer
+
+    def post(self, request, *args, **kwargs):
+        # Unitの時と同様の一括保存ロジック（前述のUnitViewと同様のため省略）
+        pass
+
+
+class ReferenceDetailView(generics.DestroyAPIView):
+    queryset = Reference.objects.all()
+
+@api_view(['GET'])
+def data_list(request):
+    if request.method == 'GET':
+        references = Reference.objects.all()
+        referenceData = ReferenceSerializer(references, many=True)
+        return Response({
+            "references": referenceData.data,
+        })
+
+
+@api_view(['POST'])
+def reference_update(request):
+    # request.data自体がリスト（配列）なので、直接ループを回す
+
+    data_list = request.data
+    if not isinstance(data_list, list):
+        return Response({"error": "データがリスト形式ではありません"}, status=status.HTTP_400_BAD_REQUEST)
+    results = []
+    try:
+        with transaction.atomic():
+            # 送られてきたリストをループ処理
+            for item in request.data:
+                raw_id = item.get('id')
+
+                # 既存データの更新か新規作成かを判定
+                # 数値型であり、かつ実際にDBに存在するIDか確認
+                instance = None
+                if isinstance(raw_id, (int, str)) and str(raw_id).isdigit():
+                    instance = Unit.objects.filter(id=raw_id).first()
+
+                if instance:
+                    # 更新 (Partial=True で一部フィールドのみの更新にも対応)
+                    serializer = ReferenceSerializer(instance, data=item, partial=True)
+                else:
+                    # 新規作成 (一時IDなどはシリアライザに渡さないように id を除外)
+                    item_data = item.copy()
+                    item_data.pop('id', None)
+                    serializer = ReferenceSerializer(data=item_data)
+
+                if serializer.is_valid():
+                    saved_instance = serializer.save()
+                    results.append(ReferenceSerializer(saved_instance).data)
+                else:
+                    # バリデーションエラー時は例外を投げてロールバックさせる
+                    return Response({
+                        "error": "validation Failed",
+                        "details": serializer.errors,
+                        "item": item
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            # 全ての処理が成功した場合のみここに来る
+            return Response(results, status=status.HTTP_200_OK)
+    except Exception as e:
+        # 処理後の全データをリストで返却
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def get_reference_data(request):
+    # unit_name_id とすることで、ForeignKeyのID値を直接取得できます
+    data = list(Reference.objects.all().values(
+        "id",
+        "detail_name",
+        "calcu_cls",
+        "unit_name_id",  # ここが重要！
+        "budget_price"
+    ))
+    return JsonResponse(data, safe=False)
 
 
 class ReferenceList(generic.ListView):

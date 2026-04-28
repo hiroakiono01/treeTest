@@ -1,63 +1,344 @@
-{% extends 'base.html' %}
-{%load static %}
-{% block title %}reference list{% endblock %}
-{% block header %}
-<div class="container">
-    <header>
-        <div class="row">
-            <div class="col-sm-4">
-            </div>
-            <div class="my-div-style col-sm">
-                <h3>reference list</h3>
-            </div>
-        </div>
-    </header>
-    <div class="col-8 offset-2 justify-content-center">
-
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.media }}
-            <div class="row">
-            </div>
-            <div class="row">
-                <div class="d-flex flex-row mx-4 my-2">
-                    <a class="btn btn-primary btn-sm mx-2" href="{% url 'reference:reference_add' %}">add</a>
-
-                    <p><a href="#" onClick="history.back(); return false;">history back</a></p>
-                </div>
-            </div>
-        </form>
-
-        <div class="container-fluid">
-            {% if reference_list|length == 0 %}
-            <p>検索結果が存在しません。</p>
-            {% else %}
-            <table class="table table-hover table-bordered text-nowrap .thead-dark">
-                <tr align="center">
-                    <th>done</th>
-                    <th>detail name</th>
-                    <th>calcu class</th>
-                    <th>get_calcu_cls_cha</th>
-                    <th>budget_price</th>
-                </tr>
-                <tbody>
-                {% for item in reference_list %}
-                <tr>
-                    <td align="center" width="20%">
-                        <a href="{% url 'reference:reference_edit' item.pk %}" class="btn btn-outline-warning btn-sm">edit</a>
-                    </td>
-                    <td align="center">{{item.detail_name}}</td>
-                    <td align="center">{{item.calcu_cls}}</td>
-                    <td align="center">{{item.get_calcu_cls_cha}}</td>
-                    <td align="center">{{item.budget_price}}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
+<html lang="ja">
+<head>
+    {% load static %}
+    {% csrf_token %}
+    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
+    <script src="{% static 'suite/suite.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
+    <!-- 共通ユーティリティ -->
+    <script src="{% static 'js/utils.js' %}"></script>
+</head>
+<body>
+<div id="controls" style="padding: 10px 10px 10px 0px; width: 70%; ">
+    <div class="button-bar" style="margin-bottom: 10px; display: flex; gap: 8px;">
+        <button id="add_btn" class="dhx_button dhx_button--color-primary">追加</button>
     </div>
 </div>
 
-{% endblock %}
+<div id="grid_container" style="width: 70%; height: 700px;"></div>
+<script>
+    // 1. ツールバー設定（Unitの時と同じ構成）
+    const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+    toolbar.data.add([
+        { id: "add", type: "button", value: "新規追加", icon: "mi-plus", color: "primary" },
+    ]);
 
+    // 2. ツールバーのクリックイベント
+    toolbar.events.on("click", function(id) {
+        if (id === "add") {
+            addRow(); // 前に作った関数を呼ぶ
+        }
+    });
+
+    //  3. ウィンドウとフォームの準備
+        const dhxWindow = new dhx.Window({
+            width: 400,
+            height: 300,
+            title: "新規",
+            modal: true
+        });
+        const form = new dhx.Form(null, {
+            rows: [
+                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
+                {
+                    name: "detail_name",
+                    type: "input",
+                    label: "詳細",
+                    required: true
+                },
+                {
+                    name: "calcu_cls",
+                    type: "input",
+                    label: "計算の区分",
+                    required: true
+                },
+                {
+                    name: "unit_name",
+                    type: "input",
+                    label: "単位",
+                    required: false
+                },
+                {
+                    name: "budget_price",
+                    type: "input",
+                    label: "単価",
+                    required: false
+                },
+                {
+                    type: "button",
+                    name: "save",
+                    text: "保存",
+                    view: "flat",
+                    color: "primary"
+                }
+            ]
+        });
+        dhxWindow.attach(form);
+
+    // 4. DRFからデータの読み込む（Django の API から取得する場合）
+    const dataset = new dhx.DataCollection();
+    fetch("/reference/data/")
+        .then(response => response.json())
+        .then(data => {
+            grid.data.parse(data.references); // data.references (配列部分) を渡す
+        });
+
+    // 3. Gridの初期化
+    const grid = new dhx.Grid("grid_container", {
+        columns: [
+            { id: "id", header: [{ text: "ID" }], hidden: true },
+            { id: "action", header: [{ text: "修正" }], align: "center", width: 80, htmlEnable: true,
+                    template:() => "<button class='edit-btn'>修正</button>"
+                },
+            { id: "detail_name", header: [{ text: "明細名称" }], editable: true },
+            {
+                id: "calcu_cls",
+                header: [{ text: "計算区分" }],
+                editable: false,
+                editorType: "select", // セレクトボックス形式
+                options: [
+                    { id: "0", value: "加算対象" },
+                    { id: "1", value: "階層内集計（加算なし）" },
+                    { id: "2", value: "税抜合計" },
+                    { id: "3", value: "消費税" }
+                ]
+            },
+            {
+                id: "unit_name", // ForeignKeyのIDが入る
+                header: [{ text: "予算単位" }],
+                editable: false,
+                editorType: "select",
+                options: [] // 後でAPIから取得して流し込む
+            },
+            { id: "budget_price", header: [{ text: "予算単価" }], editable: true, type: "number" },
+            { id: "unit_no", header: [{ text: "unit_no" }],  },
+            { id: "unit_name", header: [{ text: "unit_name" }], },
+            { id: "action", header: [{ text: "操作" }], align: "center", width: 80, htmlEnable: true,
+                template:() => "<button class='edit-btn'>編集</button>"
+            },
+            { id: "delete", header: [{ text: "削除" }], align: "center",  width: 80, htmlEnable: true,
+                template: () => "<button class='delete-btn' >削除</button>"
+                }
+        ],
+        autoWidth: true,
+        data: dataset, // 作成した DataCollection を直接紐付ける
+        // 行単位の選択モードに変更
+        //selection: "row",
+    });
+
+    // 3. Unit一覧を取得してGridのプルダウンに反映
+    fetch("/unit/units/")
+        .then(res => res.json())
+        .then(data => {
+            const unitOptions = data.map(u => ({ id: u.id, value: u.unit_name }));
+            // unit_name列のオプションを更新
+            grid.getColumn("unit_name").options = unitOptions;
+            grid.paint(); // 再描画
+        });
+
+    // 4. データ読み込み
+    grid.data.load("/reference/references/");
+
+            // 4.1 新規作成ボタン（HTML側に id="add-btn" がある想定）
+        document.getElementById("add_btn").addEventListener("click", () => {
+            if (form) {
+                form.clear({});
+                }
+            dhxWindow.header.data.update("title", { value: "新規登録" });
+            dhxWindow.setPosition(100, 50);
+            dhxWindow.paint();
+            dhxWindow.show();
+        });
+
+        // 4.2 グリッド内の「編集」ボタンクリック時
+        grid.events.on("cellClick", (row, col) => {
+            if (col.id === "action") {
+                form.setValue(row); // 選択した行のデータをフォームにセット
+                dhxWindow.header.data.update("title", { value: "編集"});
+                dhxWindow.paint();
+                dhxWindow.show();
+            }
+        });
+
+
+<!--        Promise.all([-->
+<!--            fetch("/api/unit-options/").then(res => res.json()),-->
+<!--            fetch("/reference/list/").then(res => res.json())-->
+<!--        ])-->
+<!--        .then(([optionData, mainData]) => {-->
+<!--        const formattedOptions = optionData.units.map(item => ({-->
+<!--                id: Number(item.id), // ここで確実に数値にする-->
+<!--                value: item.unit_name-->
+<!--        }));-->
+<!--        unitCollection.parse(formattedOptions);-->
+
+
+<!--    // 3. 次に本体データをセット（unit_nameを数値化）-->
+<!--    const formattedReferences = mainData.references.map(item => ({-->
+<!--        id: item.id,-->
+<!--        detail_name: item.detail_name,-->
+<!--        calcu_cls: item.calcu_cls,-->
+<!--        unit_name: item.unit_name ? Number(item.unit_name) : null,-->
+<!--        budget_price: item.budget_price-->
+<!--    }));-->
+
+<!--        // 4. 最後にdataset（Grid）にデータを流し込む-->
+<!--        dataset.parse(formattedReferences);-->
+<!--        })-->
+<!--        .catch(err => {-->
+<!--            console.error("データの読み込みに失敗しました:", err);-->
+<!--        });-->
+
+<!--        // 0. 外部キー用のデータコレクションを先に作成しておく-->
+<!--        const unitCollection = new dhx.DataCollection();-->
+<!--            // 2. Fetchでデータを読み込み、Collectionに格納する-->
+<!--            fetch("/api/unit-options/")-->
+<!--                .then(response => response.json())-->
+<!--                .then(data => {-->
+<!--                    const formattedData = data.units.map(item => ({-->
+<!--                    id: Number(item.id), // ここで確実に数値にする-->
+<!--                    value: item.unit_name-->
+<!--                    }));-->
+<!--                    unitCollection.parse(formattedData);-->
+<!--                });-->
+
+<!--        // 7. DRFからデータを読み込む-->
+<!--        const -->
+<!--        fetch("/reference/list/")-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--                grid.data.parse(data.references); // data.references (配列部分) を渡す-->
+<!--            });-->
+
+
+    // 4. データ読み込み
+    grid.data.load("/reference/references/");
+
+
+        // 2. DataCollection の作成（ここが Suite 9+ の肝）
+        // プロキシ設定をここに集約します
+<!--        const dataset = new dhx.DataCollection({-->
+<!--            //url: "/reference/list/", // 読み込み用-->
+<!--            save: {-->
+<!--                url: "/reference/update/", // 保存用（REST形式で ID が自動付与される）-->
+<!--                mode: "REST",-->
+<!--                headers: {-->
+<!--                    "X-CSRFToken": getCookie('csrftoken'),-->
+<!--                    "Content-Type": "application/json"-->
+<!--                    }-->
+<!--                },-->
+<!--            autoSave: false-->
+<!--        });-->
+
+
+
+
+
+        // 4. 追加処理(add)
+        document.getElementById("add_btn").onclick = function() {
+            // 一時的なIDを生成（dhtmlxの内部生成に任せるか、Date.now()などを使用）
+            const tempId = null;
+
+            const newRow = {
+                id: tempId,
+                detail_name: null, // 初期値
+                calcu_cls: "",
+                unit_name: "",
+                budget_price: "",
+                is_new: true // 新規フラグを付けておくと後で抽出が楽
+            };
+
+            //dataset.add(newRow);
+
+            // 追加した行を表示・選択
+            grid.showRow(tempId);
+            grid.selection.setCell(tempId, "detail_name", "calcu_cls", "unit_name", "budget_price");
+        };
+
+
+        // 5. 削除処理
+        document.getElementById("del_btn").onclick = function() {
+            const selection = grid.selection.getCell();
+            if (selection && selection.row) {
+                const rowId = selection.row.id; // これがDjangoのpkになります
+
+                if (confirm("選択した行を削除してもよろしいですか？")) {
+                    // 1. サーバー側のデータを削除
+                    fetch(`/reference/update/${rowId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            "Content-Type": "application/json",
+                            'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            // 2. サーバー削除成功後、フロントエンド(Grid)から削除
+                            dataset.remove(rowId);
+                        } else {
+                            alert("サーバーでの削除に失敗しました。");
+                        }
+                    }).catch(error => {
+                        console.error('Error:', error);
+                    });
+                }
+            } else {
+                alert("削除する行を選択してください。");
+            }
+        };
+
+        // 6. 一括保存ボタンのイベント
+        document.getElementById("save_btn").onclick =
+            async function saveAllChanges() {
+                // グリッド上の全データを取得（追加分：u...、修正分：数値ID が混在）
+                const allData = grid.data.serialize();
+
+                if (allData.length === 0) return;
+
+                try {
+                    const response = await fetch("/reference/update/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCookie("csrftoken")
+                        },
+                        body: JSON.stringify(allData)
+                    });
+
+                    const savedItems = await response.json();
+
+                    if (response.ok) {
+                        // サーバーから返ってきた確定データでグリッドを更新
+                        // savedItems は必ず配列で返ってくる前提
+                        savedItems.forEach((newItem) => {
+                            // ここが重要：
+                            // 新規なら一時ID(u...)をキーに数値IDへ置換
+                            // 修正なら数値IDをキーに内容を最新化
+                            // サーバー側で「元々の一時ID」を返してくれない場合は、
+                            // unit_no など一意のキーでマッチングさせる工夫が必要です。
+
+                            // シンプルな実装例（unit_no が一意の場合）
+                            const row = grid.data.serialize().find(r => r.unit_no === newItem.unit_no);
+                            if (row) {
+                                grid.data.update(row.id, newItem);
+                            }
+                        });
+                        alert("追加と修正の保存が完了しました");
+                    }
+                } catch (error) {
+                    console.error("保存失敗:", error);
+                }
+            }
+
+<!--        fetch("/reference/list/")-->
+<!--            .then(res => res.json())-->
+<!--            .then(data => {-->
+<!--                dataset.parse(data.references);-->
+<!--            });-->
+
+
+
+
+
+</script>
+</body>
+</html>

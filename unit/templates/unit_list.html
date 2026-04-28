@@ -1,121 +1,233 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block title %}単位一覧 | eco見積{% endblock %}
+<html lang="ja">
 
-{% block header %}
-<header class="sticky-top" style="width:1180px;margin-left:auto; margin-right:auto;">
-    <div class="container-fluid">
-        <div class="my-div-style">
-            <h3 class="mx-3 ">単位一覧</h3>
-        </div>
-        <div class="d-flex flex-row">
-            <div>
-                <a href="{% url 'unit:unit_add' %}" class="btn btn-primary btn-sm my-3">追加</a>
-            </div>
-            {% if unit_list|length != 0 %}
-            <div class="col-6 offset-3 justify-content-center">
-                {% if is_paginated %}
-                {% include 'pagination.html' %}
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
-        <table class="table table-hover table-bordered text-nowrap" style="margin-bottom:10px;">
-            <tr align="center">
-                <th width="150rem" scope="col" style="">処理</th>
-                <th width="190rem" scope="col">単位番号</th>
-                <th width="300rem" scope="col">単位名称</th>
-            </tr>
-        </table>
-    </div>
-</header>
+<head>
+    {% load static %}
+    {% csrf_token %}
+    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
+    <script src="{% static 'suite/suite.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
 
-{% if unit_list|length != 0 %}
-<div class="container-fluid">
-    <div style="width:1150px; margin-left:auto; margin-right:auto;">
-        <table class="table table-striped table-bordered  sc-table">
-            <tbody>
-            {% for unit in unit_list %}
-            <tr>
-                <td width="150rem" align="center">
-                    <a href="{% url 'unit:unit_edit' unit.pk %}"
-                       class="btn btn-outline-warning btn-sm">修正</a>
-                </td>
-                <td width="190rem">{{ unit.unit_no | default_if_none:"" }}</td>
-                <td width="300rem">{{ unit.unit_name | default_if_none:"" }}</td>
-             </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-    </div>
-    <div class="col-6 offset-3 justify-content-center">
-        {% if is_paginated %}
-        {% include 'pagination.html' %}
-        {% endif %}
+    <!-- 共通ユーティリティ -->
+    <script src="{% static 'js/utils.js' %}"></script>
+</head>
+<body>
+<div id="controls" style="padding: 10px 10px 10px 0px;　width: 70%;">
+    <div class="button-bar" style="margin-bottom: 10px; display: flex; gap: 8px;">
+        <button id="add_btn" class="dhx_button dhx_button--color-primary">追加</button>
     </div>
 </div>
-</div>
-<style>
+<div id="grid_container" style="width: 600px; height: 400px;"></div>
+<!--<style>-->
+<!--    /* コンテンツ全体を包むコンテナ */-->
+<!--    .main-container {-->
+<!--        max-width: 1200px;    /* 全体の最大幅（お好みで調整） */-->
+<!--        margin: 0 auto;       /* 左右を中央に寄せる */-->
+<!--        padding: 20px;        /* 左右に少し余白を作る */-->
+<!--    }-->
+
+<!--    /* 画面全体を中央寄せの土台にする */-->
+<!--    .grid-wrapper {-->
+<!--        display: flex;-->
+<!--        justify-content: center; /* 左右中央 */-->
+<!--        align-items: center;    /* 上下中央（必要なら） */-->
+<!--        height: 100vh;          /* 画面全体の高さ */-->
+<!--        background-color: #f5f5f5;-->
+<!--    }-->
+
+<!--    /* Gridのサイズを指定 */-->
+<!--    #grid_container {-->
+<!--        width: 50%;             /* 画面幅の80% */-->
+<!--        max-width: 1000px;      /* 広がりすぎないように制限 */-->
+<!--        height: 600px;          /* 高さを指定（Suite 9は高さ指定が必須） */-->
+<!--        box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* 浮き出し効果 */-->
+<!--    }-->
+<!--</style>-->
+
+<script>
+        //  1. ウィンドウとフォームの準備
+        const dhxWindow = new dhx.Window({
+            width: 400,
+            height: 300,
+            title: "新規",
+            modal: true
+        });
+        const form = new dhx.Form(null, {
+            rows: [
+                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
+                {
+                    name: "unit_no",
+                    type: "input",
+                    label: "Unit No",
+                    required: true
+                },
+                {
+                    name: "unit_name",
+                    type: "input",
+                    label: "Unit Name",
+                    required: true
+                },
+                {
+                    type: "button",
+                    name: "save",
+                    text: "保存",
+                    view: "flat",
+                    color: "primary"
+                }
+            ]
+        });
+        dhxWindow.attach(form);
+
+        // 2. DRFからデータの読み込む（Django の API から取得する場合）
+        const dataset = new dhx.DataCollection();
+        fetch("/unit/data/")
+            .then(response => response.json())
+            .then(data => {
+                grid.data.parse(data.units); // data.units (配列部分) を渡す
+            });
+
+        // 3. Gridの初期化
+        const grid = new dhx.Grid("grid_container", {
+            columns: [
+                { id: "id", header: [{ text: "ID" }], hidden: true },
+                { id: "unit_no", header: [{ text: "unit_no" }],  },
+                { id: "unit_name", header: [{ text: "unit_name" }], },
+                { id: "action", header: [{ text: "操作" }], align: "center", width: 80, htmlEnable: true,
+                    template:() => "<button class='edit-btn'>編集</button>"
+                },
+                { id: "delete", header: [{ text: "削除" }], align: "center",  width: 80, htmlEnable: true,
+                template: () => "<button class='delete-btn' >削除</button>"
+                }
+            ],
+            autoWidth: true,
+            data: dataset, // 作成した DataCollection を直接紐付ける
+            // 行単位の選択モードに変更
+            //selection: "row",
+        });
+
+        // 4. --- イベント制御 ---
+
+        // 4.1 新規作成ボタン（HTML側に id="add-btn" がある想定）
+        document.getElementById("add_btn").addEventListener("click", () => {
+            if (form) {
+                form.clear({});
+                }
+            dhxWindow.header.data.update("title", { value: "新規登録" });
+            dhxWindow.setPosition(100, 50);
+            dhxWindow.paint();
+            dhxWindow.show();
+        });
+
+        // 4.2 グリッド内の「編集」ボタンクリック時
+        grid.events.on("cellClick", (row, col) => {
+            if (col.id === "action") {
+                form.setValue(row); // 選択した行のデータをフォームにセット
+                dhxWindow.header.data.update("title", { value: "編集"});
+                dhxWindow.paint();
+                dhxWindow.show();
+            }
+        });
+
+        // 4.3 保存ボタンの処理
+        form.getItem("save").events.on("click", () => {
+
+            const formData = form.getValue();
+            const isNew = !formData.id || formData.id === "";
+
+            // Djangoへ送信
+            fetch("/unit/save_unit/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken') // DjangoのCSRF対策
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    if (isNew) {
+                        // サーバーから確定したIDが返ってきたら差し替えて追加
+                        formData.id = result.id;
+                        grid.data.add(formData);
+                        // 成功トースト
+                        dhx.message({
+                            text: "追加されました",
+                            css: "dhx_widget--bg_success",
+                            expire: 3000
+                        });
+
+                    } else {
+                       grid.data.update(formData.id, formData);
+                       dhx.message({
+                            text: "更新されました",
+                            css: "dhx_widget--bg_success",
+                            expire: 3000
+                        });
+
+                    }
+                    dhxWindow.hide();
+
+                    // グリッドのデータをクリアしてから再読み込み
+                    grid.data.removeAll();
+                    fetch("/unit/data/")
+                        .then(response => response.json())
+                        .then(data => {
+                            grid.data.parse(data.units); // data.units (配列部分) を渡す
+                        });
+                    // grid.data.load("/unit/data/"); // グリッド再読み込み
+                } else {
+                    // 失敗トースト（重複エラーなど）
+                    dhx.message({
+                        text: "エラー: " + result.message,
+                        css: "dhx_widget--bg_danger",
+                        expire: 6000
+                    });
+                }
+            })
+            .catch(err => {
+                dhx.message({ text: "通信に失敗しました", css: "dhx_widget--bg_danger" });
+            });
+        });
+
+        // 4.4 削除処理
+        // 削除ボタンの即時実行
+        grid.events.on("cellClick", (row, col) => {
+            if (col.id === "delete") {
+                if (confirm("即時に削除しますか？")) {
+                    // サーバーへ削除リクエスト
+                    fetch(`/unit/delete_unit/${row.id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+                            }
+                        })
+                    .then(res => {
+                        return res.json().then(result => {
+                        if (res.ok && result.success) {
+                            grid.data.remove(row.id);
+                            dhx.message({
+                                text: result.message || "削除しました",
+                                css: "dhx_widget--bg_success",
+                                expire: 3000
+                            });
+                        } else {
+                            dhx.message({
+                                text: result.message || "削除に失敗しました",
+                                css: "dhx_widget--bg_danger",
+                                expire: -1
+                               });
+                        }
+                    })
+                    .catch(err => {
+                        dhx.message({
+                            text: "システムエラーが発生しました", css: "dhx_widget--bg_danger" });
+                         });
+                    });
+                }
+            }
+        });
 
 
-
-    .table th:first-child, td:first-child {
-      position: sticky;
-      position: -webkit-sticky;
-      left: 0;
-      background-color : #FFFFFF
-    }
-
-
-    .text-nowrap { white-space: nowrap !important; }
-
-    // はみだした部分の背景を処理する
-    #wrap {
-     width:100%;
-     min-width:1150px;
-    }
-    .content {
-     width:1150px;
-     margin:0 auto;
-    }
-    .content-out {
-     width:100%;
-     min-width:1150px;
-}
-
-
-    <!--#wrap {-->
-     <!--min-width:1150rem;-->
-    <!--}-->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</style>
-
-{% endblock %}
+</script>
+</body>
+</html>
