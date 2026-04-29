@@ -1,14 +1,14 @@
 from django.urls import path, re_path
 
-from reference.views import ReferenceListCreateView, ReferenceDetailView, ReferenceListView
+from reference.views import reference_list, reference_detail, reference_list_call
 
 app_name = 'reference'
 
 urlpatterns = [
     #
-    path('', ReferenceListView.as_view(), name='reference-list'),
-    path('references/', ReferenceListCreateView.as_view(), name='reference-add'),
-    path('references/<int:pk>/', ReferenceDetailView.as_view(), name='reference-detail'),
+    path('', reference_list_call, name='reference-list'),
+    path('references/', reference_list,),
+    path('references/<int:pk>/', reference_detail,),
 
     # path('', views.ReferenceList.as_view(), name='reference_list'),  # 一覧
     # path('add/', views.ReferenceAdd.as_view(), name='reference_add'),  # 登録

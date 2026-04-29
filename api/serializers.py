@@ -36,7 +36,7 @@ class UnitSerializer(serializers.ModelSerializer):
 
 
 class ReferenceSerializer(serializers.ModelSerializer):
-    unit_name_display = serializers.CharField(source='unit_name.unit_name', read_only=True)
+    unit_name_display = serializers.ReadOnlyField(source='unit_name.unit_name')
 
     class Meta:
         model = Reference

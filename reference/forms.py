@@ -11,8 +11,7 @@ class ReferenceForm(ModelForm):
 
     detail_name = forms.CharField(required=False, label='項目名称:')
     # calcu_cls = forms.CharField(required=True, label='計算区分:')
-    calcu_cls = forms.ChoiceField(choices=Calc_clas_select, required=True,label="")
-
+    calcu_cls = forms.ChoiceField(choices=Calc_clas_select, required=True, label="")
 
     class Meta:
         model = Reference

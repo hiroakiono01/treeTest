@@ -1,10 +1,11 @@
+# from rest_framework import renderers
 from django.shortcuts import render
 # from rest_framework import renderers
 from django.shortcuts import render
 # from rest_framework import renderers
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
-from rest_framework.renderers import JSONOpenAPIRenderer, TemplateHTMLRenderer
+from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 
 from api.serializers import UnitSerializer
@@ -19,16 +20,15 @@ def index(request):
 def get_unit_options(request):
     unit_options = [
         {
-            "id": unit.id,           # 数値型として代入
-            "value": unit.unit_name  # 文字列型（表示名）
+            "value": unit.id,  # 数値型として代入
+            "content": unit.unit_name  # 文字列型（表示名）
         }
         for unit in Unit.objects.all()
     ]
-    return Response({"units":unit_options})
+    return Response({"units": unit_options})
 
 
 # views.py
-from django.db.models import F
 
 
 def reference_page(request):
