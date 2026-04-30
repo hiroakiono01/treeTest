@@ -2,3 +2,8 @@
     text-align: center;
     justify-content: center;
 }
+
+.dhx_form-group__label-required {
+    color: #ff0000 !important; /* 好みの赤色に変更してください */
+    margin-left: 4px;           /* 少し隙間をあけると見やすいです */
+}

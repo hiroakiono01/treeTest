@@ -13,6 +13,20 @@ class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
         fields = ('id', 'unit_no', 'unit_name')
+        extra_kwargs = {
+            'unit_no': {
+                'error_messages': {
+                    'unique': "この Unit No は既に登録されています。別の番号を入力してください。",
+                    'invalid': "有効な数値を入力してください。",
+                }
+            },
+            'unit_name': {
+                'error_messages': {
+                    'required': "必須の入力項目です。5555",
+                    'blank': "空欄にはできません。",
+                }
+            }
+        }
 
     # def create(self, validated_data):
     #     # IDがある場合は更新、ない場合は作成
