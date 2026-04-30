@@ -12,11 +12,7 @@
     <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
 </head>
 <body>
-<div id="controls" style="padding: 10px 10px 10px 0px;　width: 70%;">
-    <div class="button-bar" style="margin-bottom: 10px; display: flex; gap: 8px;">
-        <button id="add_btn" class="dhx_button dhx_button--color-primary">追加</button>
-    </div>
-</div>
+<div id="toolbar_container"></div>
 <div id="grid_container" style="width: 600px; height: 400px;"></div>
 <style>
     /* 強制的に赤くする */
@@ -27,16 +23,11 @@
 .dhx_form-group__message--error {
     color: #ff0000 !important;
 }
+
+
 </style>
 <style>
-    .dhx_grid-header-cell {
-    text-align: center;
-    justify-content: center;
-}
-.dhx_form-group__label-required {
-    color:red !important; /* 好みの赤色に変更してください */
-    margin-left: 4px;           /* 少し隙間をあけると見やすいです */
-}
+
     /* コンテンツ全体を包むコンテナ */
     .main-container {
         max-width: 1200px;    /* 全体の最大幅（お好みで調整） */
@@ -60,192 +51,225 @@
         height: 600px;          /* 高さを指定（Suite 9は高さ指定が必須） */
         box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* 浮き出し効果 */
     }
+
+
 </style>
 
 <script>
-        //  1. ウィンドウとフォームの準備
-        const dhxWindow = new dhx.Window({
-            width: 400,
-            height: 300,
-            title: "新規",
-            modal: true
-        });
-        const form = new dhx.Form(null, {
-            rows: [
-                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
-                {
-                    name: "unit_no",
-                    type: "input",
-                    label: "Unit No",
-                    required: true
-                },
-                {
-                    name: "unit_name",
-                    type: "input",
-                    label: "Unit Name",
-                    required: true
-                },
-                {
-                    type: "button",
-                    name: "save",
-                    text: "保存",
-                    view: "flat",
-                    color: "primary"
-                }
-            ]
-        });
-        dhxWindow.attach(form);
+    // 1. --- ツールバーの処理 ---
+    // 1.1 ツールバー設定（Unitの時と同じ構成）
+    const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+    toolbar.data.add([
+        { id: "add", type: "button", value: "新規追加", icon: "mi-plus", color: "primary" },
+    ]);
+    // 1.2. ツールバーのクリックイベント
+    toolbar.events.on("click", function(id) {
+        if (id === "add") {
+            addRow(); // 前に作った関数を呼ぶ
+        }
+    })
+    // 2. --- モーダルウインドウの準備 ---
+    //  2.1 ウィンドウとフォームの準備
+    const dhxWindow = new dhx.Window({
+        width: 400,
+        height: 400,
+        title: "新規",
+        modal: true
+    });
+    // 2.2 フォームの準備
+    const form = new dhx.Form(null, {
+        rows: [
+            { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
+            {
+                name: "unit_no",
+                type: "input",
+                label: "Unit No",
+                required: true
+            },
+            {
+                name: "unit_name",
+                type: "input",
+                label: "Unit Name",
+                required: true
+            },
+            {
+                type: "button",
+                name: "save",
+                text: "保存",
+                view: "flat",
+                color: "primary"
+            }
+        ]
+    });
+    dhxWindow.attach(form);
 
-        // 2. DRFからデータの読み込む（Django の API から取得する場合）
-        const dataset = new dhx.DataCollection();
-        fetch("/unit/data/")
-            .then(response => response.json())
-            .then(data => {
-                grid.data.parse(data.units); // data.units (配列部分) を渡す
-            });
-
-        // 3. Gridの初期化
-        const grid = new dhx.Grid("grid_container", {
-            columns: [
-                { id: "id", header: [{ text: "ID" }], hidden: true },
-                { id: "unit_no", header: [{ text: "unit_no" }],  },
-                { id: "unit_name", header: [{ text: "unit_name" }], },
-                { id: "action", header: [{ text: "操作" }], align: "center", width: 80, htmlEnable: true,
-                    template:() => "<button class='edit-btn'>編集</button>"
-                },
-                { id: "delete", header: [{ text: "削除" }], align: "center",  width: 80, htmlEnable: true,
-                template: () => "<button class='delete-btn' >削除</button>"
-                }
-            ],
-            autoWidth: true,
-            data: dataset, // 作成した DataCollection を直接紐付ける
-            // 行単位の選択モードに変更
-            //selection: "row",
+    // 4. DRFからデータの読み込む（Django の API から取得する場合）
+    const dataset = new dhx.DataCollection();
+    fetch("/unit/units/")
+        .then(response => response.json())
+        .then(data => {
+            grid.data.parse(data); // data.units (配列部分) を渡す
         });
 
-        // 4. --- イベント制御 ---
+    // 5. Gridの初期化
+    const grid = new dhx.Grid("grid_container", {
+        columns: [
+            { id: "id", header: [{ text: "ID" }], hidden: true },
+            {
+                id: "action",
+                header: [{ text: "修正" , align: "center"}],
+                align: "center",
+                width: 80,
+                htmlEnable: true,
+                template: () => "<button class='dhx_button dhx_button--view-outline dhx_button--color-warning dhx_button--size-small'>修正</button>"
+            },
+          　{ id: "unit_no", header: [{ text: "表示順" , align: "center"}],  },
+           { id: "unit_name", header: [{ text: "名称" , align: "center"}], },
 
-        // 4.1 新規作成ボタン（HTML側に id="add-btn" がある想定）
-        document.getElementById("add_btn").addEventListener("click", () => {
-            if (form) {
-                form.clear({});
-                }
-            dhxWindow.header.data.update("title", { value: "新規登録" });
-            dhxWindow.setPosition(100, 50);
+            { id: "delete", header: [{ text: "削除" , align: "center"}], align: "center",  width: 80, htmlEnable: true,
+            template: () => "<button class='btn-danger' >削除</button>"
+            }
+        ],
+        autoWidth: true,
+        data: dataset, // 作成した DataCollection を直接紐付ける
+    });
+
+    // 6. --- イベント制御 ---
+
+    // 6.1 新規作成のウインドウを表示する
+    function addRow() {
+        if (form) {
+            form.clear({});
+            }
+        dhxWindow.header.data.update("title", { value: "新規登録" });
+        dhxWindow.setPosition(100, 50);
+        dhxWindow.paint();
+        dhxWindow.show();
+    }
+
+    // 6.2 グリッド内の「編集」ボタンクリック時
+    grid.events.on("cellClick", (row, col) => {
+        if (col.id === "action") {
+            form.setValue(row); // 選択した行のデータをフォームにセット
+            dhxWindow.header.data.update("title", { value: "編集"});
             dhxWindow.paint();
             dhxWindow.show();
-        });
+        }
+    });
 
-        // 4.2 グリッド内の「編集」ボタンクリック時
-        grid.events.on("cellClick", (row, col) => {
-            if (col.id === "action") {
-                form.setValue(row); // 選択した行のデータをフォームにセット
-                dhxWindow.header.data.update("title", { value: "編集"});
-                dhxWindow.paint();
-                dhxWindow.show();
+    // 7. 保存ボタンの処理
+    form.getItem("save").events.on("click", () => {
+
+        const formData = form.getValue();
+        const isNew = !formData.id || formData.id === "";
+
+        const url = isNew ? "/unit/units/" : `/unit/units/${formData.id}/`;
+        const method = isNew ? "POST" : "PUT";
+
+        // Djangoへ送信
+        fetch(url, {
+            method: method,
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie('csrftoken') // DjangoのCSRF対策
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(res => {
+            if(!res.ok) {
+                return res.json().then(err => { throw err; });
             }
-        });
+            return res.json();
+        })
+        .then(result => {
 
-        // 4.3 保存ボタンの処理
-        form.getItem("save").events.on("click", () => {
+            // 3. 成功時の処理（DRFは成功時にオブジェクトを返す）
+            dhx.message({
+                text: isNew ? "追加されました" : "更新されました",
+                css: "dhx_widget--bg_success",
+                expire: 3000
+            });
+            dhxWindow.hide();
 
-            const formData = form.getValue();
-            const isNew = !formData.id || formData.id === "";
+            grid.data.removeAll();
+            fetch("/unit/units/")
+                .then(response => response.json())
+                .then(data => {
+                    grid.data.parse(data);
+                });
 
-            // Djangoへ送信
-            fetch("/unit/save_unit/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie('csrftoken') // DjangoのCSRF対策
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    if (isNew) {
-                        // サーバーから確定したIDが返ってきたら差し替えて追加
-                        formData.id = result.id;
-                        grid.data.add(formData);
-                        // 成功トースト
-                        dhx.message({
-                            text: "追加されました",
-                            css: "dhx_widget--bg_success",
-                            expire: 3000
+        })
+        .catch(err => {
+            console.error("Error details:", err);
+            let mainMessage = "入力内容を確認してください";
+            // サーバーからのバリデーションエラーがある場合
+            if (typeof err === "object" && err !== null) {
+                for (const fieldId in err) {
+                    const item = form.getItem(fieldId);
+                    if (item) {
+                        const errorMsg = Array.isArray(err[fieldId]) ? err[fieldId][0] : err[fieldId];
+                        item.setProperties({
+                            error: true,
+                            errorMessage: errorMsg
                         });
-
-                    } else {
-                       grid.data.update(formData.id, formData);
-                       dhx.message({
-                            text: "更新されました",
-                            css: "dhx_widget--bg_success",
-                            expire: 3000
-                        });
-
+                        mainMessage = errorMsg;
                     }
-                    dhxWindow.hide();
-
-                    // グリッドのデータをクリアしてから再読み込み
-                    grid.data.removeAll();
-                    fetch("/unit/data/")
-                        .then(response => response.json())
-                        .then(data => {
-                            grid.data.parse(data.units); // data.units (配列部分) を渡す
-                        });
-                    // grid.data.load("/unit/data/"); // グリッド再読み込み
-                } else {
-                    // 失敗トースト（重複エラーなど）
-                    dhx.message({
-                        text: "エラー: " + result.message,
-                        css: "dhx_widget--bg_danger",
-                        expire: 6000
-                    });
                 }
-            })
-            .catch(err => {
-                dhx.message({ text: "通信に失敗しました", css: "dhx_widget--bg_danger" });
+            } else {
+                // 通信断絶などの致命的エラー
+                mainMessage = "サーバーとの通信に失敗しました";
+            }
+            // 2. トースト（メッセージ）を表示
+            dhx.message({
+                text: mainMessage,
+                css: "dhx_widget--bg_danger", // Suite 9 の赤い背景
+                expire: 6000,                // 6秒間表示
+                node: document.body
             });
         });
+    });
 
-        // 4.4 削除処理
-        // 削除ボタンの即時実行
-        grid.events.on("cellClick", (row, col) => {
-            if (col.id === "delete") {
-                if (confirm("即時に削除しますか？")) {
-                    // サーバーへ削除リクエスト
-                    fetch(`/unit/delete_unit/${row.id}/`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRFToken': getCookie('csrftoken')  // ここを追加
-                            }
-                        })
-                    .then(res => {
-                        return res.json().then(result => {
-                        if (res.ok && result.success) {
-                            grid.data.remove(row.id);
-                            dhx.message({
-                                text: result.message || "削除しました",
-                                css: "dhx_widget--bg_success",
-                                expire: 3000
-                            });
-                        } else {
-                            dhx.message({
-                                text: result.message || "削除に失敗しました",
-                                css: "dhx_widget--bg_danger",
-                                expire: -1
-                               });
+    // 8. 削除処理
+    // 削除ボタンの即時実行
+    grid.events.on("cellClick", (row, col) => {
+        if (col.id === "delete") {
+            if (confirm("即時に削除しますか？")) {
+                // サーバーへ削除リクエスト
+                fetch(`/unit/units/${row.id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')  // ここを追加
                         }
                     })
-                    .catch(err => {
-                        dhx.message({
-                            text: "システムエラーが発生しました", css: "dhx_widget--bg_danger" });
-                        });
-                    });
-                }
-            }
-        });
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(err => { throw err; });
+                    }
+                    return res.json();
+                })
+                .then(result => {
+                    grid.data.remove(row.id);
+                    dhx.message({
+                        text: "削除しました",
+                        css: "dhx_widget--bg_success",
+                        expire: 3000
 
+                    });
+
+                })
+                .catch(err => {
+                    const errorMsg = err.detail || err.message || "削除に失敗しました";
+                    dhx.message({
+                        text: errorMsg,
+                        css: "dhx_widget--bg_danger", // 赤いトースト
+                        expire: 6000
+                    });
+
+                });
+
+            }
+        }
+    });
 
 </script>
 </body>

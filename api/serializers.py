@@ -8,7 +8,7 @@ from app.models import Task, Estimate, Unit, Reference
 class UnitSerializer(serializers.ModelSerializer):
     # id = serializers.CharField(required=False, allow_blank=True)
     # unit_no = serializers.CharField(required=True)
-    # unit_name = serializers.CharField(required=True)
+    unit_name = serializers.CharField(required=True)
 
     class Meta:
         model = Unit
@@ -23,30 +23,10 @@ class UnitSerializer(serializers.ModelSerializer):
             'unit_name': {
                 'error_messages': {
                     'required': "必須の入力項目です。5555",
-                    'blank': "空欄にはできません。",
+                    # 'blank': "空欄にはできません。",
                 }
             }
         }
-
-    # def create(self, validated_data):
-    #     # IDがある場合は更新、ない場合は作成
-    #     request = self.context.get('request')
-    #     raw_id = request.data.get('id') if request else None
-    #
-    #     # 数値（または数値文字列）の場合のみ既存データを探す
-    #     if raw_id is not None:
-    #         # 文字列 '123' も数値 123 も判定できる方法
-    #         str_id = str(raw_id)
-    #         if str_id.isdigit():
-    #             instance = Unit.objects.filter(id=int(str_id)).first()
-    #             if instance:
-    #                 # 既存データがあれば更新
-    #                 return self.update(instance, validated_data)
-    #
-    #     # IDが「数値ではない文字列（u78787等）」または「存在しないID」の場合は新規作成
-    #     # validated_dataからidを除去して、自動採番(AutoField)を確実に動かす
-    #     validated_data.pop('id', None)
-    #     return super().create(validated_data)
 
 
 class ReferenceSerializer(serializers.ModelSerializer):
