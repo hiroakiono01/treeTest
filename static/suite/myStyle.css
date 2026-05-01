@@ -7,3 +7,15 @@
     color: #ff0000 !important; /* 好みの赤色に変更してください */
     margin-left: 4px;           /* 少し隙間をあけると見やすいです */
 }
+
+.grid-btn-edit {
+  border: 1px solid #28a745; /* 線の太さ、種類、色を指定 */
+  background-color: transparent;
+  color: #28a745;
+}
+
+.grid-btn-delete {
+ border: 1px solid #dc3545;
+ background-color: transparent;
+ color: #dc3545;
+}

@@ -69,6 +69,7 @@ class Estimate(models.Model):
         db_table = 'estimate'
 
     id = models.AutoField(primary_key=True)
+    estimate_year = models.CharField(max_length=4, null=True, blank=True, verbose_name='estimate year')
     estimate_no = models.CharField(max_length=15, null=True, blank=True, verbose_name='estimate no')
     estimate_name = models.CharField(max_length=60, null=True, blank=True, verbose_name='estimate name')
 

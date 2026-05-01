@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
     <!-- 共通ユーティリティ -->
     <script src="{% static 'js/utils.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'suite/myStyleSuite.css' %}">
+    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
 
 
 </head>
@@ -116,14 +116,14 @@
     // 5. Gridの初期化
     const grid = new dhx.Grid("grid_container", {
         columns: [
-            { id: "id", header: [{ text: "ID" }], hidden: false },
-            { id: "action", header: [{ text: "修正" }], align: "center", width: 80, htmlEnable: true,
-                    template:() => "<button class='edit-btn'>修正</button>"
+            { id: "id", header: [{ text: "ID" }], hidden: true },
+            { id: "action", header: [{ text: "修正" , align: "center"}], align: "center", width: 80, htmlEnable: true,
+                    template:() => "<button class='grid-btn-edit'>修正</button>"
                 },
-            { id: "detail_name", header: [{ text: "明細名称" }], editable: true },
+            { id: "detail_name", header: [{ text: "明細名称", align: "center" }, { content: "inputFilter" }], editable: true },
             {
                 id: "calcu_cls",
-                header: [{ text: "計算区分" }],
+                header: [{ text: "計算区分", align: "center"},{ content: "selectFilter" }],
                 editable: false,
                 editorType: "select", // セレクトボックス形式
                 options: [
@@ -135,12 +135,19 @@
             },
             {
                 id: "unit_name_display", // ForeignKeyのIDが入る
-                header: [{ text: "予算単位" }],
+                header: [{ text: "単位", align: "center" },{ content: "selectFilter" }],
                 editable: false,
             },
-            { id: "budget_price", header: [{ text: "予算単価" }], editable: true, type: "number" },
-            { id: "delete", header: [{ text: "削除" }], align: "center",  width: 80, htmlEnable: true,
-                template: () => "<button class='delete-btn' >削除</button>"
+            {
+                id: "budget_price",
+                header: [{ text: "予算単価", align: "center" }],
+                editable: true,
+                type: "number",
+                numberMask: { maxDecLength: 2 }
+            },
+
+            { id: "delete", header: [{ text: "削除" , align: "center"}], align: "center",  width: 80, htmlEnable: true,
+                template: () => "<button class='grid-btn-delete' >削除</button>"
                 }
         ],
         autoWidth: true,

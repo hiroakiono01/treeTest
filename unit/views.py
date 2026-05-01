@@ -1,22 +1,12 @@
+from django.db import models
 from django.http import JsonResponse
-from django.shortcuts import render, redirect
-from django.views import generic
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.decorators.http import require_http_methods, require_POST
-from rest_framework.decorators import api_view, action
+from django.shortcuts import render
+from rest_framework import status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from app.models import Unit, Task
-from django.urls import reverse_lazy
-from django.contrib import messages
-from unit.forms import UnitForm
-from django.db import models, transaction
-from api.serializers import UnitSerializer, TaskSerializer
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, viewsets
+
 from api.serializers import UnitSerializer
-import json
-from django.http import JsonResponse
+from app.models import Unit
 
 
 def unit_list_call(request):

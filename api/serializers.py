@@ -31,6 +31,8 @@ class UnitSerializer(serializers.ModelSerializer):
 
 class ReferenceSerializer(serializers.ModelSerializer):
     unit_name_display = serializers.ReadOnlyField(source='unit_name.unit_name')
+    detail_name = serializers.CharField(required=True)
+    calcu_cls = serializers.CharField(required=True)
 
     class Meta:
         model = Reference
@@ -43,30 +45,28 @@ class ReferenceSerializer(serializers.ModelSerializer):
                   )
 
 
-class EstimateSerializer(serializers.HyperlinkedModelSerializer):
-    id = serializers.IntegerField(required=False)
+class EstimateSerializer(serializers.ModelSerializer):
+    estimate_year = serializers.CharField(required=True)
     estimate_no = serializers.CharField(required=True)
     estimate_name = serializers.CharField(required=True)
 
     class Meta:
         model = Estimate
-        fields = ('id', 'estimate_no', 'estimate_name',)
-
-    def create(self, validated_data):
-        """
-        Create and return a new `Snippet` instance, given the validated data.
-        """
-
-        return Estimate.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        instance.id = validated_data.get("id", instance.id)
-        instance.estimate_no = validated_data.get("estimate_no", instance.estimate_no)
-        instance.estimate_name = validated_data.get("estimate_name", instance.estimate_name)
-
-        instance.save()
-        return instance
-
+        fields = ('id', 'estimate_year', 'estimate_no', 'estimate_name',)
+        extra_kwargs = {
+            'estimate_no': {
+                'error_messages': {
+                    'unique': "この Unit No は既に登録されています。別の番号を入力してください。",
+                    'invalid': "有効な数値を入力してください。",
+                }
+            },
+            'estimate_name': {
+                'error_messages': {
+                    'required': "必須の入力項目です。5555",
+                    # 'blank': "空欄にはできません。",
+                }
+            }
+        }
 
 class TaskSerializer(serializers.ModelSerializer):
     # parentId = serializers.IntegerField(source='parent')

@@ -14,18 +14,18 @@
 <body>
 <div id="toolbar_container"></div>
 <div id="grid_container" style="width: 600px; height: 400px;"></div>
-<style>
-    /* 強制的に赤くする */
-.dhx_form-group__label-required {
-    color: #ff0000 !important;
-}
-/* エラー時のメッセージ自体の色も調整したい場合 */
-.dhx_form-group__message--error {
-    color: #ff0000 !important;
-}
+<!--<style>-->
+<!--    /* 強制的に赤くする */-->
+<!--.dhx_form-group__label-required {-->
+<!--    color: #ff0000 !important;-->
+<!--}-->
+<!--/* エラー時のメッセージ自体の色も調整したい場合 */-->
+<!--.dhx_form-group__message&#45;&#45;error {-->
+<!--    color: #ff0000 !important;-->
+<!--}-->
 
 
-</style>
+<!--</style>-->
 <style>
 
     /* コンテンツ全体を包むコンテナ */
@@ -68,6 +68,7 @@
             addRow(); // 前に作った関数を呼ぶ
         }
     })
+
     // 2. --- モーダルウインドウの準備 ---
     //  2.1 ウィンドウとフォームの準備
     const dhxWindow = new dhx.Window({
@@ -121,13 +122,13 @@
                 align: "center",
                 width: 80,
                 htmlEnable: true,
-                template: () => "<button class='dhx_button dhx_button--view-outline dhx_button--color-warning dhx_button--size-small'>修正</button>"
+                template: () => "<button class='grid-btn-edit'>修正</button>"
             },
           　{ id: "unit_no", header: [{ text: "表示順" , align: "center"}],  },
            { id: "unit_name", header: [{ text: "名称" , align: "center"}], },
 
             { id: "delete", header: [{ text: "削除" , align: "center"}], align: "center",  width: 80, htmlEnable: true,
-            template: () => "<button class='btn-danger' >削除</button>"
+            template: () => "<button class='grid-btn-delete' >削除</button>"
             }
         ],
         autoWidth: true,
