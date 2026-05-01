@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'api',
     'unit',
     'reference',
+    'task',
     'django_bootstrap5',
     'django_filters',
     # 認証機能

@@ -9,7 +9,7 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from rest_framework.response import Response
 
 from api.serializers import UnitSerializer
-from app.models import Unit
+from app.models import Unit, Estimate
 
 
 def index(request):
@@ -26,6 +26,18 @@ def get_unit_options(request):
         for unit in Unit.objects.all()
     ]
     return Response({"units": unit_options})
+
+
+@api_view(['GET'])
+def get_estimate_options(request):
+    estimate_options = [
+        {
+            "value": estimate.id,  # 数値型として代入
+            "content": estimate.estimate_name  # 文字列型（表示名）
+        }
+        for estimate in Estimate.objects.all()
+    ]
+    return Response({"estimates": estimate_options})
 
 
 # views.py

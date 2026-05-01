@@ -109,12 +109,12 @@
         columns: [
             { id: "id", header: [{ text: "ID" }], hidden: true },
             {
-                id: "action",
-                header: [{ text: "修正" , align: "center"}],
+                id: "detail",
+                header: [{ text: "見積詳細" , align: "center"}],
                 align: "center",
                 width: 80,
                 htmlEnable: true,
-                template:() => "<button class='grid-btn-edit'>修正</button>"
+                template:() => '<a href="task:task_tree" class="grid-btn-detail">詳細</a>'
             },
             {
                 id: "estimate_year",
@@ -124,13 +124,21 @@
             },
           　{ id: "estimate_no", header: [{ text: "受注番号" , align: "center"}],  width: 100},
           　{ id: "estimate_name", header: [{ text: "工事名称" , align: "center"}, { content: "inputFilter" }],  },
+           {
+                id: "action",
+                header: [{ text: "修正" , align: "center"}],
+                align: "center",
+                width: 80,
+                htmlEnable: true,
+                template:() => "<button class='dxi dxi-pencil'>修正</button>"
+            },
             {
                 id: "delete",
                 header: [{ text: "削除" , align: "center"}],
                 align: "center",
                 width: 80,
                 htmlEnable: true,
-                template: () => "<button class='grid-btn-delete' >削除</button>"
+                template: () => "<button class='dxi dxi-delete' >削除</button>"
             }
         ],
         autoWidth: true,

@@ -19,3 +19,11 @@
  background-color: transparent;
  color: #dc3545;
 }
+
+.grid-btn-detail {
+ border: none;!important;
+ background-color: transparent;
+ text-decoration: none; /* これでアンダーラインが消えます */
+ color: #007bff;
+ font-size: 14px;
+}

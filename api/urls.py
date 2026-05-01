@@ -18,7 +18,7 @@ app_name = 'api'
 urlpatterns = [
     #
     path('unit-options/', views.get_unit_options,),
-    # path('unit-options/', views.reference_page, ),
+    path('estimate-options/', views.get_estimate_options, ),
 
     # path('', views.ReferenceList.as_view(), name='reference_list'),  # 一覧
     # path('add/', views.ReferenceAdd.as_view(), name='reference_add'),  # 登録
