@@ -94,7 +94,7 @@ class Task(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='見積単価')
     amount = models.IntegerField(null=True, blank=True, verbose_name='見積金額')
     markup_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='掛率')
-    calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分')
+    calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分', default='0')
 
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     sort_order = models.IntegerField(default=0)

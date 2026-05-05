@@ -21,7 +21,7 @@
     // 1.1 ツールバー設定（Unitの時と同じ構成）
     const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
     toolbar.data.add([
-        { id: "add", type: "button", value: "新規追加", icon: "mi-plus", color: "primary" },
+        { id: "add", type: "button", value: "新規追加",  icon: "dxi dxi-plus", color: "primary", circle: true,},
     ]);
     // 1.2. ツールバーのクリックイベント
     toolbar.events.on("click", function(id) {
