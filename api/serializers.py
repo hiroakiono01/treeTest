@@ -74,17 +74,20 @@ class TaskSerializer(serializers.ModelSerializer):
     budget_unit_display = serializers.ReadOnlyField(source='budget_unit.unit_name')
     estimate_no_display = serializers.ReadOnlyField(source='estimate_no.estimate_name')
 
-    task_name = serializers.CharField(required=True)
+    # task_name = serializers.CharField(required=True)
 
     class Meta:
         model = Task
 
-        fields = ('id', 'estimate_no', 'estimate_no_display',
+        fields = ('id', 'estimate_no',
+                  'estimate_no_display',
                   'task_name',
                   'material_dimensions',
-                  'budget_quantity', 'budget_unit', 'budget_unit_display',
+                  'budget_quantity', 'budget_unit',
+                  'budget_unit_display',
                   'budget_price', 'budget_amount',
-                  'quantity', 'unit', 'unit_display',
+                  'quantity', 'unit',
+                  'unit_display',
                   'price', 'amount',
                   'markup_rate', 'calcu_cls',
                   'parent', 'sort_order',

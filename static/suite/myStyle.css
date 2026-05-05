@@ -27,3 +27,27 @@
  color: #007bff;
  font-size: 14px;
 }
+
+.dxi.dxi-pencil {
+    background: none !important;    /* 背景を透明にする */
+    border: none !important;        /* 枠線を消す */
+    outline: none !important;       /* フォーカス時の線を消す */
+    box-shadow: none !important;    /* 影がある場合は消す */
+}
+
+/* ホバー時も同様に手を出したい場合 */
+.dxi.dxi-pencil:hover {
+    color: red;          /* ホバー時の色（少し濃い青など） */
+}
+
+.dxi.dxi-delete {
+    background-color: transparent;   /* 背景を透明にする */
+    border: none !important;        /* 枠線を消す */
+    outline: none !important;       /* フォーカス時の線を消す */
+    box-shadow: none !important;    /* 影がある場合は消す */
+}
+
+.dxi.dxi-delete:hover {
+    color: red;         /* ホバー時の色（少し濃い青など） */
+    /* もし背景色も変えたい場合は background-color を指定してください */
+}

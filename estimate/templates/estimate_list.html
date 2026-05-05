@@ -97,8 +97,8 @@
 
     // 4. --- DRFからデータの読み込み ---
     // 4.1 main dataの取得
-    const dataset = new dhx.DataCollection();
-    fetch("/estimate/estimates/")
+    const dataset = new dhx.TreeCollection();
+    fetch(`/estimate/estimates/`)
         .then(response => response.json())
         .then(data => {
             grid.data.parse(data); // 配列部分を渡す
@@ -107,14 +107,14 @@
     // 5. Gridの初期化
     const grid = new dhx.Grid("grid_container", {
         columns: [
-            { id: "id", header: [{ text: "ID" }], hidden: true },
+            { id: "id", header: [{ text: "ID" }], hidden: true , isTreeColum: true },
             {
                 id: "detail",
                 header: [{ text: "見積詳細" , align: "center"}],
                 align: "center",
                 width: 80,
                 htmlEnable: true,
-                template:() => '<a href="task:task_tree" class="grid-btn-detail">詳細</a>'
+                template:() => "<button class='grid-btn-detail'>詳細</button>"
             },
             {
                 id: "estimate_year",
@@ -142,9 +142,10 @@
             }
         ],
         autoWidth: true,
-        data: dataset, // 作成した DataCollection を直接紐付ける
+        //rootParent: null
+        //data: dataset, // 作成した DataCollection を直接紐付ける
     });
-
+    //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
     // 6. --- イベントの処理 ---
     // 6.1 新規作成のウインドウを表示する
     function addRow() {
@@ -163,6 +164,15 @@
             dhxWindow.header.data.update("title", { value: "編集"});
             dhxWindow.paint();
             dhxWindow.show();
+        }
+    });
+    // 6.3 グリッド内の「詳細」から違うプログラムをコールする
+    grid.events.on("cellClick", (row, col) => {
+        if (col.id === "detail") {
+            // row.id（または row.unit_no など）を使ってURLを作成
+            const targetId = row.estimate_no;
+            window.location.href = `/task/lists/${targetId}/`;
+            // window.location.href = `/task/tasks_test/`;
         }
     });
 
