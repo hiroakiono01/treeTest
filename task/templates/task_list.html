@@ -47,10 +47,8 @@
         const form = new dhx.Form(null, {
             rows: [
                 { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
-                {
-
-                    cols: [{ type: "text", label: "工事名称：", name: "estimate_no_display", labelPosition: "left", }],
-                },
+                { type: "text", label: "工事名称：", name: "estimate_no_display", labelPosition: "left", },
+                { type: "input", label: "工事番号：", name: "estimate_no",},
                 {
                     type: "combo",
                     name: "parent", // 内部で保持する値はID
@@ -139,6 +137,7 @@
             // rootParent: "root",
             columns: [
                 { id: "id", header: [{ text: "ID" }], hidden: true, isTreeColumn: true },
+                { id: "estimate_no_display", header: [{ text: "工事名称" }], hidden: true, },
                 {
                     id: "task_name",
                     width: 200,
@@ -310,6 +309,8 @@
             });
         });
         //#endregion
+        // Estimateからestimate_noを私てestimate_nameを取得する
+
 
         //#region 3. Unit一覧を取得してGridのプルダウンに反映
         const unitFields = ["budget_unit", "unit"];
@@ -325,10 +326,10 @@
                     }
                 });
                 // ここで初期値をセット
-<!--                form.setValue({-->
-<!--                    budget_unit: 65, // ブランク-->
-<!--                    unit: "13"        // 特定のIDを選択状態にする-->
-<!--                });-->
+                form.setValue({
+                    budget_unit: 65, // ブランク
+                    unit: "13"        // 特定のIDを選択状態にする
+                });
             })
             .catch(err => console.error("データ取得失敗:", err));
 
@@ -390,7 +391,17 @@
 
         //#endregion
 
-
+        // APIを叩く
+        fetch(`/api/get_estimate_name/?estimate_no=${estimateNo}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.estimate_name) {
+                    // 取得した「工事名称」を画面にセットする処理
+                    console.log("取得成功:", data.estimate_name);
+                    // 例: document.querySelector('[name="工事名称のフィールド名"]').value = data.estimate_name;
+                }
+            })
+            .catch(error => console.error('エラー:', error));
 
 
 
@@ -401,6 +412,7 @@
         function addRow() {
             if (form) {
                 form.clear({});
+                //form.estimate_no = '002'
             }
             dhxWindow.header.data.update("title", { value: "新規登録" });
             dhxWindow.setPosition(100, 50);

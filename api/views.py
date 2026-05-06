@@ -1,5 +1,5 @@
 # from rest_framework import renderers
-from django.shortcuts import render
+from django.http import JsonResponse
 # from rest_framework import renderers
 from django.shortcuts import render
 # from rest_framework import renderers
@@ -38,6 +38,23 @@ def get_estimate_options(request):
         for estimate in Estimate.objects.all()
     ]
     return Response({"estimates": estimate_options})
+
+
+# estimate_noを取得してえestimate_nameを返す
+from django.http import JsonResponse
+from app.models import Estimate
+
+
+def get_estimate_name(request):
+    # GETパラメータから 'estimate_no' を取得
+    est_no = request.GET.get('estimate_no', None)
+
+    if est_no:
+        estimate = Estimate.objects.filter(estimate_no=est_no).first()
+        if estimate:
+            return JsonResponse({'estimate_name': estimate.estimate_name})
+
+    return JsonResponse({'estimate_name': ''}, status=404)
 
 
 # views.py
