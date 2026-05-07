@@ -18,7 +18,6 @@
 
 
     <script>
-        //#region ツールバーの準備
         // 1. --- ツールバーの処理 ---
         // 1.1 ツールバー設定
         const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
@@ -34,7 +33,8 @@
         //#endregion
 
 
-        //#region  ウィンドウとフォームの準備
+        // 2. ウィンドウとフォームの準備
+        // 2.1 ウインドウの準備
         const dhxWindow = new dhx.Window({
             width: 1000,
             height: 600,
@@ -42,19 +42,20 @@
             modal: true
         });
 
-
         // 2.2 フォームの準備
         const form = new dhx.Form(null, {
             rows: [
                 { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
                 { type: "text", label: "工事名称：", name: "estimate_no_display", labelPosition: "left", },
-                { type: "input", label: "工事番号：", name: "estimate_no",},
+                // { type: "text", label: "工事名称：", name: "estimate_name", labelPosition: "left", },
+                { type: "input", label: "工事番号：", name: "estimate_no", },
+
                 {
                     type: "combo",
                     name: "parent", // 内部で保持する値はID
                     label: "上位の階層",
                     placeholder: "階層を選択してください",
-                    readOnly: true, 
+                    readOnly: false,
                     labelPosition: "left",
                     labelWidth: 100,
                     width: 300
@@ -127,16 +128,23 @@
                 }
             ]
         });
+
+
+
         dhxWindow.attach(form);
+
+
+
+
         //#endregion
 
 
-        //#region 5. Gridの初期化
+        // 3. Gridの初期化
         const grid = new dhx.Grid("grid_container", {
             type: "tree",
             // rootParent: "root",
             columns: [
-                { id: "id", header: [{ text: "ID" }], hidden: true, isTreeColumn: true },
+                { id: "id", header: [{ text: "ID" }], hidden: false, isTreeColumn: true },
                 { id: "estimate_no_display", header: [{ text: "工事名称" }], hidden: true, },
                 {
                     id: "task_name",
@@ -275,6 +283,7 @@
         });
         //#endregion
 
+        // 4. 階層の計算
         //#region  1. 階層ごとの集計のため再帰計Ï算関数の定義（どこでもOK）
         function calculateTreeTotal(item) {
             const children = grid.data.getDirectKids(item.id);
@@ -284,7 +293,8 @@
                 // 子要素がある場合子の合計を算出
                 let sum = 0;
                 children.forEach(child => {
-                    sum += calculateTreeTotal(child);
+                    const childItem = grid.data.getItem(childId);
+                    sum += calculateTreeTotal(childItem);
                 });
 
                 totalValue = sum;
@@ -294,12 +304,15 @@
                 const price = parseFloat(item.budget_price) || 0;
                 totalValue = qty * price;
             }
-            // データ上のIDを更新
-            grid.data.update(item.id, { budget_amount: totalValue });
+
+            // 変更がある場合のみ更新（無限ループ防止）
+            if (item.budget_amount !== totalValue) {
+                teeGrid.data.update(item.id, { budget_amount: totalValue });
+            }
             return totalValue;
         }
 
-        
+
         // 2. 次にイベントリスナーを登録
         grid.data.events.on("load", () => {
             grid.data.forEach(item => {
@@ -308,38 +321,29 @@
                 }
             });
         });
+        // 【追加】編集時に自動計算を走らせる場合
+        grid.events.on("afterEditEnd", (value, row) => {
+            // 編集された行から親に向かって再計算、または全体を再計算
+            grid.data.forEach(item => {
+                if (!grid.data.getParent(item.id)) {
+                    calculateTreeTotal(item);
+                }
+            });
+        });
+        
         //#endregion
         // Estimateからestimate_noを私てestimate_nameを取得する
 
 
-        //#region 3. Unit一覧を取得してGridのプルダウンに反映
-        const unitFields = ["budget_unit", "unit"];
-        fetch("/api/unit-options/")
-            .then(res => res.json())
-            .then(data => {
-                console.log("取得データ:", data);
-                // ループして一括適用
-                unitFields.forEach(id => {
-                    const item = form.getItem(id);
-                    if (item) {
-                        item.setOptions(data.units);
-                    }
-                });
-                // ここで初期値をセット
-                form.setValue({
-                    budget_unit: 65, // ブランク
-                    unit: "13"        // 特定のIDを選択状態にする
-                });
-            })
-            .catch(err => console.error("データ取得失敗:", err));
+
 
         //#endregion
 
-            // 3.1 Estimateのestimate_nameを取得する
+        // 3.1 Estimateのestimate_nameを取得する
 
         //#region 1. グリッドからデータを取得して変換
         const gridData = grid.data.serialize(); // 現在のグリッド全データを取得
-
+        console.table(gridData);
         const options = gridData.map(item => {
             // 安全に階層レベルを取得する
             let level = 0;
@@ -351,8 +355,8 @@
             const indent = "　".repeat(level);
 
             return {
-                value: item.id.toString(),
-                content: indent + (item.task_name || "名称未設定") // 名前がない場合の回避策
+                id: item.id.toString(),
+                value: indent + (item.task_name || "名称未設定") // 名前がない場合の回避策
             };
         });
 
@@ -360,7 +364,42 @@
         const comboItem = form.getItem("parent");
         if (comboItem && typeof comboItem.setOptions === "function") {
             comboItem.setOptions(options);
+
         }
+
+<!--        const comboItem = form.getItem("parent");-->
+<!--        if (comboItem) {-->
+<!--            const comboWidget = comboItem.getWidget(); // ComboBox本体を取得-->
+<!--            comboWidget.data.parse([-->
+<!--                { id: "root", value: "最上位" },-->
+<!--                { id: "root2", value: "最上位2" },-->
+<!--                { id: "1", value: "テスト階層1" },-->
+<!--                 { id: "2", value: "テスト階層2" },-->
+<!--                  { id: "3", value: "テスト階層3" },-->
+<!--                   { id: "4", value: "テスト階層4" },-->
+<!--                    { id: "5", value: "テスト階層5" },-->
+<!--            ]);-->
+<!--        }-->
+<!--        //#region 3. Unit一覧を取得してGridのプルダウンに反映-->
+<!--        const unitFields = ["budget_unit", "unit"];-->
+<!--        fetch("/api/unit-options/")-->
+<!--            .then(res => res.json())-->
+<!--            .then(data => {-->
+<!--                console.log("取得データ:", data);-->
+<!--                // ループして一括適用-->
+<!--                unitFields.forEach(id => {-->
+<!--                    const item = form.getItem(id);-->
+<!--                    if (item) {-->
+<!--                        item.setOptions(data.units);-->
+<!--                    }-->
+<!--                });-->
+<!--                // ここで初期値をセット-->
+<!--                form.setValue({-->
+<!--                    budget_unit: 65, // ブランク-->
+<!--                    unit: "13"        // 特定のIDを選択状態にする-->
+<!--                });-->
+<!--            })-->
+<!--            .catch(err => console.error("データ取得失敗:", err));-->
 
         // 4. 最後にしてデータを流し込む
         const pathSegments = window.location.pathname.split('/');
@@ -390,12 +429,14 @@
         });
 
         //#endregion
-
+        // 1. 取得した名前を保持する変数を定義
+        let currentEstimateName = "";
         // APIを叩く
         fetch(`/api/get_estimate_name/?estimate_no=${estimateNo}`)
             .then(response => response.json())
             .then(data => {
                 if (data.estimate_name) {
+                    currentEstimateName = data.estimate_name;
                     // 取得した「工事名称」を画面にセットする処理
                     console.log("取得成功:", data.estimate_name);
                     // 例: document.querySelector('[name="工事名称のフィールド名"]').value = data.estimate_name;
@@ -412,7 +453,12 @@
         function addRow() {
             if (form) {
                 form.clear({});
-                //form.estimate_no = '002'
+                // 3. 保持しておいた変数を使用する
+                form.setValue({
+                    estimate_no: estimateNo,
+                    estimate_name: currentEstimateName, // data.sestimate_name ではなくこちら
+                    estimate_no_display: currentEstimateName
+                });
             }
             dhxWindow.header.data.update("title", { value: "新規登録" });
             dhxWindow.setPosition(100, 50);
@@ -544,6 +590,7 @@
             }
         });
         //#endregion
+
 
     </script>
 </body>
