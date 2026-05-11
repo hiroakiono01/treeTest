@@ -114,3 +114,64 @@ def task_detail(request, pk):
         # バリデーションエラー時はシリアライザのエラーをそのまま返す
         # これによりJSの .catch(err => { ... }) で項目ごとにエラー表示が可能
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from app.models import Unit
+from api.serializers import UnitSerializer
+
+from django.shortcuts import get_object_or_404
+
+
+@api_view(['POST'])
+def bulk_sync_units(request):
+    data_list = request.data
+    response_data = []
+    id_map = {}
+
+    for item in data_list:
+        temp_id = item.get('id')
+        parent_val = item.get('parent')
+
+        # 親IDの解決
+        if parent_val in id_map:
+            item['parent'] = id_map[parent_val]
+
+        # 新規か更新かの判定ロジックを強化
+        # 1. IDがNone or 空文字
+        # 2. 文字列で 'u' から始まる
+        # 3. IDがDBに存在しない (DoesNotExist 対策)
+        is_temp_id = (
+                temp_id is None or
+                temp_id == "" or
+                (isinstance(temp_id, str) and temp_id.startswith('u'))
+        )
+
+        instance = None
+        if not is_temp_id:
+            # 既存データをDBから探す（エラーにならないように filter().first() を使用）
+            instance = Unit.objects.filter(id=temp_id).first()
+
+        if instance:
+            # 【更新】DBに存在する場合
+            serializer = UnitSerializer(instance, data=item, partial=True)
+        else:
+            # 【新規】DBに存在しない、または一時IDの場合
+            item.pop('id', None)  # IDを削除して新規作成として扱う
+            serializer = UnitSerializer(data=item)
+
+        if serializer.is_valid():
+            saved_instance = serializer.save()
+
+            # マッピングの記録（後続の子要素のため）
+            if is_temp_id or not instance:
+                id_map[temp_id] = saved_instance.id
+
+            response_data.append(serializer.data)
+        else:
+            print(f"Serializer Error: {serializer.errors}")  # デバッグ用
+            return Response(serializer.errors, status=400)
+
+    return Response(response_data, status=200)
+

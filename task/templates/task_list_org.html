@@ -1,0 +1,639 @@
+<html lang="ja">
+
+<head>
+    {% load static %}
+    {% csrf_token %}
+    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
+    <script src="{% static 'suite/suite.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
+
+    <!-- 共通ユーティリティ -->
+    <script src="{% static 'js/utils.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
+</head>
+
+<body>
+    <div id="toolbar_container"></div>
+    <div id="grid_container" style="width: 100%; height: 400px;"></div>
+
+
+    <script>
+        // 1. --- ツールバーの処理 ---
+        // 1.1 ツールバー設定
+        const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+        toolbar.data.add([
+            { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
+        ]);
+        // 1.2. ツールバーのクリックイベント
+        toolbar.events.on("click", function (id) {
+            if (id === "add") {
+                addRow(); // 前に作った関数を呼ぶ
+            }
+        })
+        //#endregion
+
+
+        // 2. ウィンドウとフォームの準備
+        // 2.1 ウインドウの準備
+        const dhxWindow = new dhx.Window({
+            width: 1000,
+            height: 600,
+            title: "新規",
+            modal: true
+        });
+
+        // Row context menu
+        const rowMenu = new dhx.ContextMenu(null, {
+            data: [
+                { "id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus" },
+                { "id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus" },
+                { "id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close" },
+                { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
+            ]
+        });
+
+
+<!--        // 2.2 フォームの準備-->
+<!--        const form = new dhx.Form(null, {-->
+<!--            rows: [-->
+<!--                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される-->
+<!--                { type: "text", label: "工事名称：", name: "estimate_no_display", labelPosition: "left", },-->
+<!--                // { type: "text", label: "工事名称：", name: "estimate_name", labelPosition: "left", },-->
+<!--                { type: "input", label: "工事番号：", name: "estimate_no", },-->
+
+<!--                {-->
+<!--                    type: "combo",-->
+<!--                    name: "parent", // 内部で保持する値はID-->
+<!--                    label: "上位の階層",-->
+<!--                    placeholder: "階層を選択してください",-->
+<!--                    readOnly: false,-->
+<!--                    labelPosition: "left",-->
+<!--                    labelWidth: 100,-->
+<!--                    width: 300-->
+<!--                },-->
+<!--                {-->
+<!--                    cols: [-->
+<!--                        { type: "input", name: "task_name", required: true, label: "項目名称", padding: "0 20px 0 0" },-->
+<!--                        { type: "input", name: "material_dimensions", require: true, label: "材質・寸法", padding: "0 20px 0 0" },-->
+<!--                        {-->
+<!--                            name: "calcu_cls",-->
+<!--                            type: "select",-->
+<!--                            label: "計算区分",-->
+<!--                            required: true,-->
+<!--                            options: [-->
+<!--                                { value: "0", content: "合計に加算する" },-->
+<!--                                { value: "1", content: "合計に加算しない" },-->
+<!--                            ],-->
+<!--                            padding: "0 20px 0 0"-->
+<!--                        },-->
+<!--                    ]-->
+<!--                },-->
+<!--                {-->
+<!--                    cols: [-->
+<!--                        { type: "input", name: "budget_quantity", required: false, label: "予算数量", width: 200, padding: "0 20px 0 0" },-->
+<!--                        {-->
+<!--                            name: "budget_unit",-->
+<!--                            type: "select",-->
+<!--                            label: "予算単位",-->
+<!--                            required: false,-->
+<!--                            value: null,-->
+<!--                            options: [-->
+<!--                                { value: "", content: "" },-->
+<!--                            ],-->
+<!--                            width: 100,-->
+<!--                            padding: "0 20px 0 0"-->
+<!--                        },-->
+<!--                        { type: "input", name: "budget_price", required: false, label: "予算単価", width: 200, padding: "0 20px 0 0" },-->
+<!--                        { type: "input", name: "budget_amount", required: false, label: "予算金額", width: 200, padding: "0 20px 0 0" },-->
+<!--                        { type: "input", name: "markup_rate", required: false, label: "掛率", padding: "0 20px 0 0" },-->
+
+<!--                    ]-->
+
+<!--                },-->
+<!--                {-->
+<!--                    cols: [-->
+<!--                        { type: "input", name: "quantity", required: false, label: "見積数量", width: 200, padding: "0 20px 0 0" },-->
+<!--                        {-->
+<!--                            name: "unit",-->
+<!--                            type: "select",-->
+<!--                            label: "見積単位",-->
+<!--                            width: 100,-->
+<!--                            required: false,-->
+<!--                            value: null,-->
+<!--                            options: [-->
+<!--                                { value: "", content: "" },-->
+<!--                            ],-->
+<!--                            padding: "0 20px 0 0"-->
+<!--                        },-->
+<!--                        { type: "input", name: "price", required: false, label: "見積単価", width: 200, padding: "0 20px 0 0" },-->
+<!--                        { type: "input", name: "amount", required: false, label: "見積金額", width: 200, padding: "0 20px 0 0" },-->
+<!--                    ]-->
+
+<!--                },-->
+<!--                {-->
+<!--                    type: "button",-->
+<!--                    name: "save",-->
+<!--                    text: "保存",-->
+<!--                    view: "flat",-->
+<!--                    color: "primary"-->
+<!--                }-->
+<!--            ]-->
+<!--        });-->
+
+
+
+<!--        dhxWindow.attach(form);-->
+
+
+
+
+        //#endregion
+
+
+        // 3. Gridの初期化
+        const grid = new dhx.Grid("grid_container", {
+            type: "tree",
+            // rootParent: "root",
+            columns: [
+                { id: "id", header: [{ text: "ID" }], hidden: false, isTreeColumn: true },
+                { id: "estimate_no_display", header: [{ text: "工事名称" }], hidden: true, },
+                {
+                    id: "task_name",
+                    width: 200,
+                    header: [{ text: "名称", align: "center" }],
+                    footer: [{ text: "合計" }],
+                    isTreeColumn: true, // この列に 展開/折りたたみ アイコンを表示
+                    gravity: 1.5
+                },
+                { id: "material_dimensions", header: [{ text: "材質・寸法", align: "center" }], width: 200, },
+                {
+                    id: "calcu_cls",
+                    header: [{ text: "計算区分", align: "center" }],
+                    editable: true,
+                    editorType: "select", // セレクトボックス形式
+                    options: [
+                        { id: "0", value: "加算対象" },
+                        { id: "1", value: "階層内集計（加算なし）" },
+                        { id: "2", value: "税抜合計" },
+                        { id: "3", value: "消費税" }
+                    ]
+                },
+                {
+                    id: "budget_quantity",
+                    header: [{ text: "予算数量", align: "center" }],
+                    type: "number",
+                    numberMask: { maxDecLength: 2 }
+                },
+                {
+                    id: "budget_unit_display",
+                    header: [{ text: "予算単位", align: "center" }],
+                    editorType: "select",
+                    required: true,
+                    width: 100,
+                    options: [
+                        { id: "", content: "" }
+                    ]
+                },
+                {
+                    id: "budget_price",
+                    header: [{ text: "予算単価", align: "center" }],
+                    type: "number",
+
+                    numberMask: { maxDecLength: 2 }
+                },
+                {
+                    id: "budget_amount",
+                    header: [{ text: "予算金額", align: "center" }],
+                    type: "number",
+                    footer: [{
+                        content: "sum",
+                        template: (sum) => `合計: ${sum.toLocaleString()}`
+                    }],
+                    summary: "sum",
+                    numberMask: { groupSeparator: "," },
+<!--                    template: function (cellValue, row) {-->
+<!--                        // 1. budget_amountに値がある時はその値を優先-->
+<!--                        if (cellValue !== undefined && cellValue !== null && cellValue !== "") {-->
+<!--                            return parseFloat(cellValue).toLocaleString();-->
+<!--                        }-->
+
+<!--                        // 2. 値がない場合は 数量 * 単価 を計算-->
+<!--                        const qty = parseFloat(row.budget_quantity);-->
+<!--                        const price = parseFloat(row.budget_price);-->
+
+<!--                        if (!isNaN(qty) && !isNaN(price)) {-->
+<!--                            const total = qty * price;-->
+<!--                            return total.toLocaleString();-->
+<!--                        }-->
+
+<!--                        // 3. どちらもなければ 0 または空文字-->
+<!--                        return "0";-->
+<!--                    }-->
+                },
+                {
+                    id: "markup_rate",
+                    header: [{ text: "掛率", align: "center" }],
+                    type: "number",
+                },
+                {
+                    id: "quantity",
+                    header: [{ text: "見積数量", align: "center" }],
+                    type: "number",
+                    numberMask: { maxDecLength: 2 }
+                },
+                {
+                    id: "unit_display",
+                    header: [{ text: "見積単位", align: "center" }],
+                    editorType: "select",
+                    required: true,
+                    width: 100,
+                    options: [
+                        { id: "", content: "" }
+                    ]
+                },
+
+                {
+                    id: "price",
+                    header: [{ text: "見積単価", align: "center" }],
+                    type: "number",
+                    numberMask: { maxDecLength: 2 }
+                },
+                {
+                    id: "amount",
+                    header: [{ text: "見積金額", align: "center" }],
+                    type: "number",
+                    footer: [{
+                        content: "sum",
+                        template: (sum) => `合計: ${sum.toLocaleString()}`
+                    }],
+                    summary: "sum",
+                    numberMask: { groupSeparator: "," },
+
+<!--                    template: function (cellValue, row) {-->
+<!--                        // 1. amountに値がある時はその値を優先-->
+<!--                        if (row.amount !== undefined && row.amount !== null && row.amount !== "") {-->
+<!--                            return row.amount;-->
+<!--                        }-->
+
+<!--                        // 2. amountがない場合数量と単価が揃っていれば計算する-->
+<!--                        if (row.quantity != null && row.quantity !== "" &&-->
+<!--                            row.price != null && row.price !== "") {-->
+
+<!--                            const qty = parseFloat(row.quantity);-->
+<!--                            const price = parseFloat(row.price);-->
+
+<!--                            if (!isNaN(qty) && !isNaN(price)) {-->
+<!--                                return qty * price;-->
+<!--                            }-->
+<!--                        }-->
+
+<!--                        // 3. どちらの条件も満たさない場合は空文字-->
+<!--                        return "";-->
+<!--                    }-->
+                },
+                {
+                    id: "parent", header: [{ text: "parent" }], hidden: true
+                },
+                {
+                    id: "sort_order", header: [{ text: "sort_order" }], hidden: true
+                },
+                {
+                    id: "actions",
+                    header: [{ text: "Actions", tooltip: true, align: "center", rowspan: 2 }],
+                    mark: () => "dhx-demo_color--gray",
+                    template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
+                    align: "center",
+                    tooltip: false, editable: false, sortable: false, htmlEnable: true,
+
+                }
+            ],
+            autoWidth: true,
+            editable: true
+        });
+        //#endregion
+
+        // 4. 階層の計算
+        //#region  1. 階層ごとの集計のため再帰計Ï算関数の定義（どこでもOK）
+        function calculateTreeTotal(item) {
+            const children = grid.data.getDirectKids(item.id);
+            let totalValue = 0;
+
+            if (children.length > 0) {
+                // 子要素がある場合子の合計を算出
+                let sum = 0;
+                children.forEach(child => {
+                    const childItem = grid.data.getItem(childId);
+                    sum += calculateTreeTotal(childItem);
+                });
+
+                totalValue = sum;
+            } else {
+                // 子要素がない場合数量 * 単価 を返す
+                const qty = parseFloat(item.budget_quantity) || 0;
+                const price = parseFloat(item.budget_price) || 0;
+                totalValue = qty * price;
+            }
+
+            // 変更がある場合のみ更新（無限ループ防止）
+            if (item.budget_amount !== totalValue) {
+                teeGrid.data.update(item.id, { budget_amount: totalValue });
+            }
+            return totalValue;
+        }
+
+
+        // 2. 次にイベントリスナーを登録
+        grid.data.events.on("load", () => {
+            grid.data.forEach(item => {
+                if (!grid.data.getParent(item.id)) {
+                    calculateTreeTotal(item);
+                }
+            });
+        });
+        // 【追加】編集時に自動計算を走らせる場合
+        grid.events.on("afterEditEnd", (value, row) => {
+            // 編集された行から親に向かって再計算、または全体を再計算
+            grid.data.forEach(item => {
+                if (!grid.data.getParent(item.id)) {
+                    calculateTreeTotal(item);
+                }
+            });
+        });
+        
+        //#endregion
+        // Estimateからestimate_noを私てestimate_nameを取得する
+
+
+
+
+        //#endregion
+
+        // 3.1 Estimateのestimate_nameを取得する
+
+        //#region 1. グリッドからデータを取得して変換
+        const gridData = grid.data.serialize(); // 現在のグリッド全データを取得
+        console.table(gridData);
+        const options = gridData.map(item => {
+            // 安全に階層レベルを取得する
+            let level = 0;
+            if (item.parent && grid.data.getItem(item.parent)) {
+                // 親のレベル + 1 が現在のアイテムのレベルになります
+                level = (grid.data.getItem(item.parent).$level || 0) + 1;
+            }
+
+            const indent = "　".repeat(level);
+
+            return {
+                id: item.id.toString(),
+                value: indent + (item.task_name || "名称未設定") // 名前がない場合の回避策
+            };
+        });
+
+        // 2. Comboにセット
+        const comboItem = form.getItem("parent");
+        if (comboItem && typeof comboItem.setOptions === "function") {
+            comboItem.setOptions(options);
+
+        }
+
+<!--        const comboItem = form.getItem("parent");-->
+<!--        if (comboItem) {-->
+<!--            const comboWidget = comboItem.getWidget(); // ComboBox本体を取得-->
+<!--            comboWidget.data.parse([-->
+<!--                { id: "root", value: "最上位" },-->
+<!--                { id: "root2", value: "最上位2" },-->
+<!--                { id: "1", value: "テスト階層1" },-->
+<!--                 { id: "2", value: "テスト階層2" },-->
+<!--                  { id: "3", value: "テスト階層3" },-->
+<!--                   { id: "4", value: "テスト階層4" },-->
+<!--                    { id: "5", value: "テスト階層5" },-->
+<!--            ]);-->
+<!--        }-->
+
+        //#region 3. Unit一覧を取得してGridのプルダウンに反映
+        const unitFields = ["budget_unit_display", "unit_display"];
+        fetch("/api/unit-options/")
+            .then(res => res.json())
+            .then(data => {
+                /// 1. Suite 9 の Grid が解釈できる形式に整形
+                // value ではなく id を使うのが一般的です
+                const formattedOptions = data.units.map(u => ({
+                    id: String(u.id),      // 文字列に変換しておくと安全
+                    value: u.unitName || u.content // 表示名
+                }));
+
+                // 2. Grid のカラムに適用
+                unitFields.forEach(fieldId => {
+                    const column = grid.getColumn(fieldId);
+                    if (column) {
+                        column.options = formattedOptions;
+                    }
+                });
+                // 重要：ループの後に再描画を実行
+                grid.paint();
+                    })
+            .catch(err => console.error("データ取得失敗:", err));
+
+<!--        // オプション反映後に値をセット-->
+<!--        form.setValue({-->
+<!--        budget_unit: 65,-->
+<!--        unit: "13"-->
+<!--        })-->
+<!--            })-->
+<!--            .catch(err => console.error("データ取得失敗:", err));-->
+
+        // 4. 最後にしてデータを流し込む
+        const pathSegments = window.location.pathname.split('/');
+        const estimateNo = pathSegments[pathSegments.length - 1] || pathSegments[pathSegments.length - 2];
+        const dataset = new dhx.TreeCollection()
+
+        fetch(`/task/lists/${estimateNo}/`, {
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(response => response.json())
+            .then(data => {
+                grid.data.parse(data); // ここでloadイベントが発生し計算が走る
+            });
+        //.catch(error => console.error("Error:", error));
+
+        // 階層ごとに集計値を計算するロジック
+
+
+        // データのロード完了時に実行
+        grid.data.events.on("load", () => {
+            grid.data.forEach(item => {
+                // ルート要素から計算を開始
+                if (!grid.data.getParent(item.id)) {
+                    calculateTreeTotal(item);
+                }
+            });
+        });
+
+        //#endregion
+        // 1. 取得した名前を保持する変数を定義
+        let currentEstimateName = "";
+        // APIを叩く
+        fetch(`/api/get_estimate_name/?estimate_no=${estimateNo}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.estimate_name) {
+                    currentEstimateName = data.estimate_name;
+                    // 取得した「工事名称」を画面にセットする処理
+                    console.log("取得成功:", data.estimate_name)
+                    // 例: document.querySelector('[name="工事名称のフィールド名"]').value = data.estimate_name;
+                }
+            })
+            .catch(error => console.error('エラー:', error));
+
+
+
+
+        //#region 6. --- イベント制御 ---
+
+<!--        // 6.1 新規作成のウインドウを表示する-->
+<!--        function addRow() {-->
+<!--            if (form) {-->
+<!--                form.clear({});-->
+<!--                // 3. 保持しておいた変数を使用する-->
+<!--                form.setValue({-->
+<!--                    estimate_no: estimateNo,-->
+<!--                    estimate_name: currentEstimateName, // data.sestimate_name ではなくこちら-->
+<!--                    estimate_no_display: currentEstimateName-->
+<!--                });-->
+<!--            }-->
+<!--            dhxWindow.header.data.update("title", { value: "新規登録" });-->
+<!--            dhxWindow.setPosition(100, 50);-->
+<!--            dhxWindow.paint();-->
+<!--            dhxWindow.show();-->
+<!--        }-->
+
+<!--        // 6.2 グリッド内のボタンクリック時-->
+<!--        grid.events.on("cellClick", (row, col) => {-->
+<!--            if (col.id === "action") {-->
+<!--                form.setValue(row); // 選択した行のデータをフォームにセット-->
+<!--                dhxWindow.header.data.update("title", { value: "編集" });-->
+<!--                dhxWindow.paint();-->
+<!--                dhxWindow.show();-->
+<!--            }-->
+<!--        });-->
+
+<!--        // 7. 保存ボタンの処理-->
+<!--        form.getItem("save").events.on("click", () => {-->
+
+<!--            const formData = form.getValue();-->
+<!--            const isNew = !formData.id || formData.id === "";-->
+
+<!--            const url = isNew ? "/unit/units/" : `/unit/units/${formData.id}/`;-->
+<!--            const method = isNew ? "POST" : "PUT";-->
+
+<!--            // Djangoへ送信-->
+<!--            fetch(url, {-->
+<!--                method: method,-->
+<!--                headers: {-->
+<!--                    "Content-Type": "application/json",-->
+<!--                    "X-CSRFToken": getCookie('csrftoken') // DjangoのCSRF対策-->
+<!--                },-->
+<!--                body: JSON.stringify(formData)-->
+<!--            })-->
+<!--                .then(res => {-->
+<!--                    if (!res.ok) {-->
+<!--                        return res.json().then(err => { throw err; });-->
+<!--                    }-->
+<!--                    return res.json();-->
+<!--                })-->
+<!--                .then(result => {-->
+
+<!--                    // 3. 成功時の処理-->
+<!--                    dhx.message({-->
+<!--                        text: isNew ? "追加されました" : "更新されました",-->
+<!--                        css: "dhx_widget&#45;&#45;bg_success",-->
+<!--                        expire: 3000-->
+<!--                    });-->
+<!--                    dhxWindow.hide();-->
+
+<!--                    grid.data.removeAll();-->
+<!--                    fetch("/unit/units/")-->
+<!--                        .then(response => response.json())-->
+<!--                        .then(data => {-->
+<!--                            grid.data.parse(data);-->
+<!--                        });-->
+
+<!--                })-->
+<!--                .catch(err => {-->
+<!--                    console.error("Error details:", err);-->
+<!--                    let mainMessage = "入力内容を確認してください";-->
+<!--                    // サーバーからのバリデーションエラーがある場合-->
+<!--                    if (typeof err === "object" && err !== null) {-->
+<!--                        for (const fieldId in err) {-->
+<!--                            const item = form.getItem(fieldId);-->
+<!--                            if (item) {-->
+<!--                                const errorMsg = Array.isArray(err[fieldId]) ? err[fieldId][0] : err[fieldId];-->
+<!--                                item.setProperties({-->
+<!--                                    error: true,-->
+<!--                                    errorMessage: errorMsg-->
+<!--                                });-->
+<!--                                mainMessage = errorMsg;-->
+<!--                            }-->
+<!--                        }-->
+<!--                    } else {-->
+<!--                        // 通信断絶などの致命的エラー-->
+<!--                        mainMessage = "サーバーとの通信に失敗しました";-->
+<!--                    }-->
+<!--                    // 2. トーストを表示-->
+<!--                    dhx.message({-->
+<!--                        text: mainMessage,-->
+<!--                        css: "dhx_widget&#45;&#45;bg_danger", // Suite 9 の赤い背景-->
+<!--                        expire: 6000,                // 秒間表示-->
+<!--                        node: document.body-->
+<!--                    });-->
+<!--                });-->
+<!--        });-->
+
+<!--        // 8. 削除処理-->
+<!--        // 削除ボタンの即時実行-->
+<!--        grid.events.on("cellClick", (row, col) => {-->
+<!--            if (col.id === "delete") {-->
+<!--                if (confirm("即時に削除しますか？")) {-->
+<!--                    // サーバーへ削除リクエスト-->
+<!--                    fetch(`/unit/units/${row.id}/`, {-->
+<!--                        method: 'DELETE',-->
+<!--                        headers: {-->
+<!--                            'X-CSRFToken': getCookie('csrftoken')  // ここを追加-->
+<!--                        }-->
+<!--                    })-->
+<!--                        .then(res => {-->
+<!--                            if (!res.ok) {-->
+<!--                                return res.json().then(err => { throw err; });-->
+<!--                            }-->
+<!--                            return res.json();-->
+<!--                        })-->
+<!--                        .then(result => {-->
+<!--                            grid.data.remove(row.id);-->
+<!--                            dhx.message({-->
+<!--                                text: "削除しました",-->
+<!--                                css: "dhx_widget&#45;&#45;bg_success",-->
+<!--                                expire: 3000-->
+
+<!--                            });-->
+
+<!--                        })-->
+<!--                        .catch(err => {-->
+<!--                            const errorMsg = err.detail || err.message || "削除に失敗しました";-->
+<!--                            dhx.message({-->
+<!--                                text: errorMsg,-->
+<!--                                css: "dhx_widget&#45;&#45;bg_danger", // 赤いトースト-->
+<!--                                expire: 6000-->
+<!--                            });-->
+
+<!--                        });-->
+
+<!--                }-->
+<!--            }-->
+<!--        });-->
+<!--        //#endregion-->
+
+
+    </script>
+</body>
+
+</html>
