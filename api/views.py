@@ -20,7 +20,7 @@ def index(request):
 def get_unit_options(request):
     unit_options = [
         {
-            "value": unit.id,  # 数値型として代入
+            "value": str(unit.id),  # 文字型として代入
             "content": unit.unit_name  # 文字列型（表示名）
         }
         for unit in Unit.objects.all()

@@ -370,14 +370,16 @@
             .then(data => {
                 /// 1. Suite 9 の Grid が解釈できる形式に整形-->
                 // value ではなく id を使うのが一般的です-->
-                const formattedOptions = data.units.map(u => ({
-                    id: String(u.value),        // DjangoのID（値）
-                    value: u.content // ★ここを 'content' に変換する
-                }));
-                // 先頭に「空欄」の選択肢を追加する
-                // formattedOptions.unshift({ value: "", content: "" });
-                // フォームのアイテムに反映
-                //form.getItem("unit_name").setOptions(formattedOptions);
+                const formattedOptions = [
+                    { id: "", value: "" } // これが重要！ nullや空文字の時の「受け皿」になります
+                ];
+                // 2. サーバーからのデータを追加（IDは必ず文字列にする）
+                data.units.forEach(unit => {
+                    formattedOptions.push({
+                        id: String(unit.value),
+                        value: unit.content
+                    });
+                });
 
                 // 2. Grid のカラムに適用
                 unitFields.forEach(fieldId => {
@@ -391,15 +393,6 @@
             })
             .catch(err => console.error("データ取得失敗:", err));
 
-        // // オプション反映後に値をセット
-        // form.setValue({
-        //     budget_unit: 65,
-        //     unit: "13"
-        // })
-        //         })
-        // .catch (err => console.error("データ取得失敗:", err));
-
-
 
         // 4. 最後にしてデータを流し込む
         const pathSegments = window.location.pathname.split('/');
@@ -411,34 +404,19 @@
         })
             .then(response => response.json())
             .then(data => {
-                grid.data.parse(data); // ここでloadイベントが発生し計算が走る
+                grid.data.parse(data)
+                // ここでloadイベントが発生し計算が走る
                 grid.collapseAll();
             });
         //.catch(error => console.error("Error:", error));
 
-        // 階層ごとに集計値を計算するロジック
 
 
 
 
 
+        //--- イベント制御 ---
 
-
-        //#region 6. --- イベント制御 ---
-
-
-
-        // < !--        // 6.2 グリッド内のボタンクリック時-->
-        // < !--grid.events.on("cellClick", (row, col) => {
-        //                 -->
-        // < !--            if (col.id === "action") {
-        //                     -->
-        // < !--form.setValue(row); // 選択した行のデータをフォームにセット-->
-        // < !--dhxWindow.header.data.update("title", { value: "編集" }); -->
-        // < !--dhxWindow.paint(); -->
-        // < !--dhxWindow.show(); -->
-        // < !--            } -->
-        // < !--        }); -->
         const rawData = grid.data.serialize();
         // 7. 保存ボタンの処理
         function updateAll() {
