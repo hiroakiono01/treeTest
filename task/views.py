@@ -151,15 +151,15 @@ def bulk_sync_units(request):
         instance = None
         if not is_temp_id:
             # 既存データをDBから探す（エラーにならないように filter().first() を使用）
-            instance = Unit.objects.filter(id=temp_id).first()
+            instance = Task.objects.filter(id=temp_id).first()
 
         if instance:
             # 【更新】DBに存在する場合
-            serializer = UnitSerializer(instance, data=item, partial=True)
+            serializer = TaskSerializer(instance, data=item, partial=True)
         else:
             # 【新規】DBに存在しない、または一時IDの場合
             item.pop('id', None)  # IDを削除して新規作成として扱う
-            serializer = UnitSerializer(data=item)
+            serializer = TaskSerializer(data=item)
 
         if serializer.is_valid():
             saved_instance = serializer.save()

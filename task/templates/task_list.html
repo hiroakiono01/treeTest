@@ -13,51 +13,58 @@
 </head>
 
 <body>
-<div id="toolbar_container"></div>
-<div id="grid_container" style="width: 100%; height: 1200px;"></div>
+    <div id="toolbar_container"></div>
+    <div id="grid_container" style="width: 100%; height: 1200px;"></div>
 
 
-<script>
-    // 1. --- ツールバーの処理 ---
-    // 1.1 ツールバー設定
-    const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
-    toolbar.data.add([
-        { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
-        { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "primary", circle: true, },
-        { id: "undo", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "primary", circle: true, },
-    ]);
-    // 1.2. ツールバーのクリックイベント
+    <script>
+        // --- ツールバーの処理 ---
+        const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+        toolbar.data.add([
+            { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
+            { type: "spacer" },
+            { id: "expandAll", type: "button", value: "展開する" },
+            { id: "collapseAll", type: "button", value: "折りたたむ" },
+            { type: "spacer" },
+            { id: "undo", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "primary", circle: true, },
+            { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "primary", circle: true, }
+        ]);
         toolbar.events.on("click", function (id) {
-        if (id === "add") {
-            addRow(); // 前に作った関数を呼ぶ
-        }
-        if (id === "update") {
-            updateAll();
-        }
-    })
-    //#endregion
+            if (id === "add") {
+                addRow();
+            }
+            if (id === "update") {
+                updateAll();
+            }
+            if (id === "expandAll") {
+                expandAll();
+            }
+            if (id === "collapseAll") {
+                collapseAll();
+            }
+        })
 
-
-    // Row context menu
-    const rowMenu = new dhx.ContextMenu(null, {
-        data: [
-            { "id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus" },
-            { "id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus" },
-            { "id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close" },
-            { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
-        ]
-    });
-
-    const columns = [
-            { id: "id", header: [{ text: "ID" }], hidden: false, isTreeColumn: true },
+        // --- コンテキストメニューの処理 ---
+        const rowMenu = new dhx.ContextMenu(null, {
+            data: [
+                { "id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus" },
+                { "id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus" },
+                { "id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close" },
+                { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
+            ]
+        });
+        // --- カラムの処理 ---
+        const columns = [
+            { id: "id", header: [{ text: "ID" }], hidden: true, isTreeColumn: true },
             { id: "estimate_no_display", header: [{ text: "工事名称" }], hidden: true, },
+            { id: "estimate_no", header: [{ text: "工事番号" }], hidden: true, },
             {
                 id: "task_name",
                 width: 200,
                 header: [{ text: "名称", align: "center" }],
                 footer: [{ text: "合計" }],
                 isTreeColumn: true, // この列に 展開/折りたたみ アイコンを表示
-                require: true,
+                required: true,
                 gravity: 1.5
             },
             { id: "material_dimensions", header: [{ text: "材質・寸法", align: "center" }], width: 200, },
@@ -79,21 +86,23 @@
                 type: "number",
                 numberMask: { maxDecLength: 2 }
             },
+            // {
+            //     id: "budget_unit",
+            //     header: [{ text: "予算単位", align: "center" }],
+            //     type: "number",
+            // },
             {
-                id: "budget_unit",
+                id: "budget_unit_display",
                 header: [{ text: "予算単位", align: "center" }],
-                type: "number",
+                editorType: "combobox",
+                required: true,
+                width: 100,
+                options: [
+                    { id: "", value: "" },
+                ],
+
+                editable: true
             },
-<!--            {-->
-<!--                id: "budget_unit_display",-->
-<!--                header: [{ text: "予算単位", align: "center" }],-->
-<!--                editorType: "select",-->
-<!--                required: true,-->
-<!--                width: 100,-->
-<!--                options: [-->
-<!--                    { id: "", content: "" }-->
-<!--                ]-->
-<!--            },-->
             {
                 id: "budget_price",
                 header: [{ text: "予算単価", align: "center" }],
@@ -111,25 +120,29 @@
                 }],
                 summary: "sum",
                 numberMask: { groupSeparator: "," },
-<!--                    template: function (cellValue, row) {-->
-<!--                        // 1. budget_amountに値がある時はその値を優先-->
-<!--                        if (cellValue !== undefined && cellValue !== null && cellValue !== "") {-->
-<!--                            return parseFloat(cellValue).toLocaleString();-->
-<!--                        }-->
-
-<!--                        // 2. 値がない場合は 数量 * 単価 を計算-->
-<!--                        const qty = parseFloat(row.budget_quantity);-->
-<!--                        const price = parseFloat(row.budget_price);-->
-
-<!--                        if (!isNaN(qty) && !isNaN(price)) {-->
-<!--                            const total = qty * price;-->
-<!--                            return total.toLocaleString();-->
-<!--                        }-->
-
-<!--                        // 3. どちらもなければ 0 または空文字-->
-<!--                        return "0";-->
-<!--                    }-->
             },
+
+            // function (cellValue, row) {
+
+            //                                      // 1. budget_amountに値がある時はその値を優先-->
+            //                if (cellValue !== undefined && cellValue !== null && cellValue !== "") {
+
+            //                            return parseFloat(cellValue).toLocaleString();
+            //                        }
+            //                        // 2. 値がない場合は 数量 * 単価 を計算
+            //                       const qty = parseFloat(row.budget_quantity);
+            //                         const price = parseFloat(row.budget_price);
+
+            //                       if (!isNaN(qty) && !isNaN(price)) {
+
+            //                             const total = qty * price;
+            //                           return total.toLocaleString();
+            //                        }
+
+            //                        // 3. どちらもなければ 0 または空文字
+            //                        return "0";
+            //                     }
+
             {
                 id: "markup_rate",
                 header: [{ text: "掛率", align: "center" }],
@@ -141,21 +154,22 @@
                 type: "number",
                 numberMask: { maxDecLength: 2 }
             },
+            // {
+            //     id: "unit",
+            //     header: [{ text: "見積単位", align: "center" }],
+            //     type: "number",
+            // },
             {
-                id: "unit",
+                id: "unit_display",
                 header: [{ text: "見積単位", align: "center" }],
-                type: "number",
+                editorType: "combobox",
+                required: false,
+                width: 100,
+                //editable: true,
+                options: [
+                    { value: "", content: "" },
+                ]
             },
-<!--            {-->
-<!--                id: "unit_display",-->
-<!--                header: [{ text: "見積単位", align: "center" }],-->
-<!--                editorType: "select",-->
-<!--                required: true,-->
-<!--                width: 100,-->
-<!--                options: [-->
-<!--                    { id: "", content: "" }-->
-<!--                ]-->
-<!--            },-->
 
             {
                 id: "price",
@@ -174,27 +188,31 @@
                 summary: "sum",
                 numberMask: { groupSeparator: "," },
 
-<!--                    template: function (cellValue, row) {-->
-<!--                        // 1. amountに値がある時はその値を優先-->
-<!--                        if (row.amount !== undefined && row.amount !== null && row.amount !== "") {-->
-<!--                            return row.amount;-->
-<!--                        }-->
+                // < !--template: function (cellValue, row) {
+                //             -->
+                // < !--                        // 1. amountに値がある時はその値を優先-->
+                // < !--                        if (row.amount !== undefined && row.amount !== null && row.amount !== "") {
+                //                 -->
+                // < !--                            return row.amount; -->
+                // < !--                        } -->
 
-<!--                        // 2. amountがない場合数量と単価が揃っていれば計算する-->
-<!--                        if (row.quantity != null && row.quantity !== "" &&-->
-<!--                            row.price != null && row.price !== "") {-->
+                // < !--                        // 2. amountがない場合数量と単価が揃っていれば計算する-->
+                // < !--                        if (row.quantity != null && row.quantity !== "" && -->
+                // < !--row.price != null && row.price !== "") {
+                //                 -->
 
-<!--                            const qty = parseFloat(row.quantity);-->
-<!--                            const price = parseFloat(row.price);-->
+                // < !--                            const qty = parseFloat(row.quantity); -->
+                // < !--                            const price = parseFloat(row.price); -->
 
-<!--                            if (!isNaN(qty) && !isNaN(price)) {-->
-<!--                                return qty * price;-->
-<!--                            }-->
-<!--                        }-->
+                // < !--                            if (!isNaN(qty) && !isNaN(price)) {
+                //                     -->
+                // < !--                                return qty * price; -->
+                // < !--                            } -->
+                // < !--                        } -->
 
-<!--                        // 3. どちらの条件も満たさない場合は空文字-->
-<!--                        return "";-->
-<!--                    }-->
+                // < !--                        // 3. どちらの条件も満たさない場合は空文字-->
+                // < !--                        return ""; -->
+                // < !--                    } -->
             },
             {
                 id: "parent", header: [{ text: "parent" }], hidden: true
@@ -214,151 +232,191 @@
         ];
 
 
-    // 3. Gridの初期化
-    const grid = new dhx.Grid("grid_container", {
-        type: "tree",
-        // rootParent: "root",
-        columns,
-        eventHandlers: {
-            onclick: {
-                "row-menu": event => rowMenu.showAt(event.target)
+        // --- Gridの初期化 ---
+        const grid = new dhx.Grid("grid_container", {
+            type: "tree",
+            // rootParent: "root",
+            columns,
+            eventHandlers: {
+                onclick: {
+                    "row-menu": event => rowMenu.showAt(event.target)
+                }
+            },
+            // data: dataset,
+            autoWidth: true,
+            keyNavigation: true,
+            editing: true,
+            selection: "row",
+            // autoEmptyRow: true
+
+
+        });
+        // ワンクリックでエディタを開く　https://docs.dhtmlx.com/suite/grid/configuration/#opening-editor-with-one-click
+        grid.events.on("cellClick", function (row, column) {
+
+            grid.editCell(row.id, column.id);
+
+        });
+
+        // ---　コンテキストメニューの処理 ---
+        rowMenu.events.on("click", id => {
+            const row = grid.selection.getCell()?.row;
+            const rowIndex = grid.data.getIndex(row.id);
+            switch (id) {
+                case "insertRowAbove":
+                    grid.data.add({
+                        estimate_no: estimateNo
+                    }, rowIndex);
+                    break;
+                case "insertRowBelow":
+                    grid.data.add({
+                        estimate_no: estimateNo
+                    }, rowIndex + 1);
+                    break;
+                case "clearRow":
+                    grid.data.update(row.id, {
+                        property: "",
+                        status: "",
+                        client: "",
+                        startDate: "",
+                        endDate: ""
+                    });
+                    break;
+                case "deleteRow":
+                    deleteRow(row.id);
+                    // grid.data.remove(row.id);
+                    break;
             }
-        },
-        // data: dataset,
-        autoWidth: true,
-        keyNavigation: true,
-        editing: true,
-        selection: "row",
-        // autoEmptyRow: true
+        });
 
-    });
-    // ワンクリックでエディタを開く　https://docs.dhtmlx.com/suite/grid/configuration/#opening-editor-with-one-click
-    grid.events.on("cellClick", function(row, column){
-        grid.editCell(row.id, column.id);
-    });
+        // --- 新規作成のウインドウを表示する ---
+        function addRow() {
+            const newRowData = {
+                //id: dhx.uid(),          // DHTMLXの機能で一意のIDを生成
+                estimate_no: estimateNo, // ★ここにセットしたい番号を指定
+                task_name: "新規タスク",  // 初期表示名（任意）
+                parent: null            // 親階層（任意）
+            };
 
+            // 2. グリッドのデータストアに直接追加
+            grid.data.add(newRowData);
 
-    rowMenu.events.on("click", id => {
-        const row = grid.selection.getCell()?.row;
-        const rowIndex = grid.data.getIndex(row.id);
-        switch (id) {
-            case "insertRowAbove":
-                grid.data.add({}, rowIndex);
-                break;
-            case "insertRowBelow":
-                grid.data.add({}, rowIndex + 1);
-                break;
-            case "clearRow":
-                grid.data.update(row.id, {
-                    property: "",
-                    status: "",
-                    client: "",
-                    startDate: "",
-                    endDate: ""
-                });
-                break;
-            case "deleteRow":
-                deleteRow(row.id);
-                // grid.data.remove(row.id);
-                break;
+            // 3. (オプション) 追加した行を自動でフォーカスしてスクロール
+            grid.selection.setCell(newRowData.id);
         }
-    });
+        // --- 行を右クリックでコンテキストメニューを表示する ---
+        grid.events.on("cellRightClick", (row, column, event) => {
+            event.preventDefault();
+            grid.selection.setCell(row, column);
+            rowMenu.showAt(event.target);
+        });
 
-    grid.events.on("cellRightClick", (row, column, event) => {
-        event.preventDefault();
-        grid.selection.setCell(row, column);
-        rowMenu.showAt(event.target);
-    });
-
-    function getPriorityTemplate(value) {
-        if (!value) return;
-        let status = "dhx-demo_grid-status--suspended";
-        if (value === "Completed") status = "dhx-demo_grid-status--completed";
-        if (value === "In progress") status = "dhx-demo_grid-status--in-progress";
-        return `
+        function getPriorityTemplate(value) {
+            if (!value) return;
+            let status = "dhx-demo_grid-status--suspended";
+            if (value === "Completed") status = "dhx-demo_grid-status--completed";
+            if (value === "In progress") status = "dhx-demo_grid-status--in-progress";
+            return `
             <div class='dhx-demo_grid-status ${status}'>
                 <div class='dhx-demo_grid-status-indicator'></div>
                 <span class='dhx-demo_grid-status-text'>${value}</span>
             </div>
         `
-    }
-
-    // 3.1 Estimateのestimate_nameを取得する
-
-    //#region 1. グリッドからデータを取得して変換
-    const gridData = grid.data.serialize(); // 現在のグリッド全データを取得
-    console.table(gridData);
-    const options = gridData.map(item => {
-        // 安全に階層レベルを取得する
-        let level = 0;
-        if (item.parent && grid.data.getItem(item.parent)) {
-            // 親のレベル + 1 が現在のアイテムのレベルになります
-            level = (grid.data.getItem(item.parent).$level || 0) + 1;
         }
 
-        const indent = "　".repeat(level);
+        function collapseAll() {
+            grid.collapseAll();
+        }
 
-        return {
-            id: item.id.toString(),
-            value: indent + (item.task_name || "名称未設定") // 名前がない場合の回避策
-        };
-    });
+        function expandAll() {
+            grid.expandAll();
+        }
 
-<!--        // 2. Comboにセット-->
-<!--        const comboItem = form.getItem("parent");-->
-<!--        if (comboItem && typeof comboItem.setOptions === "function") {-->
-<!--            comboItem.setOptions(options);-->
+        // 3.1 Estimateのestimate_nameを取得する
+        // ########## 以下は不要か？　#########
+        //#region 1. グリッドからデータを取得して変換
+        // const gridData = grid.data.serialize(); // 現在のグリッド全データを取得
+        // console.table(gridData);
+        // const options = gridData.map(item => {
+        //     // 安全に階層レベルを取得する
+        //     let level = 0;
+        //     if (item.parent && grid.data.getItem(item.parent)) {
+        //         // 親のレベル + 1 が現在のアイテムのレベルになります
+        //         level = (grid.data.getItem(item.parent).$level || 0) + 1;
+        //     }
 
-<!--        }-->
+        //     const indent = "　".repeat(level);
+
+        //     return {
+        //         id: item.id.toString(),
+        //         value: indent + (item.task_name || "名称未設定") // 名前がない場合の回避策
+        //     };
+        // });
+
+        // < !--        // 2. Comboにセット-->
+        // < !--        const comboItem = form.getItem("parent"); -->
+        // < !--        if (comboItem && typeof comboItem.setOptions === "function") {
+        //             -->
+        // < !--comboItem.setOptions(options); -->
+
+        // < !--        } -->
 
 
-    //#region 3. Unit一覧を取得してGridのプルダウンに反映
-    const unitFields = ["budget_unit_display", "unit_display"];
-    fetch("/api/unit-options/")
-        .then(res => res.json())
-        .then(data => {
-            /// 1. Suite 9 の Grid が解釈できる形式に整形
-            // value ではなく id を使うのが一般的です
-            const formattedOptions = data.units.map(u => ({
-                id: String(u.id),      // 文字列に変換しておくと安全
-                value: u.unitName || u.content // 表示名
-            }));
+        // --- Unit一覧を取得してGridのプルダウンに反映 ---
+        // const combobox = new dhx.Combobox("combobox",);
+        const unitFields = ["budget_unit_display", "unit_display"];
+        fetch("/api/unit-options/")
+            .then(res => res.json())
+            .then(data => {
+                /// 1. Suite 9 の Grid が解釈できる形式に整形-->
+                // value ではなく id を使うのが一般的です-->
+                const formattedOptions = data.units.map(u => ({
+                    id: String(u.value),        // DjangoのID（値）
+                    value: u.content // ★ここを 'content' に変換する
+                }));
+                // 先頭に「空欄」の選択肢を追加する
+                // formattedOptions.unshift({ value: "", content: "" });
+                // フォームのアイテムに反映
+                //form.getItem("unit_name").setOptions(formattedOptions);
 
-            // 2. Grid のカラムに適用
-            unitFields.forEach(fieldId => {
-                const column = grid.getColumn(fieldId);
-                if (column) {
-                    column.options = formattedOptions;
-                }
+                // 2. Grid のカラムに適用
+                unitFields.forEach(fieldId => {
+                    const column = grid.getColumn(fieldId);
+                    if (column) {
+                        column.options = formattedOptions;
+                    }
+                });
+                // 重要：ループの後に再描画を実行
+                grid.paint();
+            })
+            .catch(err => console.error("データ取得失敗:", err));
+
+        // // オプション反映後に値をセット
+        // form.setValue({
+        //     budget_unit: 65,
+        //     unit: "13"
+        // })
+        //         })
+        // .catch (err => console.error("データ取得失敗:", err));
+
+
+
+        // 4. 最後にしてデータを流し込む
+        const pathSegments = window.location.pathname.split('/');
+        const estimateNo = pathSegments[pathSegments.length - 1] || pathSegments[pathSegments.length - 2];
+        const dataset = new dhx.TreeCollection()
+
+        fetch(`/task/lists/${estimateNo}/`, {
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(response => response.json())
+            .then(data => {
+                grid.data.parse(data); // ここでloadイベントが発生し計算が走る
+                grid.collapseAll();
             });
-            // 重要：ループの後に再描画を実行
-            grid.paint();
-                })
-        .catch(err => console.error("データ取得失敗:", err));
+        //.catch(error => console.error("Error:", error));
 
-<!--        // オプション反映後に値をセット-->
-<!--        form.setValue({-->
-<!--        budget_unit: 65,-->
-<!--        unit: "13"-->
-<!--        })-->
-<!--            })-->
-<!--            .catch(err => console.error("データ取得失敗:", err));-->
-
-    // 4. 最後にしてデータを流し込む
-    const pathSegments = window.location.pathname.split('/');
-    const estimateNo = pathSegments[pathSegments.length - 1] || pathSegments[pathSegments.length - 2];
-    const dataset = new dhx.TreeCollection()
-
-    fetch(`/task/lists/${estimateNo}/`, {
-        headers: { 'Accept': 'application/json' }
-    })
-        .then(response => response.json())
-        .then(data => {
-            grid.data.parse(data); // ここでloadイベントが発生し計算が走る
-        });
-    //.catch(error => console.error("Error:", error));
-
-    // 階層ごとに集計値を計算するロジック
+        // 階層ごとに集計値を計算するロジック
 
 
 
@@ -366,116 +424,96 @@
 
 
 
-    //#region 6. --- イベント制御 ---
-
-<!--        // 6.1 新規作成のウインドウを表示する-->
-<!--        function addRow() {-->
-<!--            if (form) {-->
-<!--                form.clear({});-->
-<!--                // 3. 保持しておいた変数を使用する-->
-<!--                form.setValue({-->
-<!--                    estimate_no: estimateNo,-->
-<!--                    estimate_name: currentEstimateName, // data.sestimate_name ではなくこちら-->
-<!--                    estimate_no_display: currentEstimateName-->
-<!--                });-->
-<!--            }-->
-<!--            dhxWindow.header.data.update("title", { value: "新規登録" });-->
-<!--            dhxWindow.setPosition(100, 50);-->
-<!--            dhxWindow.paint();-->
-<!--            dhxWindow.show();-->
-<!--        }-->
-
-<!--        // 6.2 グリッド内のボタンクリック時-->
-<!--        grid.events.on("cellClick", (row, col) => {-->
-<!--            if (col.id === "action") {-->
-<!--                form.setValue(row); // 選択した行のデータをフォームにセット-->
-<!--                dhxWindow.header.data.update("title", { value: "編集" });-->
-<!--                dhxWindow.paint();-->
-<!--                dhxWindow.show();-->
-<!--            }-->
-<!--        });-->
-
-    // 7. 保存ボタンの処理
-    function updateAll() {
-        const allData = grid.data.serialize().map(item => {
-            return {
-                ...item,
-                // parentが0や空文字ならnullとして送信する
-                parent: (item.parent === 0 || item.parent === "0" || item.parent === "") ? null : item.parent
-            };
-        });
-
-    if (allData.length === 0) return;
-
-
-        fetch("/task/bulk_sync/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCookie('csrftoken')
-            },
-            body: JSON.stringify(allData)
-        })
-        .then(res => {
-            if (!res.ok) throw res;
-            return res.json();
-        })
-        .then(result => {
-            dhx.message({ text: "一括保存を完了しました", css: "dhx_widget--bg_success" });
-
-            // サーバー側で採番されたIDなどを含む最新データでグリッドを更新
-            grid.data.removeAll();
-            grid.data.parse(result);
-        })
-        .catch(err => {
-            dhx.message({ text: "保存失敗: 入力内容を確認してください", css: "dhx_widget--bg_danger" });
-        });
-    }
+        //#region 6. --- イベント制御 ---
 
 
 
-    // 8. 削除処理
-    // 削除ボタンの即時実行
-    function deleteRow(rowId) {
-        if (confirm("即時に削除しますか？")) {
-            // サーバーへ削除リクエスト
-            fetch(`/task/detail/${rowId}/`, {
-                method: 'DELETE',
+        // < !--        // 6.2 グリッド内のボタンクリック時-->
+        // < !--grid.events.on("cellClick", (row, col) => {
+        //                 -->
+        // < !--            if (col.id === "action") {
+        //                     -->
+        // < !--form.setValue(row); // 選択した行のデータをフォームにセット-->
+        // < !--dhxWindow.header.data.update("title", { value: "編集" }); -->
+        // < !--dhxWindow.paint(); -->
+        // < !--dhxWindow.show(); -->
+        // < !--            } -->
+        // < !--        }); -->
+        const rawData = grid.data.serialize();
+        // 7. 保存ボタンの処理
+        function updateAll() {
+            const allData = grid.data.serialize();
+
+            if (allData.length === 0) return;
+
+
+            fetch("/task/bulk_sync/", {
+                method: "POST",
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken')  // ここを追加
-                }
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                },
+                body: JSON.stringify(allData)
             })
-            .then(res => {
-                if (!res.ok) {
-                    return res.json().then(err => { throw err; });
-                }
-                return res.json();
-            })
-            .then(result => {
-                grid.data.remove(row.id);
-                dhx.message({
-                    text: "削除しました",
-                    css: "dhx_widget--bg_success",
-                    expire: 3000
+                .then(res => {
+                    if (!res.ok) throw res;
+                    return res.json();
+                })
+                .then(result => {
+                    dhx.message({ text: "一括保存を完了しました", css: "dhx_widget--bg_success", expire: 3000, });
 
+                    // サーバー側で採番されたIDなどを含む最新データでグリッドを更新
+                    grid.data.removeAll();
+                    grid.data.parse(result);
+                })
+                .catch(err => {
+                    dhx.message({ text: "保存失敗: 入力内容を確認してください", css: "dhx_widget--bg_danger" });
                 });
-
-            })
-            .catch(err => {
-                const errorMsg = err.detail || err.message || "削除に失敗しました";
-                dhx.message({
-                    text: errorMsg,
-                    css: "dhx_widget--bg_danger", // 赤いトースト
-                    expire: 6000
-                });
-
-            });
-
         }
-    };
 
 
-</script>
+
+        // 8. 削除処理
+        // 削除ボタンの即時実行
+        function deleteRow(rowId) {
+            if (confirm("即時に削除しますか？")) {
+                // サーバーへ削除リクエスト
+                fetch(`/task/detail/${rowId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+                    }
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            return res.json().then(err => { throw err; });
+                        }
+                        return res.json();
+                    })
+                    .then(result => {
+                        grid.data.load(`/task/lists/${estimateNo}/`).then(() => {
+                            dhx.message({
+                                text: "削除しました",
+                                css: "dhx_widget--bg_success",
+                                expire: 3000
+                            });
+                        });
+                    })
+                    .catch(err => {
+                        const errorMsg = err.detail || err.message || "削除に失敗しました";
+                        dhx.message({
+                            text: errorMsg,
+                            css: "dhx_widget--bg_danger", // 赤いトースト
+                            expire: 6000
+                        });
+
+                    });
+
+            }
+        };
+
+
+    </script>
 </body>
 
 </html>

@@ -51,3 +51,7 @@
     color: red;         /* ホバー時の色（少し濃い青など） */
     /* もし背景色も変えたい場合は background-color を指定してください */
 }
+
+.dhx_message-container {
+    top: 50px;
+}
