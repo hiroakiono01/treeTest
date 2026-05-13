@@ -16,7 +16,7 @@ def unit_list_call(request):
 @api_view(['GET', 'POST'])
 def unit_list(request):
     if request.method == 'GET':
-        units = Unit.objects.all()
+        units = Unit.objects.order_by("sort_order").all()
         serializer = UnitSerializer(units, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':

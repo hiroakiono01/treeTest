@@ -8,6 +8,11 @@
     margin-left: 4px;           /* 少し隙間をあけると見やすいです */
 }
 
+/* 必須エラー用のスタイル */
+.required-error {
+    background: #fff0f0 !important; /* 薄い赤背景 */
+    border: 1px solid #ff4d4d !important; /* 赤い枠線 */
+}
 .grid-btn-edit {
   border: 1px solid #28a745; /* 線の太さ、種類、色を指定 */
   background-color: transparent;

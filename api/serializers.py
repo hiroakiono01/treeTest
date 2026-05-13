@@ -74,8 +74,8 @@ class TaskSerializer(serializers.ModelSerializer):
     budget_unit_display = serializers.ReadOnlyField(source='budget_unit.unit_name')
     estimate_no_display = serializers.ReadOnlyField(source='estimate_no.estimate_name')
 
-    budget_unit = serializers.SerializerMethodField()
-    unit = serializers.SerializerMethodField()
+    # budget_unit = serializers.SerializerMethodField()
+    # unit = serializers.SerializerMethodField()
 
     # task_name = serializers.CharField(required=True)
 
@@ -96,14 +96,14 @@ class TaskSerializer(serializers.ModelSerializer):
                   'parent', 'sort_order',
                   )
 
-    def get_budget_unit(self, obj):
-        # null なら空文字、あれば文字列にして返す
-        if obj.budget_unit_id is not None:
-            return str(obj.budget_unit_id)
-        return ""
-
-    def get_unit(self, obj):
-        # null なら空文字、あれば文字列にして返す
-        if obj.unit_id is not None:
-            return str(obj.unit_id)
-        return ""
+    # def get_budget_unit(self, obj):
+    #     # null なら空文字、あれば文字列にして返す
+    #     if obj.budget_unit_id is not None:
+    #         return str(obj.budget_unit_id)
+    #     return ""
+    #
+    # def get_unit(self, obj):
+    #     # null なら空文字、あれば文字列にして返す
+    #     if obj.unit_id is not None:
+    #         return str(obj.unit_id)
+    #     return ""
