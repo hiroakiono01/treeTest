@@ -12,7 +12,7 @@ class UnitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Unit
-        fields = ('id', 'unit_no', 'unit_name')
+        fields = ('id', 'unit_no', 'unit_name', 'sort_order')
         extra_kwargs = {
             'unit_no': {
                 'error_messages': {

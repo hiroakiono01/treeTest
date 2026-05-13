@@ -11,6 +11,6 @@ urlpatterns = [
     # path('tasks/<int:pk>/', views.tree_detail),
     path('lists/<int:estimate_no>/', views.task_list),
     path('detail/<int:pk>/', views.task_detail),
-    path('bulk_sync/', views.bulk_sync_units, name='unit-bulk-sync'),
+    path('bulk_sync/', views.bulk_sync_tasks, name='task-bulk-sync'),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

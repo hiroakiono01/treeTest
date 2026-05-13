@@ -57,6 +57,50 @@ def unit_detail(request, pk):
         # これによりJSの .catch(err => { ... }) で項目ごとにエラー表示が可能
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['POST'])
+def bulk_sync_units(request):
+    data_list = request.data
+    response_data = []
+    id_map = {}
+
+    # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
+    for index, item in enumerate(data_list):
+        temp_id = item.get('id')
+        parent_val = item.get('parent')
+        item['sort_order'] = index
+
+        is_temp_id = (
+                temp_id is None or
+                temp_id == "" or
+                (isinstance(temp_id, str) and temp_id.startswith('u'))
+        )
+        instance = None
+        if not is_temp_id:
+            # 既存データをDBから探す（エラーにならないように filter().first() を使用）
+            instance = Unit.objects.filter(id=temp_id).first()
+
+        if instance:
+            # 【更新】DBに存在する場合
+            serializer = UnitSerializer(instance, data=item, partial=True)
+        else:
+            # 【新規】DBに存在しない、または一時IDの場合
+            item.pop('id', None)  # IDを削除して新規作成として扱う
+            serializer = UnitSerializer(data=item)
+
+        if serializer.is_valid():
+            saved_instance = serializer.save()
+
+            # マッピングの記録（後続の子要素のため）
+            if is_temp_id or not instance:
+                id_map[temp_id] = saved_instance.id
+
+            response_data.append(serializer.data)
+        else:
+            print(f"Serializer Error: {serializer.errors}")  # デバッグ用
+            return Response(serializer.errors, status=400)
+
+    return Response(response_data, status=200)
 #
 # @api_view(['GET'])
 # def data_list(request, offset):

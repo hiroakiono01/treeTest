@@ -125,7 +125,7 @@ from django.shortcuts import get_object_or_404
 
 
 @api_view(['POST'])
-def bulk_sync_units(request):
+def bulk_sync_tasks(request):
     data_list = request.data
     response_data = []
     id_map = {}

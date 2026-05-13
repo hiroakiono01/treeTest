@@ -14,8 +14,16 @@
 
 <body>
 <div id="toolbar_container"></div>
-<div id="grid_container" style="width: 100%; height: 1200px;"></div>
-
+<div id="grid_container"></div>
+<style>
+    /* Gridのサイズを指定 */
+    #grid_container {
+        width: 1800px;             /* 画面幅の80% */
+        max-width: 1800px;      /* 広がりすぎないように制限 */
+        height: 800px;          /* 高さを指定（Suite 9は高さ指定が必須） */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* 浮き出し効果 */
+    }
+</style>
 
 <script>
     // --- ツールバーの処理 ---
