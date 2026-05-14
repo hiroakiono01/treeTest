@@ -24,15 +24,13 @@
         /* Gridのサイズを指定 */
         #grid_container {
             width: 800px;
-            /* 画面幅の80% */
             max-width: 1000px;
-            /* 広がりすぎないように制限 */
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
             height: calc(100vh - 150px);
             min-height: 100px;
-            /* 高さを指定（Suite 9は高さ指定が必須） */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             /* 浮き出し効果 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
 
         }
     </style>
@@ -79,14 +77,15 @@
         // Gridの初期化
         const grid = new dhx.Grid("grid_container", {
             columns: [
-                { id: "id", header: [{ text: "ID" }], hidden: false },
+                { id: "id", header: [{ text: "ID" }], hidden: true },
                 {
                     id: "unit_name",
                     header: [
                         { text: "単位 <span style='color:red'>*</span>", align: "center" },
                         { content: "inputFilter" }
                     ],
-                    htmlEnable: true
+                    htmlEnable: true,
+                    editable: true
                 },
                 {
                     id: "actions",
@@ -133,13 +132,12 @@
 
             // 2. 第2引数に「0」を指定して、グリッドの先頭（インデックス0）に追加
             const newRow = grid.data.add(newRowData, 0); // 戻り値で追加された行オブジェクトが取得できます
+            // grid.selection.setCell(newRowId, "unit_name");
+            console.log("追加された行のID:", newRow);
 
             // 3. 追加した行へフォーカス
             if (newRow) {
-                const rowId = newRow.id;
-                // 💡 修正：指定した行ID・列IDのセルを「選択状態」にする
-                grid.selection.setCell(rowId);
-
+                grid.editCell(newRow, "unit_name");
             }
         }
 
@@ -174,14 +172,21 @@
             const rowIndex = grid.data.getIndex(row.id);
             switch (id) {
                 case "insertRowAbove":
-                    grid.data.add({
-
+                    const newAboveRow = grid.data.add({
                     }, rowIndex);
+                    // 3. 追加した行へフォーカス
+                    if (newAboveRow) {
+                        grid.editCell(newAboveRow, "unit_name");
+                    }
                     break;
                 case "insertRowBelow":
-                    grid.data.add({
-
+                    const newBelowRow = grid.data.add({
                     }, rowIndex + 1);
+                    console.log("追加された行のID:", rowIndex);
+                    // 3. 追加した行へフォーカス
+                    if (newBelowRow) {
+                        grid.editCell(newBelowRow, "unit_name");
+                    }
                     break;
                 case "clearRow":
                     grid.data.update(row.id, {
@@ -207,12 +212,10 @@
         });
 
 
-        // 7. 保存ボタンで一括更新処理
+        // --- 保存ボタンで一括更新処理 ---
         function updateAll() {
             let hasError = false;
             const requiredFields = ["unit_name"];
-
-            // const allData = grid.data.serialize();
 
             grid.data.forEach(row => {
                 requiredFields.forEach(field => {
@@ -319,8 +322,7 @@
 
         }
 
-        // 8. 削除処理
-        // 削除ボタンの即時実行
+        // --- 削除ボタンの即時実行 ---
         function deleteRow(rowId) {
             if (confirm("即時に削除しますか？")) {
                 // サーバーへ削除リクエスト
@@ -329,7 +331,7 @@
                     headers: {
                         'X-CSRFToken': getCookie('csrftoken')  // ここを追加
                     },
-                    body: JSON.stringify(sendingData)
+                    // body: JSON.stringify(sendingData)
                 })
                     .then(res => {
                         if (!res.ok) {
@@ -352,13 +354,11 @@
                             css: "dhx_widget--bg_danger", // 赤いトースト
                             expire: 6000
                         });
-
                     });
-
             }
-
         }
 
+        // --- 
         grid.events.on("afterEditEnd", (value, row, col) => {
             // 必須にしたいカラムIDを指定（例: unit_display）
             if (col.id === "unit_name") {
@@ -372,6 +372,7 @@
             }
         });
 
+        // 行のドラグアンドドロップ
         grid.events.on("afterRowDrag", (data, id, targetId) => {
             // 1. 画面の上から順番に全行をループ
             grid.data.forEach((row, index) => {
