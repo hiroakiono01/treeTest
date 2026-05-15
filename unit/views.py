@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
+from django.db import transaction
 from api.serializers import UnitSerializer
 from app.models import Unit
 
@@ -62,15 +62,15 @@ def unit_detail(request, pk):
 def bulk_sync_units(request):
     data_list = request.data
     response_data = []
-    errors_list = []
-    id_map = {}
+    errors_dict = {}
     has_error = False
 
-    # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
+    # --------------------------------------------------
+    # 1. 全データのバリデーション（チェック）フェーズ
+    # --------------------------------------------------
     for index, item in enumerate(data_list):
         temp_id = item.get('id')
-        parent_val = item.get('parent')
-        item['unit_no'] = index
+        item['sort_order'] = index  # 画面の並び順を反映
 
         is_temp_id = (
                 temp_id is None or
@@ -79,38 +79,84 @@ def bulk_sync_units(request):
         )
         instance = None
         if not is_temp_id:
-            # 既存データをDBから探す（エラーにならないように filter().first() を使用）
             instance = Unit.objects.filter(id=temp_id).first()
 
-        if instance:
-            # 【更新】DBに存在する場合
-            serializer = UnitSerializer(instance, data=item, partial=True)
-        else:
-            # シリアライザに渡す前にコピーを作成し、元のitem（idを含む）は維持する
-            item_copy = item.copy()
-            # 【新規】DBに存在しない、または一時IDの場合
-            item.pop('id', None)  # IDを削除して新規作成として扱う
-            serializer = UnitSerializer(data=item)
+        validate_data = item.copy()
+        if not instance:
+            validate_data.pop('id', None)
 
-        if serializer.is_valid():
-            if not has_error:
+        if instance:
+            # 💡 validate_data を渡すように統一します
+            serializer = UnitSerializer(instance, data=validate_data, partial=True)
+        else:
+            serializer = UnitSerializer(data=validate_data)
+
+        if not serializer.is_valid():
+            has_error = True
+            error_info = serializer.errors.copy()
+
+            cleaned_errors = {}
+            for field, messages in error_info.items():
+                if isinstance(messages, list) and len(messages) > 0:
+                    cleaned_errors[field] = messages[0]  # 最初のエラーメッセージを取得
+                else:
+                    cleaned_errors[field] = messages
+
+            # 各行のエラーを溜める
+            errors_dict[temp_id] = cleaned_errors
+
+    # 💡 修正ポイント: if has_error の判定は for ループの「外」に出します
+    # これにより、全行のチェックが完全に終わった後でエラーを返却できます
+    if has_error:
+        return Response({'row_errors': errors_dict}, status=400)
+
+    # --------------------------------------------------
+    # 2. データベースへの保存フェーズ（エラーがない場合のみ到達）
+    # --------------------------------------------------
+    id_map = {}
+
+    # 複数行の保存中にエラーが起きたら元に戻せるようトランザクションで囲みます
+    with transaction.atomic():
+        for index, item in enumerate(data_list):
+            temp_id = item.get('id')
+            item['sort_order'] = index
+
+            is_temp_id = (
+                    temp_id is None or
+                    temp_id == "" or
+                    (isinstance(temp_id, str) and temp_id.startswith('u'))
+            )
+            instance = None
+            if not is_temp_id:
+                instance = Unit.objects.filter(id=temp_id).first()
+
+            save_data = item.copy()
+            if not instance:
+                save_data.pop('id', None)
+
+            if instance:
+                serializer = UnitSerializer(instance, data=save_data, partial=True)
+            else:
+                serializer = UnitSerializer(data=save_data)
+
+            # 既に上のフェーズで検証済みなので必ず True になります
+            if serializer.is_valid():
+                # 💡 修正ポイント: データベースに保存を実行します
                 saved_instance = serializer.save()
 
-                # マッピングの記録（後続の子要素のため）
+                # フロント側の一時IDと、新しく発行されたDBの本番IDをマッピング
                 if is_temp_id or not instance:
                     id_map[temp_id] = saved_instance.id
 
                 response_data.append(serializer.data)
-        else:
-            has_error = True
-            # エラー情報に元のフロントエンド側ID（temp_id）を紐付けて記録
-            error_info = serializer.errors.copy()
-            error_info['id'] = temp_id  # "u17788..." や 5 などのIDをセット
-            errors_list.append(error_info)
-    if has_error:
-        return Response(serializer.errors, status=400)
 
-    return Response(response_data, status=200)
+    # 💡 修正ポイント: 関数の最後で、必ず成功レスポンスを返却します
+    return Response({
+        'status': 'success',
+        'id_map': id_map,  # 新規作成した行のID変換表をフロントに伝える
+        'data': response_data
+    }, status=status.HTTP_200_OK)
+
 #
 # @api_view(['GET'])
 # def data_list(request, offset):

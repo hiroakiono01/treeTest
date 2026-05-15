@@ -99,7 +99,7 @@
             //keyNavigation: true,
             editing: true,
             //dragMode: "both", // ドラッグ＆ドロップを有効にする
-            selection: "row",
+            //selection: "row",
         });
 
         // ページネーション
@@ -158,7 +158,7 @@
                 });
         }
 
-
+    
 
         // --- 保存ボタンで一括更新処理 ---
         function updateAll() {
@@ -222,105 +222,82 @@
                     });
                 })
                 .catch(err => {
-                    console.error("Error details:", err);
-                    let mainMessage = "入力内容を確認してください。";
+                    // エラーハンドラや .catch(err => { ... }) の中
+                    const responseData = err.response ? err.response.data : null;
 
-                    if (typeof err === "object" && err !== null) {
-                        // パターンA: サーバーから [ { id: "u177...", unit_name: ["..."] } ] の配列型エラーが返る場合
-                        if (Array.isArray(err)) {
-                            let firstErrorMessage = "";
+                    if (responseData && responseData.row_errors) {
+                        const rowErrors = responseData.row_errors; // サーバーから届いた行ごとのエラーオブジェクト
+                        let firstErrorMessage = "";
 
-                            err.forEach(errorRow => {
-                                if (errorRow && errorRow.id) {
-                                    const rowId = errorRow.id;
-                                    Object.keys(errorRow).forEach(field => {
-                                        if (field !== "id") {
-                                            // 該当する行・セルに赤枠クラスを付与
-                                            grid.addCellCss(rowId, field, "required-error");
-                                            // トーストに表示する最初の１つ目のエラー文言を記憶
-                                            if (!firstErrorMessage && Array.isArray(errorRow[field])) {
-                                                firstErrorMessage = errorRow[field][0];
-                                            }
-                                        }
-                                    });
+                        // グリッドの全データをループ
+                        grid.data.forEach(row => {
+                            // この行（row.id）に対するエラーがサーバーから返ってきているか確認
+                            if (rowErrors[row.id]) {
+                                const errorFields = rowErrors[row.id];
+
+                                // 1. unit_name の重複エラーがある場合
+                                if (errorFields.unit_name) {
+                                    grid.addCellCss(row.id, "unit_name", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_name;
                                 }
-                            });
-                            if (firstErrorMessage) {
-                                mainMessage = firstErrorMessage;
+
+                                // 2. unit_no の重複エラーがある場合
+                                if (errorFields.unit_no) {
+                                    grid.addCellCss(row.id, "unit_no", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_no;
+                                }
                             }
+                        });
+
+                        // 画面のメインメッセージ（トーストやアラートなど）に、最初のカスタムメッセージを表示する
+                        if (firstErrorMessage) {
+                            mainMessage = firstErrorMessage;
+                            // 例: alert(mainMessage); や UIライブラリの通知関数を呼ぶ
                         }
-                        // パターンB: 単一オブジェクトで全体の共通エラー（例: { "detail": "..." }）などが返る場合
-                        else if (err.detail) {
-                            mainMessage = err.detail;
-                        }
-                        // パターンC: 万が一古い単一オブジェクト形式 { "unit_name": ["..."] } で返ってきた場合の互換用
-                        else if (err.unit_name) {
-                            mainMessage = Array.isArray(err.unit_name) ? err.unit_name[0] : err.unit_name;
-                            const values = [];
-                            grid.data.forEach(row => {
-                                const val = String(row.unit_name || "").trim();
-                                if (val !== "") {
-                                    if (values.includes(val)) {
-                                        grid.addCellCss(row.id, "unit_name", "required-error");
-                                    }
-                                    values.push(val);
-                                }
-                            });
-                        }
-                    } else if (err instanceof Error) {
-                        mainMessage = err.message;
-                    } else {
-                        mainMessage = "サーバーとの通信に失敗しました";
                     }
-
-                    // エラーメッセージをトースト表示
-                    dhx.message({
-                        text: mainMessage,
-                        css: "dhx_widget--bg_danger",
-                        expire: 6000,
-                        node: document.body
-                    });
-                });
-        }
-
+                }
+            )
+        };
+        
+            
 
         // --- 削除ボタンの即時実行 ---
         grid.events.on("cellClick", (row, col) => {
-            if (col.id === "delete") {
-                if (confirm("即時に削除しますか？")) {
-                    // サーバーへ削除リクエスト
-                    fetch(`/unit/units/${row.id}/`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRFToken': getCookie('csrftoken')  // ここを追加
-                        },
-                        // body: JSON.stringify(sendingData)
-                    })
-                        .then(res => {
-                            if (!res.ok) {
-                                return res.json().then(err => { throw err; });
-                            }
-                            return res.json();
-                        })
-                        .then(result => {
-                            grid.data.remove(row.id);
-                            dhx.message({
-                                text: "削除しました",
-                                css: "dhx_widget--bg_success",
-                                expire: 3000
-                            });
-                        })
-                        .catch(err => {
-                            const errorMsg = err.detail || err.message || "削除に失敗しました";
-                            dhx.message({
-                                text: errorMsg,
-                                css: "dhx_widget--bg_danger", // 赤いトースト
-                                expire: 6000
-                            });
-                        });
-                }
-            }
-        });
+                    if (col.id === "delete") {
+                        if (confirm("即時に削除しますか？")) {
+                            // サーバーへ削除リクエスト
+                            fetch(`/unit/units/${row.id}/`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+                                },
+                                // body: JSON.stringify(sendingData)
+                            })
+                                .then(res => {
+                                    if (!res.ok) {
+                                        return res.json().then(err => { throw err; });
+                                    }
+                                    return res.json();
+                                })
+                                .then(result => {
+                                    grid.data.remove(row.id);
+                                    dhx.message({
+                                        text: "削除しました",
+                                        css: "dhx_widget--bg_success",
+                                        expire: 3000
+                                    });
+                                })
+                                .catch(err => {
+                                    const errorMsg = err.detail || err.message || "削除に失敗しました";
+                                    dhx.message({
+                                        text: errorMsg,
+                                        css: "dhx_widget--bg_danger", // 赤いトースト
+                                        expire: 6000
+                                    });
+                                });
+                        }
+                    }
+                });
 
         // --- 
         // grid.events.on("afterEditEnd", (value, row, col) => {
