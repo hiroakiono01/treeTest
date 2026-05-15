@@ -21,7 +21,7 @@ def get_unit_options(request):
     # combobox の場合はid,valueでselectは使えない
     unit_options = [
         {
-            "id": unit.id,  # 文字型として代入
+            id: unit.id,  # 文字型として代入
             "value": unit.unit_name  # 文字列型（表示名）
         }
         for unit in Unit.objects.all()

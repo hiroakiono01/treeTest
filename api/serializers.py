@@ -7,16 +7,21 @@ from app.models import Task, Estimate, Unit, Reference
 
 class UnitSerializer(serializers.ModelSerializer):
     # id = serializers.CharField(required=False, allow_blank=True)
-    # unit_no = serializers.CharField(required=True)
-    # unit_name = serializers.CharField(required=True)
+    unit_no = serializers.CharField(required=True)
+    unit_name = serializers.CharField(required=True)
 
     class Meta:
         model = Unit
-        fields = ('id', 'unit_name', 'sort_order')
+        fields = ('id', 'unit_no', 'unit_name', 'sort_order')
         extra_kwargs = {
             'unit_name': {
                 'error_messages': {
                     'unique': "この Unit_name は既に登録されています。別の文言入力してください。",
+                }
+            },
+            'unit_no': {
+                'error_messages': {
+                    'unique': "この Unit_no は既に登録されています。",
                 }
             }
         }

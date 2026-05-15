@@ -16,7 +16,7 @@ def unit_list_call(request):
 @api_view(['GET', 'POST'])
 def unit_list(request):
     if request.method == 'GET':
-        units = Unit.objects.order_by("sort_order").all()
+        units = Unit.objects.order_by("unit_no").all()
         serializer = UnitSerializer(units, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
@@ -62,13 +62,15 @@ def unit_detail(request, pk):
 def bulk_sync_units(request):
     data_list = request.data
     response_data = []
+    errors_list = []
     id_map = {}
+    has_error = False
 
     # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
     for index, item in enumerate(data_list):
         temp_id = item.get('id')
         parent_val = item.get('parent')
-        item['sort_order'] = index
+        item['unit_no'] = index
 
         is_temp_id = (
                 temp_id is None or
@@ -84,21 +86,29 @@ def bulk_sync_units(request):
             # 【更新】DBに存在する場合
             serializer = UnitSerializer(instance, data=item, partial=True)
         else:
+            # シリアライザに渡す前にコピーを作成し、元のitem（idを含む）は維持する
+            item_copy = item.copy()
             # 【新規】DBに存在しない、または一時IDの場合
             item.pop('id', None)  # IDを削除して新規作成として扱う
             serializer = UnitSerializer(data=item)
 
         if serializer.is_valid():
-            saved_instance = serializer.save()
+            if not has_error:
+                saved_instance = serializer.save()
 
-            # マッピングの記録（後続の子要素のため）
-            if is_temp_id or not instance:
-                id_map[temp_id] = saved_instance.id
+                # マッピングの記録（後続の子要素のため）
+                if is_temp_id or not instance:
+                    id_map[temp_id] = saved_instance.id
 
-            response_data.append(serializer.data)
+                response_data.append(serializer.data)
         else:
-            print(f"Serializer Error: {serializer.errors}")  # デバッグ用
-            return Response(serializer.errors, status=400)
+            has_error = True
+            # エラー情報に元のフロントエンド側ID（temp_id）を紐付けて記録
+            error_info = serializer.errors.copy()
+            error_info['id'] = temp_id  # "u17788..." や 5 などのIDをセット
+            errors_list.append(error_info)
+    if has_error:
+        return Response(serializer.errors, status=400)
 
     return Response(response_data, status=200)
 #

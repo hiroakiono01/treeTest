@@ -11,24 +11,26 @@ from rest_framework.response import Response
 
 from api.serializers import ReferenceSerializer
 from app.models import Reference
-from reference.forms import ReferenceForm
 
 
-class ReferenceListView(TemplateView):
-    template_name = "reference_list.html"
-
-
-class ReferenceListCreateView(generics.ListCreateAPIView):
-    queryset = Reference.objects.all()
-    serializer_class = ReferenceSerializer
-
-    def post(self, request, *args, **kwargs):
-        # Unitの時と同様の一括保存ロジック（前述のUnitViewと同様のため省略）
-        pass
-
-
-class ReferenceDetailView(generics.DestroyAPIView):
-    queryset = Reference.objects.all()
+# from reference.forms import ReferenceForm
+#
+#
+# class ReferenceListView(TemplateView):
+#     template_name = "reference_list.html"
+#
+#
+# class ReferenceListCreateView(generics.ListCreateAPIView):
+#     queryset = Reference.objects.all()
+#     serializer_class = ReferenceSerializer
+#
+#     def post(self, request, *args, **kwargs):
+#         # Unitの時と同様の一括保存ロジック（前述のUnitViewと同様のため省略）
+#         pass
+#
+#
+# class ReferenceDetailView(generics.DestroyAPIView):
+#     queryset = Reference.objects.all()
 
 
 def reference_list_call(request):
@@ -38,42 +40,92 @@ def reference_list_call(request):
 @api_view(['GET', "POST"])
 def reference_list(request):
     if request.method == 'GET':
-        references = Reference.objects.all()
+        references = Reference.objects.order_by("sort_order").all()
         serializer = ReferenceSerializer(references, many=True)
         return Response(serializer.data)
 
-    elif request.method == "POST":
-        serializer = ReferenceSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # elif request.method == "POST":
+    #     serializer = ReferenceSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #
 
 
-@api_view(["GET", "PUT", "DELETE"])
+@api_view(["DELETE"])
 def reference_detail(request, pk):
     """
     Retrieve, update or delete a code reference.
     """
     try:
-        reference = Reference.objects.get(pk=pk)
+        instance = Reference.objects.get(pk=pk)
     except Reference.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == "GET":
-        serializer = ReferenceSerializer(reference)
-        return Response(serializer.data)
+    # if request.method == "GET":
+    #     serializer = ReferenceSerializer(reference)
+    #     return Response(serializer.data)
+    #
+    # elif request.method == "PUT":
+    #     serializer = ReferenceSerializer(reference, data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == "PUT":
-        serializer = ReferenceSerializer(reference, data=request.data)
+    if request.method == "DELETE":
+        try:
+            instance.delete()
+            return JsonResponse({'success': True}, status=status.HTTP_200_OK)
+        except models.ProtectedError as e:
+            msg = f'「{instance}」は他で使われているため削除がきません'
+            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def bulk_sync_references(request):
+    data_list = request.data
+    response_data = []
+    id_map = {}
+
+    # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
+    for index, item in enumerate(data_list):
+        temp_id = item.get('id')
+        parent_val = item.get('parent')
+        item['sort_order'] = index
+
+        is_temp_id = (
+                temp_id is None or
+                temp_id == "" or
+                (isinstance(temp_id, str) and temp_id.startswith('u'))
+        )
+        instance = None
+        if not is_temp_id:
+            # 既存データをDBから探す（エラーにならないように filter().first() を使用）
+            instance = Reference.objects.filter(id=temp_id).first()
+
+        if instance:
+            # 【更新】DBに存在する場合
+            serializer = ReferenceSerializer(instance, data=item, partial=True)
+        else:
+            # 【新規】DBに存在しない、または一時IDの場合
+            item.pop('id', None)  # IDを削除して新規作成として扱う
+            serializer = ReferenceSerializer(data=item)
+
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            saved_instance = serializer.save()
 
-    elif request.method == "DELETE":
-        reference.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            # マッピングの記録（後続の子要素のため）
+            if is_temp_id or not instance:
+                id_map[temp_id] = saved_instance.id
+
+            response_data.append(serializer.data)
+        else:
+            print(f"Serializer Error: {serializer.errors}")  # デバッグ用
+            return Response(serializer.errors, status=400)
+
+    return Response(response_data, status=200)
 
 
 # @api_view(['POST'])
@@ -135,61 +187,61 @@ def get_reference_data(request):
     return JsonResponse(data, safe=False)
 
 
-class ReferenceList(generic.ListView):
-    paginate_by = 10
-    context_object_name = 'reference_list'
-    template_name = 'reference_list.html'
-    model = Reference
-    form_class = ReferenceForm
-
-    def get_queryset(self):
-        return Reference.objects.all()
-
-
-class ReferenceAdd(generic.FormView):
-    model = Reference
-    template_name = 'reference_add.html'
-    form_class = ReferenceForm
-    success_url = reverse_lazy('reference:reference_list')
-
-    def form_valid(self, form):
-        form.save()
-        messages.success(self.request, '単位を追加しました。')
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.error(self.request, "単位の追加に失敗しました。")
-        return super().form_invalid(form)
+# class ReferenceList(generic.ListView):
+#     paginate_by = 10
+#     context_object_name = 'reference_list'
+#     template_name = 'reference_list.html'
+#     model = Reference
+#     # //form_class = ReferenceForm
+#
+#     def get_queryset(self):
+#         return Reference.objects.all()
 
 
-class ReferenceEdit(generic.UpdateView):
-    model = Reference
-    template_name = 'reference_edit.html'
-    form_class = ReferenceForm
+# class ReferenceAdd(generic.FormView):
+#     model = Reference
+#     template_name = 'reference_add.html'
+#     # form_class = ReferenceForm
+#     success_url = reverse_lazy('reference:reference_list')
+#
+#     def form_valid(self, form):
+#         form.save()
+#         messages.success(self.request, '単位を追加しました。')
+#         return super().form_valid(form)
+#
+#     def form_invalid(self, form):
+#         messages.error(self.request, "単位の追加に失敗しました。")
+#         return super().form_invalid(form)
 
-    def get_success_url(self):
-        return reverse_lazy('reference:reference_list')
 
-    def form_valid(self, form):
-        messages.success(self.request, '単位を更新しました。')
-        return super().form_valid(form)
+# class ReferenceEdit(generic.UpdateView):
+#     model = Reference
+#     template_name = 'reference_edit.html'
+#     # form_class = ReferenceForm
+#
+#     def get_success_url(self):
+#         return reverse_lazy('reference:reference_list')
+#
+#     def form_valid(self, form):
+#         messages.success(self.request, '単位を更新しました。')
+#         return super().form_valid(form)
+#
+#     def form_invalid(self, form):
+#         messages.error(self.request, "単位の更新に失敗しました。")
+#         return super().form_invalid(form)
 
-    def form_invalid(self, form):
-        messages.error(self.request, "単位の更新に失敗しました。")
-        return super().form_invalid(form)
 
-
-class ReferenceDel(generic.DeleteView):
-    model = Reference
-    template_name = 'reference_del.html'
-
-    def post(self, request, *args, **kwargs):
-
-        try:
-            obj = self.get_object()
-            obj.delete()
-            messages.success(self.request, "単位を削除しました。")
-            return redirect('reference:reference_list')
-        except models.ProtectedError as e:
-            messages.error(request, f'「{obj}」は他で使われているため削除がきません。')
-            return redirect('reference:reference_list')
+# class ReferenceDel(generic.DeleteView):
+#     model = Reference
+#     template_name = 'reference_del.html'
+#
+#     def post(self, request, *args, **kwargs):
+#
+#         try:
+#             obj = self.get_object()
+#             obj.delete()
+#             messages.success(self.request, "単位を削除しました。")
+#             return redirect('reference:reference_list')
+#         except models.ProtectedError as e:
+#             messages.error(request, f'「{obj}」は他で使われているため削除がきません。')
+#             return redirect('reference:reference_list')

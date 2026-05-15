@@ -30,11 +30,8 @@
             min-height: 100px;
             /* 浮き出し効果 */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-
-
         }
     </style>
-
     <script>
         // --- ツールバーの処理 ---
         const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
@@ -46,7 +43,7 @@
         ]);
         toolbar.events.on("click", function (id) {
             if (id === "add") {
-                addRow(); // 前に作った関数を呼ぶ
+                addRow();
             }
             if (id === "update") {
                 updateAll();
@@ -56,15 +53,7 @@
             }
         })
 
-        // --- コンテキストメニューの処理 ---
-        const rowMenu = new dhx.ContextMenu(null, {
-            data: [
-                { "id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus" },
-                { "id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus" },
-                { "id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close" },
-                { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
-            ]
-        });
+
 
         // DRFからデータの読み込む（Django の API から取得する場合）
         const dataset = new dhx.DataCollection();
@@ -72,12 +61,21 @@
             .then(response => response.json())
             .then(data => {
                 grid.data.parse(data); // data.units (配列部分) を渡す
-            });
+            })
+            .catch(err => console.error("unitデータ取得失敗:", err));
 
         // Gridの初期化
         const grid = new dhx.Grid("grid_container", {
             columns: [
                 { id: "id", header: [{ text: "ID" }], hidden: true },
+                {
+                    id: "unit_no",
+                    header: [
+                        { text: "表示順 <span style='color:red'>*</span>", align: "center" },
+                    ],
+                    htmlEnable: true,
+                    editable: true
+                },
                 {
                     id: "unit_name",
                     header: [
@@ -88,25 +86,19 @@
                     editable: true
                 },
                 {
-                    id: "actions",
-                    header: [{ text: "Actions", tooltip: true, align: "center", }],
-                    mark: () => "dhx-demo_color--gray",
-                    template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
+                    id: "delete",
+                    header: [{ text: "削除", align: "center" }],
                     align: "center",
-                    tooltip: false, editable: false, sortable: false, htmlEnable: true,
-
+                    width: 80,
+                    htmlEnable: true,
+                    template: () => "<button class='dxi dxi-delete' >削除</button>"
                 }
             ],
-            eventHandlers: {
-                onclick: {
-                    "row-menu": event => rowMenu.showAt(event.target)
-                }
-            },
             autoWidth: true,
             data: dataset, // 作成した DataCollection を直接紐付ける
-            keyNavigation: true,
+            //keyNavigation: true,
             editing: true,
-            dragMode: "both", // ドラッグ＆ドロップを有効にする
+            //dragMode: "both", // ドラッグ＆ドロップを有効にする
             selection: "row",
         });
 
@@ -137,7 +129,7 @@
 
             // 3. 追加した行へフォーカス
             if (newRow) {
-                grid.editCell(newRow, "unit_name");
+                grid.editCell(newRow, "unit_no");
             }
         }
 
@@ -166,96 +158,53 @@
                 });
         }
 
-        // ---　コンテキストメニューの処理 ---
-        rowMenu.events.on("click", id => {
-            const row = grid.selection.getCell()?.row;
-            const rowIndex = grid.data.getIndex(row.id);
-            switch (id) {
-                case "insertRowAbove":
-                    const newAboveRow = grid.data.add({
-                    }, rowIndex);
-                    // 3. 追加した行へフォーカス
-                    if (newAboveRow) {
-                        grid.editCell(newAboveRow, "unit_name");
-                    }
-                    break;
-                case "insertRowBelow":
-                    const newBelowRow = grid.data.add({
-                    }, rowIndex + 1);
-                    console.log("追加された行のID:", rowIndex);
-                    // 3. 追加した行へフォーカス
-                    if (newBelowRow) {
-                        grid.editCell(newBelowRow, "unit_name");
-                    }
-                    break;
-                case "clearRow":
-                    grid.data.update(row.id, {
-                        property: "",
-                        status: "",
-                        client: "",
-                        startDate: "",
-                        endDate: ""
-                    });
-                    break;
-                case "deleteRow":
-                    deleteRow(row.id);
-                    // grid.data.remove(row.id);
-                    break;
-            }
-        });
-
-        // --- 行を右クリックでコンテキストメニューを表示する ---
-        grid.events.on("cellRightClick", (row, column, event) => {
-            event.preventDefault();
-            grid.selection.setCell(row, column);
-            rowMenu.showAt(event.target);
-        });
 
 
         // --- 保存ボタンで一括更新処理 ---
         function updateAll() {
             let hasError = false;
-            const requiredFields = ["unit_name"];
+            const requiredFields = ["unit_no", "unit_name"];
 
+            // 1. 実行前に前回のサーバーエラー赤枠をすべてクリアする
+            grid.data.forEach(row => {
+                requiredFields.forEach(field => {
+                    grid.removeCellCss(row.id, field, "required-error");
+                });
+            });
+
+            // 2. フロントエンドの必須入力チェック
             grid.data.forEach(row => {
                 requiredFields.forEach(field => {
                     const value = row[field];
-
-                    // null, undefined, 空文字 を正確に判定
                     if (value === null || value === undefined || String(value).trim() === "") {
                         grid.addCellCss(row.id, field, "required-error");
                         hasError = true;
-                    } else {
-                        // 入力されていればエラー用の赤枠を消す
-                        grid.removeCellCss(row.id, field, "required-error");
                     }
                 });
             });
 
-
             if (hasError) {
                 dhx.message({
-                    text: "必須項目を入力してください。",
+                    text: "必須項目を入力してください。rr",
                     expire: 3000,
-                    css: "dhx_widget--bg_danger", // 修正: statusからcssへ変更
+                    css: "dhx_widget--bg_danger",
                 });
-                return; // ここで処理を中断
+                return; // 中断
             }
-            // 3. チェック通過後に、最新の綺麗なデータをシリアライズする
 
+            // 3. データ送信
             const allData = grid.data.serialize();
 
             fetch("/unit/bulk_sync/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie('csrftoken') // ✨重要: CSRFトークンを追加
+                    "X-CSRFToken": getCookie('csrftoken')
                 },
                 body: JSON.stringify(allData)
             })
                 .then(response => {
                     if (!response.ok) {
-                        // 修正: サーバーがHTML（403や500エラー）を返した際のエラー落ちを防ぐ
                         const contentType = response.headers.get("content-type");
                         if (contentType && contentType.includes("application/json")) {
                             return response.json().then(errData => { throw errData; });
@@ -266,11 +215,10 @@
                     return response.json();
                 })
                 .then(result => {
-                    // 成功時の処理
                     dhx.message({
                         text: "データの更新が完了しました。",
                         expire: 3000,
-                        css: "dhx_widget--bg_success", // 修正: statusからcssへ変更
+                        css: "dhx_widget--bg_success",
                     });
                 })
                 .catch(err => {
@@ -278,35 +226,49 @@
                     let mainMessage = "入力内容を確認してください。";
 
                     if (typeof err === "object" && err !== null) {
-                        // パターンA: サーバーから [ { id: 1, unit_name: ["..."] } ] のような配列型エラーが返る場合
+                        // パターンA: サーバーから [ { id: "u177...", unit_name: ["..."] } ] の配列型エラーが返る場合
                         if (Array.isArray(err)) {
+                            let firstErrorMessage = "";
+
                             err.forEach(errorRow => {
-                                if (errorRow.id) {
-                                    grid.addCellCss(errorRow.id, "unit_name", "required-error");
-                                    if (errorRow.unit_name) {
-                                        mainMessage = Array.isArray(errorRow.unit_name) ? errorRow.unit_name[0] : errorRow.unit_name;
-                                    }
+                                if (errorRow && errorRow.id) {
+                                    const rowId = errorRow.id;
+                                    Object.keys(errorRow).forEach(field => {
+                                        if (field !== "id") {
+                                            // 該当する行・セルに赤枠クラスを付与
+                                            grid.addCellCss(rowId, field, "required-error");
+                                            // トーストに表示する最初の１つ目のエラー文言を記憶
+                                            if (!firstErrorMessage && Array.isArray(errorRow[field])) {
+                                                firstErrorMessage = errorRow[field][0];
+                                            }
+                                        }
+                                    });
                                 }
                             });
-                            // パターンB: { "unit_name": ["..."] } のように単一オブジェクトで返る場合
-                        } else if (err.unit_name) {
+                            if (firstErrorMessage) {
+                                mainMessage = firstErrorMessage;
+                            }
+                        }
+                        // パターンB: 単一オブジェクトで全体の共通エラー（例: { "detail": "..." }）などが返る場合
+                        else if (err.detail) {
+                            mainMessage = err.detail;
+                        }
+                        // パターンC: 万が一古い単一オブジェクト形式 { "unit_name": ["..."] } で返ってきた場合の互換用
+                        else if (err.unit_name) {
                             mainMessage = Array.isArray(err.unit_name) ? err.unit_name[0] : err.unit_name;
-
-                            // 重複エラーが発生したため、該当行）のセルに赤枠を付与
                             const values = [];
                             grid.data.forEach(row => {
                                 const val = String(row.unit_name || "").trim();
                                 if (val !== "") {
                                     if (values.includes(val)) {
-                                        // 画面内で重複している行に赤枠を付与
                                         grid.addCellCss(row.id, "unit_name", "required-error");
                                     }
                                     values.push(val);
                                 }
                             });
-                        } else if (err.detail) {
-                            mainMessage = err.detail;
                         }
+                    } else if (err instanceof Error) {
+                        mainMessage = err.message;
                     } else {
                         mainMessage = "サーバーとの通信に失敗しました";
                     }
@@ -314,76 +276,67 @@
                     // エラーメッセージをトースト表示
                     dhx.message({
                         text: mainMessage,
-                        css: "dhx_widget--bg_danger", // Suite 9 の赤い背景
+                        css: "dhx_widget--bg_danger",
                         expire: 6000,
                         node: document.body
                     });
                 });
-
         }
+
 
         // --- 削除ボタンの即時実行 ---
-        function deleteRow(rowId) {
-            if (confirm("即時に削除しますか？")) {
-                // サーバーへ削除リクエスト
-                fetch(`/unit/units/${rowId}/`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken')  // ここを追加
-                    },
-                    // body: JSON.stringify(sendingData)
-                })
-                    .then(res => {
-                        if (!res.ok) {
-                            return res.json().then(err => { throw err; });
-                        }
-                        return res.json();
+        grid.events.on("cellClick", (row, col) => {
+            if (col.id === "delete") {
+                if (confirm("即時に削除しますか？")) {
+                    // サーバーへ削除リクエスト
+                    fetch(`/unit/units/${row.id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+                        },
+                        // body: JSON.stringify(sendingData)
                     })
-                    .then(result => {
-                        grid.data.remove(rowId);
-                        dhx.message({
-                            text: "削除しました",
-                            css: "dhx_widget--bg_success",
-                            expire: 3000
+                        .then(res => {
+                            if (!res.ok) {
+                                return res.json().then(err => { throw err; });
+                            }
+                            return res.json();
+                        })
+                        .then(result => {
+                            grid.data.remove(row.id);
+                            dhx.message({
+                                text: "削除しました",
+                                css: "dhx_widget--bg_success",
+                                expire: 3000
+                            });
+                        })
+                        .catch(err => {
+                            const errorMsg = err.detail || err.message || "削除に失敗しました";
+                            dhx.message({
+                                text: errorMsg,
+                                css: "dhx_widget--bg_danger", // 赤いトースト
+                                expire: 6000
+                            });
                         });
-                    })
-                    .catch(err => {
-                        const errorMsg = err.detail || err.message || "削除に失敗しました";
-                        dhx.message({
-                            text: errorMsg,
-                            css: "dhx_widget--bg_danger", // 赤いトースト
-                            expire: 6000
-                        });
-                    });
-            }
-        }
-
-        // --- 
-        grid.events.on("afterEditEnd", (value, row, col) => {
-            // 必須にしたいカラムIDを指定（例: unit_display）
-            if (col.id === "unit_name") {
-                if (!value || value.trim() === "") {
-                    // 空ならエラークラスを適用
-                    grid.addCellCss(row.id, col.id, "required-error");
-                } else {
-                    // 入力されていればエラークラスを削除
-                    grid.removeCellCss(row.id, col.id, "required-error");
                 }
             }
         });
 
-        // 行のドラグアンドドロップ
-        grid.events.on("afterRowDrag", (data, id, targetId) => {
-            // 1. 画面の上から順番に全行をループ
-            grid.data.forEach((row, index) => {
-                // 各行の sort_order プロパティを新しい連番（0, 1, 2...）で更新
-                grid.data.update(row.id, { sort_order: index });
-            });
+        // --- 
+        // grid.events.on("afterEditEnd", (value, row, col) => {
+        //     // 必須にしたいカラムIDを指定（例: unit_display）
+        //     if (col.id === "unit_name") {
+        //         if (!value || value.trim() === "") {
+        //             // 空ならエラークラスを適用
+        //             grid.addCellCss(row.id, col.id, "required-error");
+        //         } else {
+        //             // 入力されていればエラークラスを削除
+        //             grid.removeCellCss(row.id, col.id, "required-error");
+        //         }
+        //     }
+        // });
 
-            // 2. 作成済みの updateAll 関数を呼び出してサーバーへ最新データを送信
-            // (自動で保存させたい場合に実行。ボタンを押して保存させたい場合はこの行は不要です)
-            // updateAll();
-        });
+
     </script>
 </body>
 

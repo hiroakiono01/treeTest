@@ -13,7 +13,7 @@ class Unit(models.Model):
         db_table = 'unit'
 
     id = models.AutoField(primary_key=True)
-    # unit_no = models.IntegerField(null=True, blank=True, verbose_name='unit No', unique=True)
+    unit_no = models.IntegerField(null=True, blank=True, verbose_name='unit No', unique=True)
     unit_name = models.CharField(max_length=15, null=True, blank=True, verbose_name='unit name', unique=True)
     sort_order = models.IntegerField(default=0)
 
@@ -30,6 +30,7 @@ class Reference(models.Model):
     calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分', default='0')
     unit_name = models.ForeignKey(Unit, blank=True, null=True, verbose_name='予算単位', related_name='+', on_delete=models.PROTECT)
     budget_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算単価')
+    sort_order = models.IntegerField(default=0)
 
     def get_calcu_cls_cha(self) -> str:
         if self.calcu_cls == '0':
