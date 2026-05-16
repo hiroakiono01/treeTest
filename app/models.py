@@ -13,7 +13,7 @@ class Unit(models.Model):
         db_table = 'unit'
 
     id = models.AutoField(primary_key=True)
-    unit_no = models.IntegerField(null=True, blank=True, verbose_name='unit No', unique=True)
+    unit_no = models.IntegerField(null=True, blank=True, verbose_name='unit No', unique=True, default=0)
     unit_name = models.CharField(max_length=15, null=True, blank=True, verbose_name='unit name', unique=True)
     sort_order = models.IntegerField(default=0)
 
