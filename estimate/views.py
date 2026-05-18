@@ -1,16 +1,13 @@
-from django.contrib import messages
+from django.db import models
 from django.db import models
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
-from django.views import generic
+from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from api.serializers import EstimateSerializer
 from app.models import Estimate
-from estimate.forms import EstimateAddForm
 
 
 def estimate_list_call(request):
@@ -64,56 +61,56 @@ def estimate_detail(request, pk):
 #
 
 
-class EstimateList(generic.ListView):
-    """ 見積一覧表　照会画面 """
-    context_object_name = 'estimate_list'
-    template_name = 'estimate_list.html'
-    model = Estimate
-
-    def get_queryset(self):
-        estimate = Estimate.objects.all()
-        return estimate
-
-
-class EstimateAdd(generic.CreateView):
-    template_name = 'estimate_add.html'
-    success_url = reverse_lazy('estimate:estimate_list')
-    form_class = EstimateAddForm
-
-    def form_valid(self, form):
-        messages.success(self.request, 'create estimate')
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.error(self.request, "invalid estimate")
-        return super().form_invalid(form)
-
-
-class EstimateEdit(generic.UpdateView):
-    model = Estimate
-    template_name = 'estimate_edit.html'
-    success_url = reverse_lazy('estimate:estimate_list')
-    form_class = EstimateAddForm
-
-    def form_valid(self, form):
-        messages.success(self.request, 'edit estimate')
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.error(self.request, "invalid estimate")
-        return super().form_invalid(form)
-
-
-class EstimateDel(generic.DeleteView):
-    model = Estimate
-    template_name = 'estimate_del.html'
-
-    def post(self, request, *args, **kwargs):
-        try:
-            obj = self.get_object()
-            obj.delete()
-            messages.success(self.request, "delete estimate")
-            return redirect('estimate:estimate_list')
-        except models.ProtectedError as e:
-            messages.error(request, f'「{obj}」estimate use other')
-            return redirect('estimate:estimate_list')
+# class EstimateList(generic.ListView):
+#     """ 見積一覧表　照会画面 """
+#     context_object_name = 'estimate_list'
+#     template_name = 'estimate_list.html'
+#     model = Estimate
+#
+#     def get_queryset(self):
+#         estimate = Estimate.objects.all()
+#         return estimate
+#
+#
+# class EstimateAdd(generic.CreateView):
+#     template_name = 'estimate_add.html'
+#     success_url = reverse_lazy('estimate:estimate_list')
+#     form_class = EstimateAddForm
+#
+#     def form_valid(self, form):
+#         messages.success(self.request, 'create estimate')
+#         return super().form_valid(form)
+#
+#     def form_invalid(self, form):
+#         messages.error(self.request, "invalid estimate")
+#         return super().form_invalid(form)
+#
+#
+# class EstimateEdit(generic.UpdateView):
+#     model = Estimate
+#     template_name = 'estimate_edit.html'
+#     success_url = reverse_lazy('estimate:estimate_list')
+#     form_class = EstimateAddForm
+#
+#     def form_valid(self, form):
+#         messages.success(self.request, 'edit estimate')
+#         return super().form_valid(form)
+#
+#     def form_invalid(self, form):
+#         messages.error(self.request, "invalid estimate")
+#         return super().form_invalid(form)
+#
+#
+# class EstimateDel(generic.DeleteView):
+#     model = Estimate
+#     template_name = 'estimate_del.html'
+#
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             obj = self.get_object()
+#             obj.delete()
+#             messages.success(self.request, "delete estimate")
+#             return redirect('estimate:estimate_list')
+#         except models.ProtectedError as e:
+#             messages.error(request, f'「{obj}」estimate use other')
+#             return redirect('estimate:estimate_list')
