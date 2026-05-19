@@ -93,6 +93,7 @@ export declare class BlockSelection implements IBlockSelection {
     isDisabled(): boolean;
     destructor(): void;
     toHTML(): VNode | null;
+    private _calculateClippedGeometry;
     private _getAreaNode;
     private _getStartCellNode;
     private _getHandleAreaNode;
@@ -116,5 +117,6 @@ export declare class BlockSelection implements IBlockSelection {
     private _removeHandlers;
     private _getPageCoords;
     private _cellHandler;
+    private _getSourceCellIndex;
     private _paint;
 }

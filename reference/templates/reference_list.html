@@ -39,7 +39,7 @@
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
             { type: "spacer" },
-            { id: "reset", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
+            { id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
             { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
         ]);
         toolbar.events.on("click", function (id) {
@@ -49,7 +49,7 @@
             if (id === "update") {
                 updateAll();
             }
-            if (id === "reset") {
+            if (id === "resetGrid") {
                 resetGrid();
             }
         })

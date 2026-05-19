@@ -90,11 +90,11 @@ class Task(models.Model):
     budget_quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算数量')
     budget_unit = models.ForeignKey(Unit, blank=True, null=True, verbose_name='予算単位', related_name='+', on_delete=models.PROTECT)
     budget_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算単価')
-    budget_amount = models.IntegerField(null=True, blank=True, verbose_name='予算金額')
+    budget_amount = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True, verbose_name='予算金額')
     quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='見積数量')
     unit = models.ForeignKey(Unit, blank=True, null=True, verbose_name='見積単位', related_name='+', on_delete=models.PROTECT)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='見積単価')
-    amount = models.IntegerField(null=True, blank=True, verbose_name='見積金額')
+    amount = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True, verbose_name='見積金額')
     markup_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='掛率')
     calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分', default='0')
 

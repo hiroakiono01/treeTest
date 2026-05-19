@@ -6,14 +6,12 @@ from app.models import Task, Estimate, Unit, Reference
 
 
 class UnitSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Unit
-        fields = ('id', 
-                  'unit_no', 
-                  'unit_name', 
+        fields = ('id',
+                  'unit_no',
+                  'unit_name',
                   'sort_order')
-
 
 
 class ReferenceSerializer(serializers.ModelSerializer):

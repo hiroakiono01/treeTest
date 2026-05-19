@@ -31,7 +31,7 @@ export declare class ExtendedGrid extends Grid implements IExtendedGrid {
     protected _afterEditEndProcess(value: any, editableRow: any, editableColumn: any): void;
     protected _setSort(): void;
     protected getNormalizeContentHeight(row: IFooter | IHeader, col: ICol, config: IGridConfig): number;
-    protected _prepareData(data: IDataItem[] | IDataCollection): IDataItem[] | IRow[];
+    protected _prepareData(data: IDataItem[] | IDataCollection): IRow[] | IDataItem[];
     protected _prepareDataFromTo(data: IDataCollection, from: number, to: number): IDataItem[];
     protected _dragStart(event: any): void;
     protected _group(order: IGroupOrderItem[]): void;
