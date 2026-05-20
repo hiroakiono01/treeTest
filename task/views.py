@@ -73,7 +73,7 @@ def task_list(request, estimate_no):
     if request.method == 'GET':
         if 'text/html' in request.headers.get('Accept', ''):
             return render(request, 'task_list.html', {'estimate_no': estimate_no})
-        tasks = Task.objects.filter(estimate_no=estimate_no)
+        tasks = Task.objects.filter(estimate_no=estimate_no).order_by("sort_order").all()
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
