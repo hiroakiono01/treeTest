@@ -557,7 +557,59 @@
             grid.expandAll();
         }
 
+function moveRowUp() {
+    // 現在選択されているセル/行を取得
+    const selectedCell = grid.selection.getCell();
+    if (!selectedCell || !selectedCell.row) {
+        alert("移動する行を選択してください。");
+        return;
+    }
+    const targetId = selectedCell.row.id;
 
+    // 現在のインデックス（並び順）を取得
+    const currentIndex = grid.data.getIndex(targetId);
+
+    // すでに一番上にある場合はこれ以上上に移動できない
+    if (currentIndex <= 0) {
+        return;
+    }
+
+    // 💡 Suite 9のmoveメソッドを使用：targetIdの要素を「currentIndex - 1」の位置へ移動
+    grid.data.move(targetId, currentIndex - 1);
+
+    // 移動後も選択状態をキープする
+    grid.selection.setCell(targetId, selectedCell.column.id);
+}
+
+/**
+ * 2. 選択中の行を「1つ下」に移動させる関数
+ */
+function moveRowDown() {
+    // 現在選択されているセル/行を取得
+    const selectedCell = grid.selection.getCell();
+    if (!selectedCell || !selectedCell.row) {
+        alert("移動する行を選択してください。");
+        return;
+    }
+    const targetId = selectedCell.row.id;
+
+    // 現在のインデックス（並び順）を取得
+    const currentIndex = grid.data.getIndex(targetId);
+
+    // 全体のデータ数を取得
+    const totalCount = grid.data.getLength();
+
+    // すでに一番下にある場合はこれ以上下に移動できない
+    if (currentIndex >= totalCount - 1) {
+        return;
+    }
+
+    // 💡 Suite 9のmoveメソッドを使用：targetIdの要素を「currentIndex + 1」の位置へ移動
+    grid.data.move(targetId, currentIndex + 1);
+
+    // 移動後も選択状態をキープする
+    grid.selection.setCell(targetId, selectedCell.column.id);
+}
 
 
         // --- Unit一覧を取得してGridのプルダウンに反映 ---
