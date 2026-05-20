@@ -68,6 +68,8 @@
                 { "id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus" },
                 { "id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus" },
                 { "id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close" },
+                { "id": "copySelectedTree", "value": "Copy row", "icon": "dxi dxi-copy" },
+                { "id": "pasteTreeHierarchy", "value": "Paste row", "icon": "dxi dxi-paste" },
                 { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
             ]
         });
@@ -211,41 +213,39 @@
             },
             autoWidth: true,
             keyNavigation: true,
+            selection: "cell",
             editing: true,
             sortable: false,
             selection: "row",
             dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
-            dropBehaviour: "complex" // 階層の移動（子要素へのドロップなど）を許可
+            dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
+            // clipboard: "row"
             // autoEmptyRow: true
         });
 
-        // 💡 数量または単価が変更されたら、その場で金額データを書き換える
+        // 💡--- 値の自動計算 ----
         grid.events.on("afterEditEnd", function (value, row, column) {
-            // 予算数量（budget_quantity）または予算単価（budget_price）が編集された場合
-            if (column.id === "budget_quantity" || column.id === "budget_price") {
-                const qty = parseFloat(row.budget_quantity);
-                const price = parseFloat(row.budget_price);
-                if (!isNaN(qty) && !isNaN(price)) {
-                    // 計算結果を「生データ」として直接Gridに保存（これが出荷データになります）
+
+            // 1. 数量（budget_quantity=>quantity）のコピー処理
+            if (column.id === "quantity" || column.id === "budget_quantity") {
+                const currentQty = parseFloat(row.quantity);
+                if (isNaN(currentQty) || row.quantity === "" || row.quantity === null) {
                     grid.data.update(row.id, {
-                        budget_amount: Math.round(qty * price)
+                        quantity: row.budget_quantity
                     });
-                } else {
-                    // どちらかが空になったら金額も0にする
-                    grid.data.update(row.id, {
-                        budget_amount: 0
-                    });
-                }
-                // 階層全体の再計算関数（以前作成したもの）を呼び出して親要素も更新
-                if (typeof calculateTreeSum === "function") {
-                    calculateTreeSum();
                 }
             }
-        });
 
-        // 💡 数量または単価が変更されたら、その場で金額データを書き換える
-        grid.events.on("afterEditEnd", function (value, row, column) {
-            // 予算数量（budget_quantity）または予算単価（budget_price）が編集された場合
+            // 2. 単位（budget_unit=>unit）のコピー処理
+            if (column.id === "unit" || column.id === "budget_unit") {
+                const currentUnit = row.unit;
+                if (!currentUnit || currentUnit.toString().trim() === "") {
+                    grid.data.update(row.id, {
+                        unit: row.budget_unit
+                    });
+                }
+            }
+
             if (column.id === "quantity" || column.id === "price") {
                 const qty = parseFloat(row.quantity);
                 const price = parseFloat(row.price);
@@ -254,18 +254,118 @@
                     grid.data.update(row.id, {
                         amount: Math.round(qty * price)
                     });
-                } else {
-                    // どちらかが空になったら金額も0にする
-                    grid.data.update(row.id, {
-                        amount: null
-                    });
                 }
-                // 階層全体の再計算関数（以前作成したもの）を呼び出して親要素も更新
-                if (typeof calculateTreeSum === "function") {
-                    calculateTreeSum();
+            }
+
+            // 4. 予算数量または予算単価が変更された場合の、予算金額（budget_amount）計算
+                if (column.id === "budget_quantity" || column.id === "budget_price") {
+                    const qty = parseFloat(row.budget_quantity);
+                    const price = parseFloat(row.budget_price);
+                    if (!isNaN(qty) && !isNaN(price)) {
+                        grid.data.update(row.id, {
+                            budget_amount: Math.round(qty * price)
+                        });
+                    } else {
+                        grid.data.update(row.id, {
+                            budget_amount: 0
+                        });
+                    }
+                }
+
+
+             // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更
+            if (column.id === "price" || column.id === "quantity" || column.id === "markup_rate") {
+                const currentPrice = parseFloat(row.price);
+                if (isNaN(currentPrice) || row.price === "" || row.price === null) {
+                    const bPrice = parseFloat(row.budget_price);
+                    const rate = parseFloat(row.markup_rate);
+
+                    // 両方に有効な数値が入っている場合のみ掛け算（片方でも無ければ予算単価をそのままコピー）
+                    if (!isNaN(bPrice) && !isNaN(rate)) {
+                        grid.data.update(row.id, {
+                           price: Math.round((bPrice * rate) / 100)
+                        });
+                    }
+                    else if (!isNaN(bPrice)) {
+                        grid.data.update(row.id, {
+                            price: bPrice
+                        });
+                    }
+                }
+            }
+
+<!--            // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更-->
+<!--            if (column.id === "price" || column.id === "budget_price" || column.id === "markup_rate") {-->
+<!--                const currentPrice = parseFloat(row.price);-->
+<!--                if (isNaN(currentPrice) || row.price === "" || row.price === null) {-->
+<!--                    const bPrice = parseFloat(row.budget_price);-->
+<!--                    const rate = parseFloat(row.markup_rate);-->
+
+<!--                    // 両方に有効な数値が入っている場合のみ掛け算（片方でも無ければ予算単価をそのままコピー）-->
+<!--                    if (!isNaN(bPrice) && !isNaN(rate)) {-->
+<!--                        grid.data.update(row.id, {-->
+<!--                            price: Math.round(bPrice * rate)-->
+<!--                        });-->
+<!--                    } else if (!isNaN(bPrice)) {-->
+<!--                        grid.data.update(row.id, {-->
+<!--                            price: bPrice-->
+<!--                        });-->
+<!--                    }-->
+<!--                }-->
+<!--            }-->
+
+            // 階層全体の再計算関数（以前作成したもの）を呼び出して親要素も更新
+            if (typeof calculateTreeSum === "function") {
+                calculateTreeSum();
+            }
+
+            // 💡 Enterキーで編集が終わった場合のみ実行
+            if (window.event && (window.event.key === "Enter" || window.event.keyCode === 13)) {
+                const columns = grid.config.columns;
+                const currentIndex = columns.findIndex(col => col.id === column.id);
+
+                // 右隣に列が存在するかチェック
+                if (currentIndex !== -1 && currentIndex < columns.length - 1) {
+                    const nextColumn = columns[currentIndex + 1];
+
+                    // 10ミリ秒だけ処理をずらすことで、Suite9の内部確定処理との衝突を防ぎます
+                    setTimeout(() => {
+                        // 右のセルを選択状態にする
+                        grid.selection.setCell(row.id, nextColumn.id);
+                        // そのセルを編集モードにする
+                        grid.editCell(row.id, nextColumn.id);
+                    }, 10);
                 }
             }
         });
+
+
+
+
+
+<!--        // 💡 数量または単価が変更されたら、その場で金額データを書き換える-->
+<!--        grid.events.on("afterEditEnd", function (value, row, column) {-->
+<!--            // 予算数量（budget_quantity）または予算単価（budget_price）が編集された場合-->
+<!--            if (column.id === "quantity" || column.id === "price") {-->
+<!--                const qty = parseFloat(row.quantity);-->
+<!--                const price = parseFloat(row.price);-->
+<!--                if (!isNaN(qty) && !isNaN(price)) {-->
+<!--                    // 計算結果を「生データ」として直接Gridに保存（これが出荷データになります）-->
+<!--                    grid.data.update(row.id, {-->
+<!--                        amount: Math.round(qty * price)-->
+<!--                    });-->
+<!--                } else {-->
+<!--                    // どちらかが空になったら金額も0にする-->
+<!--                    grid.data.update(row.id, {-->
+<!--                        amount: null-->
+<!--                    });-->
+<!--                }-->
+<!--                // 階層全体の再計算関数（以前作成したもの）を呼び出して親要素も更新-->
+<!--                if (typeof calculateTreeSum === "function") {-->
+<!--                    calculateTreeSum();-->
+<!--                }-->
+<!--            }-->
+<!--        });-->
 
         function calculateTreeSums() {
             grid.data.events.detach("change");
@@ -363,6 +463,13 @@
                 case "deleteRow":
                     deleteRow(row.id);
                     // grid.data.remove(row.id);
+                    break;
+
+                case "copySelectedTree":
+                    copySelectedTree();
+                    break;
+                case "pasteTreeHierarchy":
+                    pasteTreeHierarchy();
                     break;
             }
         });
@@ -471,7 +578,99 @@
             });
         //.catch(error => console.error("Error:", error));
 
+// 💡 コピーしたデータを一時的に保存しておくための「箱」（グローバル変数）
+let clipboardTreeData = null;
 
+/**
+ * 1. 選択中の行（ツリー階層ごと）をコピーする関数
+ */
+function copySelectedTree() {
+    const selectedCell = grid.selection.getCell();
+    if (!selectedCell || !selectedCell.row) {
+        alert("コピーする行を選択してください。");
+        return;
+    }
+    const targetRowId = selectedCell.row.id;
+
+    // 選択された行とその配下の子要素をすべて集める配列
+    const nodesToCopy = [];
+
+    // 再帰的に子要素を探索してデータを収集する関数
+    function collectNodes(nodeId) {
+        const rowData = grid.data.getItem(nodeId);
+        if (!rowData) return;
+
+        // 元データが変更されないよう、中身を複製して保存
+        nodesToCopy.push({ ...rowData });
+
+        // 子要素があれば同じように集める
+        if (rowData.parent) {
+            const children = grid.data.getValues().filter(item => item.parent === nodeId);
+            children.forEach(child => collectNodes(child.id));
+        }
+    }
+
+    // データの収集を実行
+    collectNodes(targetRowId);
+
+    // 一時保存用の箱にデータを保存
+    clipboardTreeData = {
+        rootId: targetRowId,
+        nodes: nodesToCopy
+    };
+
+    alert("ツリー構造をコピーしました。");
+}
+
+/**
+ * 2. コピーしたツリーを、現在選択中の行の「中に（子要素として）」貼り付ける関数
+ */
+function pasteTreeHierarchy() {
+    if (!clipboardTreeData || clipboardTreeData.nodes.length === 0) {
+        alert("コピーされたデータがありません。");
+        return;
+    }
+
+    const selectedCell = grid.selection.getCell();
+    if (!selectedCell || !selectedCell.row) {
+        alert("貼り付け先の親となる行を選択してください。");
+        return;
+    }
+    const targetParentId = selectedCell.row.id;
+
+    // 古いIDと新しいIDの対応表（階層関係を維持するため）
+    const idMap = {};
+
+    // 1. まずすべての新しいIDをあらかじめ発行する
+    clipboardTreeData.nodes.forEach(node => {
+        idMap[node.id] = "copy_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
+    });
+
+    // 2. データをGridに追加していく
+    clipboardTreeData.nodes.forEach(node => {
+        const clonedData = { ...node };
+        clonedData.id = idMap[node.id]; // 新しいIDを割り当て
+
+        // 親IDの紐付けを決定する
+        if (node.id === clipboardTreeData.rootId) {
+            // 一番上の要素は、選択した行が新しい親になる
+            clonedData.parent = targetParentId;
+        } else {
+            // 子要素や孫要素は、対応表から新しい親のIDを取得する
+            clonedData.parent = idMap[node.parent];
+        }
+
+        // Gridにデータを追加
+        grid.data.add(clonedData, -1, clonedData.parent);
+    });
+
+    // 3. 金額データなどの再計算
+    if (typeof calculateTreeSum === "function") {
+        calculateTreeSum();
+    }
+
+    alert("貼り付けが完了しました。");
+}
 
 
 <!--    // 1. 現在選択されている行のIDを取得-->
