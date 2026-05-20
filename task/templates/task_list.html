@@ -17,18 +17,23 @@
     <div id="grid_container"></div>
     <style>
         #toolbar_container {
-            place-content: center;
             width: 1500px;
-        }
+            max-width: 1500px;
+
+                    }
 
         #grid_container {
-            width: 1500px;
+            width: 100%;
             max-width: 1500px;
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
             height: calc(100vh - 150px);
             min-height: 100px;
             /* 浮き出し効果 */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                /* 💡 修正：Grid自体も画面中央に寄せる設定を追加 */
+            margin: 0 auto;
+            /* 💡 念のためGrid内部の余計なはみ出しを防ぐ */
+            overflow: hidden;
         }
     </style>
 
@@ -38,8 +43,11 @@
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
             { type: "spacer" },
-            { id: "expandAll", type: "button", value: "展開する" },
-            { id: "collapseAll", type: "button", value: "折りたたむ" },
+            { id: "moveRowUp", type: "button", value:"上へ移動", icon: "dxi dxi-arrow-up", color: "primary", },
+            { id: "moveRowDown", type: "button", value:"下へ移動", icon: "dxi dxi-arrow-down", color: "primary", },
+
+            { id: "expandAll", type: "button", value: "展開する", icon: "dxi dxi-folder-open" },
+            { id: "collapseAll", type: "button", value: "折りたたむ", icon: "dxi dxi-folder"},
             { type: "spacer" },
             { id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
             { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
@@ -50,6 +58,12 @@
             }
             if (id === "update") {
                 updateAll();
+            }
+            if (id === "moveRowUp") {
+                moveRowUp();
+            }
+            if (id === "moveRowDown") {
+                moveRowDown();
             }
             if (id === "expandAll") {
                 expandAll();
@@ -544,6 +558,8 @@
         }
 
 
+
+
         // --- Unit一覧を取得してGridのプルダウンに反映 ---
         const unitFields = ["budget_unit", "unit"];
         fetch("/api/unit-options/")
@@ -591,6 +607,7 @@ function copySelectedTree() {
         return;
     }
     const targetRowId = selectedCell.row.id;
+    console.log("copy")
 
     // 選択された行とその配下の子要素をすべて集める配列
     const nodesToCopy = [];
@@ -603,11 +620,12 @@ function copySelectedTree() {
         // 元データが変更されないよう、中身を複製して保存
         nodesToCopy.push({ ...rowData });
 
-        // 子要素があれば同じように集める
-        if (rowData.parent) {
-            const children = grid.data.getValues().filter(item => item.parent === nodeId);
-            children.forEach(child => collectNodes(child.id));
-        }
+        // ★修正点: getValues の代わりに Suite 9 で動く map を使用して子要素を探す
+        const allItems = grid.data.map(item => item);
+        const children = allItems.filter(item => item.parent === nodeId);
+
+        // 子要素があれば同じように再帰で集める
+        children.forEach(child => collectNodes(child.id));
     }
 
     // データの収集を実行
@@ -638,33 +656,39 @@ function pasteTreeHierarchy() {
     }
     const targetParentId = selectedCell.row.id;
 
-    // 古いIDと新しいIDの対応表（階層関係を維持するため）
+    // 古いIDと「新しくDHTMLXが発行したuから始まる自動ID」の対応表
     const idMap = {};
 
-    // 1. まずすべての新しいIDをあらかじめ発行する
-    clipboardTreeData.nodes.forEach(node => {
-        idMap[node.id] = "copy_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
-    });
+    // 💡 データの破壊を防ぐため、clipboardTreeData の中身をディープコピーしてループを回す
+    const nodesToPaste = JSON.parse(JSON.stringify(clipboardTreeData.nodes));
 
-    // 2. データをGridに追加していく
-    clipboardTreeData.nodes.forEach(node => {
-        const clonedData = { ...node };
-        clonedData.id = idMap[node.id]; // 新しいIDを割り当て
+    // データをGridに追加していく
+    nodesToPaste.forEach(node => {
+        const oldId = node.id;
 
-        // 親IDの紐付けを決定する
-        if (node.id === clipboardTreeData.rootId) {
-            // 一番上の要素は、選択した行が新しい親になる
-            clonedData.parent = targetParentId;
+        // 1. コピー元の古いIDを完全に消去（DHTMLXに「u〜」の自動IDを作らせるため）
+        delete node.id;
+
+        // 2. 親ID（parent）の紐付けを決定する
+        if (oldId === clipboardTreeData.rootId) {
+            // 一番上の親ノードは、選択した行が新しい親になる
+            node.parent = targetParentId;
         } else {
-            // 子要素や孫要素は、対応表から新しい親のIDを取得する
-            clonedData.parent = idMap[node.parent];
+            // 子要素や孫要素は、対応表（idMap）から「新しく発行されたu〜のID」を取得して親にする
+            node.parent = idMap[node.parent];
         }
 
-        // Gridにデータを追加
-        grid.data.add(clonedData, -1, clonedData.parent);
+        // 💡 3. DHTMLX Suite 9 の仕様に基づき、オブジェクト内ではなく「第3引数」で親IDを渡して追加する [1]
+        // 第1引数: 追加するデータオブジェクト、第2引数: 挿入位置（-1は末尾）、第3引数: 親のID [1]
+        const addedRow = grid.data.add(node, -1, node.parent);
+
+        if (addedRow && addedRow.id) {
+            // DHTMLXが自動生成した「u〜」のIDを対応表にメモ（次の世代の子要素が使えるようにする）
+            idMap[oldId] = addedRow.id;
+        }
     });
 
-    // 3. 金額データなどの再計算
+    // 4. 金額データなどの再計算
     if (typeof calculateTreeSum === "function") {
         calculateTreeSum();
     }
