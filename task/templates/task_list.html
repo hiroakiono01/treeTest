@@ -1,5 +1,6 @@
-<html lang="ja">
 
+{% extends "base.html" %}
+{% block contents %}
 <head>
     {% load static %}
     {% csrf_token %}
@@ -17,20 +18,23 @@
     <div id="grid_container"></div>
     <style>
         #toolbar_container {
-            width: 1500px;
-            max-width: 1500px;
-
-                    }
+            width: calc(100vw - 40px);
+            max-width: none;
+            /* 💡 画面の中央に配置する */
+            margin: 0 auto;
+        }
 
         #grid_container {
-            width: 100%;
-            max-width: 1500px;
+            width: calc(100vw - 40px);
+            max-width: none;
+            /* 💡 画面の中央に配置する */
+            margin: 0 auto;
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
-            height: calc(100vh - 150px);
+            height: calc(100vh - 100px);
             min-height: 100px;
             /* 浮き出し効果 */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                /* 💡 修正：Grid自体も画面中央に寄せる設定を追加 */
+            /* 💡 修正：Grid自体も画面中央に寄せる設定を追加 */
             margin: 0 auto;
             /* 💡 念のためGrid内部の余計なはみ出しを防ぐ */
             overflow: hidden;
@@ -38,16 +42,24 @@
     </style>
 
     <script>
+        window.addEventListener("resize", function () {
+            if (grid) {
+                grid.paint(); /* 💡 コンテナの100%幅に合わせて枠線を再描画 */
+            }
+        });
+
+
+
         // --- ツールバーの処理 ---
         const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
             { type: "spacer" },
-            { id: "moveRowUp", type: "button", value:"上へ移動", icon: "dxi dxi-arrow-up", color: "primary", },
-            { id: "moveRowDown", type: "button", value:"下へ移動", icon: "dxi dxi-arrow-down", color: "primary", },
+            { id: "moveRowUp", type: "button", value: "上へ移動", icon: "dxi dxi-arrow-up", color: "primary", },
+            { id: "moveRowDown", type: "button", value: "下へ移動", icon: "dxi dxi-arrow-down", color: "primary", },
 
             { id: "expandAll", type: "button", value: "展開する", icon: "dxi dxi-folder-open" },
-            { id: "collapseAll", type: "button", value: "折りたたむ", icon: "dxi dxi-folder"},
+            { id: "collapseAll", type: "button", value: "折りたたむ", icon: "dxi dxi-folder" },
             { type: "spacer" },
             { id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
             { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
@@ -129,7 +141,16 @@
                     { id: "1", value: "加算しない" },
                     { id: "2", value: "税抜合計" },
                     { id: "3", value: "消費税" }
-                ]
+                ],
+                // 💡 セルにカスタムCSSクラスを適用するための関数
+                htmlEnable: true,
+                css: function (value, row, col) {
+                    // 区分が "2" または "3" の場合はグレーにするクラスを返す
+                    if (row.calcu_cls === "2" || row.calcu_cls === "3") {
+                        return "cell-disabled";
+                    }
+                    return "";
+                }
             },
             {
                 id: "budget_quantity",
@@ -225,7 +246,7 @@
             group: {
                 panel: false,   // Disable the group panel
             },
-            autoWidth: true,
+            // autoWidth: true,
             keyNavigation: true,
             selection: "cell",
             editing: true,
@@ -235,6 +256,21 @@
             dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
             // clipboard: "row"
             // autoEmptyRow: true
+        });
+        // 💡 2. 編集を開始する直前にインターセプト（編集不可の制御）
+        grid.events.on("beforeEditStart", function (row, col) {
+            // 対象の列が「calcu_cls」かつ、値が "2" または "3" の場合は編集をキャンセル
+            if (col.id === "calcu_cls" && (row.calcu_cls === "2" || row.calcu_cls === "3")) {
+                return false; // falseを返すと編集モードになりません
+            }
+            return true;
+        });
+
+        // 💡 3. 値が変更されたら背景色をリアルタイムに更新するための設定
+        grid.events.on("afterEditEnd", function (value, row, col) {
+            if (col.id === "calcu_cls") {
+                grid.paint(); // 画面を再描画してCSS（背景色）を反映させる
+            }
         });
 
         // 💡--- 値の自動計算 ----
@@ -272,22 +308,22 @@
             }
 
             // 4. 予算数量または予算単価が変更された場合の、予算金額（budget_amount）計算
-                if (column.id === "budget_quantity" || column.id === "budget_price") {
-                    const qty = parseFloat(row.budget_quantity);
-                    const price = parseFloat(row.budget_price);
-                    if (!isNaN(qty) && !isNaN(price)) {
-                        grid.data.update(row.id, {
-                            budget_amount: Math.round(qty * price)
-                        });
-                    } else {
-                        grid.data.update(row.id, {
-                            budget_amount: 0
-                        });
-                    }
+            if (column.id === "budget_quantity" || column.id === "budget_price") {
+                const qty = parseFloat(row.budget_quantity);
+                const price = parseFloat(row.budget_price);
+                if (!isNaN(qty) && !isNaN(price)) {
+                    grid.data.update(row.id, {
+                        budget_amount: Math.round(qty * price)
+                    });
+                } else {
+                    grid.data.update(row.id, {
+                        budget_amount: 0
+                    });
                 }
+            }
 
 
-             // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更
+            // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更
             if (column.id === "price" || column.id === "quantity" || column.id === "markup_rate") {
                 const currentPrice = parseFloat(row.price);
                 if (isNaN(currentPrice) || row.price === "" || row.price === null) {
@@ -297,7 +333,7 @@
                     // 両方に有効な数値が入っている場合のみ掛け算（片方でも無ければ予算単価をそのままコピー）
                     if (!isNaN(bPrice) && !isNaN(rate)) {
                         grid.data.update(row.id, {
-                           price: Math.round((bPrice * rate) / 100)
+                            price: Math.round((bPrice * rate) / 100)
                         });
                     }
                     else if (!isNaN(bPrice)) {
@@ -308,25 +344,6 @@
                 }
             }
 
-<!--            // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更-->
-<!--            if (column.id === "price" || column.id === "budget_price" || column.id === "markup_rate") {-->
-<!--                const currentPrice = parseFloat(row.price);-->
-<!--                if (isNaN(currentPrice) || row.price === "" || row.price === null) {-->
-<!--                    const bPrice = parseFloat(row.budget_price);-->
-<!--                    const rate = parseFloat(row.markup_rate);-->
-
-<!--                    // 両方に有効な数値が入っている場合のみ掛け算（片方でも無ければ予算単価をそのままコピー）-->
-<!--                    if (!isNaN(bPrice) && !isNaN(rate)) {-->
-<!--                        grid.data.update(row.id, {-->
-<!--                            price: Math.round(bPrice * rate)-->
-<!--                        });-->
-<!--                    } else if (!isNaN(bPrice)) {-->
-<!--                        grid.data.update(row.id, {-->
-<!--                            price: bPrice-->
-<!--                        });-->
-<!--                    }-->
-<!--                }-->
-<!--            }-->
 
             // 階層全体の再計算関数（以前作成したもの）を呼び出して親要素も更新
             if (typeof calculateTreeSum === "function") {
@@ -352,34 +369,6 @@
                 }
             }
         });
-
-
-
-
-
-<!--        // 💡 数量または単価が変更されたら、その場で金額データを書き換える-->
-<!--        grid.events.on("afterEditEnd", function (value, row, column) {-->
-<!--            // 予算数量（budget_quantity）または予算単価（budget_price）が編集された場合-->
-<!--            if (column.id === "quantity" || column.id === "price") {-->
-<!--                const qty = parseFloat(row.quantity);-->
-<!--                const price = parseFloat(row.price);-->
-<!--                if (!isNaN(qty) && !isNaN(price)) {-->
-<!--                    // 計算結果を「生データ」として直接Gridに保存（これが出荷データになります）-->
-<!--                    grid.data.update(row.id, {-->
-<!--                        amount: Math.round(qty * price)-->
-<!--                    });-->
-<!--                } else {-->
-<!--                    // どちらかが空になったら金額も0にする-->
-<!--                    grid.data.update(row.id, {-->
-<!--                        amount: null-->
-<!--                    });-->
-<!--                }-->
-<!--                // 階層全体の再計算関数（以前作成したもの）を呼び出して親要素も更新-->
-<!--                if (typeof calculateTreeSum === "function") {-->
-<!--                    calculateTreeSum();-->
-<!--                }-->
-<!--            }-->
-<!--        });-->
 
         function calculateTreeSums() {
             grid.data.events.detach("change");
@@ -557,74 +546,74 @@
             grid.expandAll();
         }
 
-function moveRowUp() {
-    console.log("moveRowUp");
-    const selectedCell = grid.selection.getCell();
-    if (!selectedCell || !selectedCell.row) {
-        alert("移動する行を選択してください。");
-        return;
-    }
-    const targetId = selectedCell.row.id;
-    const currentIndex = grid.data.getIndex(targetId);
+        function moveRowUp() {
+            console.log("moveRowUp");
+            const selectedCell = grid.selection.getCell();
+            if (!selectedCell || !selectedCell.row) {
+                alert("移動する行を選択してください。");
+                return;
+            }
+            const targetId = selectedCell.row.id;
+            const currentIndex = grid.data.getIndex(targetId);
 
-    if (currentIndex <= 0) {
-        return;
-    }
+            if (currentIndex <= 0) {
+                return;
+            }
 
-    // 1. 位置を移動
-    grid.data.move(targetId, currentIndex - 1);
+            // 1. 位置を移動
+            grid.data.move(targetId, currentIndex - 1);
 
-    // 2. すべての行の sort_order を再配分
-    updateAllSortOrders();
+            // 2. すべての行の sort_order を再配分
+            updateAllSortOrders();
 
-     // 💡 3. グリッドを強制的に再描画（画面を動かす）
-    grid.paint();
+            // 💡 3. グリッドを強制的に再描画（画面を動かす）
+            grid.paint();
 
-    // 移動後も選択状態をキープ
-    grid.selection.setCell(targetId, selectedCell.column.id);
-}
-
-function moveRowDown() {
-    const selectedCell = grid.selection.getCell();
-    console.log("moveRowDown", selectedCell);
-    if (!selectedCell || !selectedCell.row) {
-        alert("移動する行を選択してください。");
-        return;
-    }
-    const targetId = selectedCell.row.id;
-    const currentIndex = grid.data.getIndex(targetId);
-    const totalCount = grid.data.getLength();
-
-    if (currentIndex >= totalCount - 1) {
-        return;
-    }
-
-    // 1. 位置を移動
-    grid.data.move(targetId, currentIndex + 1);
-
-    // 2. すべての行の sort_order を再配分
-    updateAllSortOrders();
-
-    // 💡 3. グリッドを強制的に再描画（画面を動かす）
-    grid.paint();
-    // 移動後も選択状態をキープ
-    grid.selection.setCell(targetId, selectedCell.column.id);
-}
-
-/**
- * 💡 追加：現在の並び順（インデックス）に基づいて sort_order を一括更新する共通関数
- */
-function updateAllSortOrders() {
-    // 変更通知を一時停止してパフォーマンスを最適化
-    grid.data.map((item, index) => {
-        const newOrder = index + 1; // 1始まりの連番にする場合
-
-        // 値が変わっている場合のみ更新
-        if (item.sort_order !== newOrder) {
-            grid.data.update(item.id, { sort_order: newOrder });
+            // 移動後も選択状態をキープ
+            grid.selection.setCell(targetId, selectedCell.column.id);
         }
-    });
-}
+
+        function moveRowDown() {
+            const selectedCell = grid.selection.getCell();
+            console.log("moveRowDown", selectedCell);
+            if (!selectedCell || !selectedCell.row) {
+                alert("移動する行を選択してください。");
+                return;
+            }
+            const targetId = selectedCell.row.id;
+            const currentIndex = grid.data.getIndex(targetId);
+            const totalCount = grid.data.getLength();
+
+            if (currentIndex >= totalCount - 1) {
+                return;
+            }
+
+            // 1. 位置を移動
+            grid.data.move(targetId, currentIndex + 1);
+
+            // 2. すべての行の sort_order を再配分
+            updateAllSortOrders();
+
+            // 💡 3. グリッドを強制的に再描画（画面を動かす）
+            grid.paint();
+            // 移動後も選択状態をキープ
+            grid.selection.setCell(targetId, selectedCell.column.id);
+        }
+
+        /**
+         * 💡 追加：現在の並び順（インデックス）に基づいて sort_order を一括更新する共通関数
+         */
+        function updateAllSortOrders() {
+            // 変更通知を一時停止してパフォーマンスを最適化
+            grid.data.map((item, index) => {
+                const newOrder = index + 1; // 1始まりの連番にする場合
+
+                // 値が変わっている場合のみ更新
+                if (item.sort_order !== newOrder) {
+                    grid.data.update(item.id, { sort_order: newOrder });
+                }
+            });
+        }
 
 
         // --- Unit一覧を取得してGridのプルダウンに反映 ---
@@ -661,174 +650,110 @@ function updateAllSortOrders() {
             });
         //.catch(error => console.error("Error:", error));
 
-// 💡 コピーしたデータを一時的に保存しておくための「箱」（グローバル変数）
-let clipboardTreeData = null;
+        // 💡 コピーしたデータを一時的に保存しておくための「箱」（グローバル変数）
+        let clipboardTreeData = null;
 
-/**
- * 1. 選択中の行（ツリー階層ごと）をコピーする関数
- */
-function copySelectedTree() {
-    const selectedCell = grid.selection.getCell();
-    if (!selectedCell || !selectedCell.row) {
-        alert("コピーする行を選択してください。");
-        return;
-    }
-    const targetRowId = selectedCell.row.id;
-    console.log("copy")
+        /**
+         * 1. 選択中の行（ツリー階層ごと）をコピーする関数
+         */
+        function copySelectedTree() {
+            const selectedCell = grid.selection.getCell();
+            if (!selectedCell || !selectedCell.row) {
+                alert("コピーする行を選択してください。");
+                return;
+            }
+            const targetRowId = selectedCell.row.id;
+            console.log("copy")
 
-    // 選択された行とその配下の子要素をすべて集める配列
-    const nodesToCopy = [];
+            // 選択された行とその配下の子要素をすべて集める配列
+            const nodesToCopy = [];
 
-    // 再帰的に子要素を探索してデータを収集する関数
-    function collectNodes(nodeId) {
-        const rowData = grid.data.getItem(nodeId);
-        if (!rowData) return;
+            // 再帰的に子要素を探索してデータを収集する関数
+            function collectNodes(nodeId) {
+                const rowData = grid.data.getItem(nodeId);
+                if (!rowData) return;
 
-        // 元データが変更されないよう、中身を複製して保存
-        nodesToCopy.push({ ...rowData });
+                // 元データが変更されないよう、中身を複製して保存
+                nodesToCopy.push({ ...rowData });
 
-        // ★修正点: getValues の代わりに Suite 9 で動く map を使用して子要素を探す
-        const allItems = grid.data.map(item => item);
-        const children = allItems.filter(item => item.parent === nodeId);
+                // ★修正点: getValues の代わりに Suite 9 で動く map を使用して子要素を探す
+                const allItems = grid.data.map(item => item);
+                const children = allItems.filter(item => item.parent === nodeId);
 
-        // 子要素があれば同じように再帰で集める
-        children.forEach(child => collectNodes(child.id));
-    }
+                // 子要素があれば同じように再帰で集める
+                children.forEach(child => collectNodes(child.id));
+            }
 
-    // データの収集を実行
-    collectNodes(targetRowId);
+            // データの収集を実行
+            collectNodes(targetRowId);
 
-    // 一時保存用の箱にデータを保存
-    clipboardTreeData = {
-        rootId: targetRowId,
-        nodes: nodesToCopy
-    };
+            // 一時保存用の箱にデータを保存
+            clipboardTreeData = {
+                rootId: targetRowId,
+                nodes: nodesToCopy
+            };
 
-    alert("ツリー構造をコピーしました。");
-}
-
-/**
- * 2. コピーしたツリーを、現在選択中の行の「中に（子要素として）」貼り付ける関数
- */
-function pasteTreeHierarchy() {
-    if (!clipboardTreeData || clipboardTreeData.nodes.length === 0) {
-        alert("コピーされたデータがありません。");
-        return;
-    }
-
-    const selectedCell = grid.selection.getCell();
-    if (!selectedCell || !selectedCell.row) {
-        alert("貼り付け先の親となる行を選択してください。");
-        return;
-    }
-    const targetParentId = selectedCell.row.id;
-
-    // 古いIDと「新しくDHTMLXが発行したuから始まる自動ID」の対応表
-    const idMap = {};
-
-    // 💡 データの破壊を防ぐため、clipboardTreeData の中身をディープコピーしてループを回す
-    const nodesToPaste = JSON.parse(JSON.stringify(clipboardTreeData.nodes));
-
-    // データをGridに追加していく
-    nodesToPaste.forEach(node => {
-        const oldId = node.id;
-
-        // 1. コピー元の古いIDを完全に消去（DHTMLXに「u〜」の自動IDを作らせるため）
-        delete node.id;
-
-        // 2. 親ID（parent）の紐付けを決定する
-        if (oldId === clipboardTreeData.rootId) {
-            // 一番上の親ノードは、選択した行が新しい親になる
-            node.parent = targetParentId;
-        } else {
-            // 子要素や孫要素は、対応表（idMap）から「新しく発行されたu〜のID」を取得して親にする
-            node.parent = idMap[node.parent];
+            alert("ツリー構造をコピーしました。");
         }
 
-        // 💡 3. DHTMLX Suite 9 の仕様に基づき、オブジェクト内ではなく「第3引数」で親IDを渡して追加する [1]
-        // 第1引数: 追加するデータオブジェクト、第2引数: 挿入位置（-1は末尾）、第3引数: 親のID [1]
-        const addedRow = grid.data.add(node, -1, node.parent);
+        /**
+         * 2. コピーしたツリーを、現在選択中の行の「中に（子要素として）」貼り付ける関数
+         */
+        function pasteTreeHierarchy() {
+            if (!clipboardTreeData || clipboardTreeData.nodes.length === 0) {
+                alert("コピーされたデータがありません。");
+                return;
+            }
 
-        if (addedRow && addedRow.id) {
-            // DHTMLXが自動生成した「u〜」のIDを対応表にメモ（次の世代の子要素が使えるようにする）
-            idMap[oldId] = addedRow.id;
+            const selectedCell = grid.selection.getCell();
+            if (!selectedCell || !selectedCell.row) {
+                alert("貼り付け先の親となる行を選択してください。");
+                return;
+            }
+            const targetParentId = selectedCell.row.id;
+
+            // 古いIDと「新しくDHTMLXが発行したuから始まる自動ID」の対応表
+            const idMap = {};
+
+            // 💡 データの破壊を防ぐため、clipboardTreeData の中身をディープコピーしてループを回す
+            const nodesToPaste = JSON.parse(JSON.stringify(clipboardTreeData.nodes));
+
+            // データをGridに追加していく
+            nodesToPaste.forEach(node => {
+                const oldId = node.id;
+
+                // 1. コピー元の古いIDを完全に消去（DHTMLXに「u〜」の自動IDを作らせるため）
+                delete node.id;
+
+                // 2. 親ID（parent）の紐付けを決定する
+                if (oldId === clipboardTreeData.rootId) {
+                    // 一番上の親ノードは、選択した行が新しい親になる
+                    node.parent = targetParentId;
+                } else {
+                    // 子要素や孫要素は、対応表（idMap）から「新しく発行されたu〜のID」を取得して親にする
+                    node.parent = idMap[node.parent];
+                }
+
+                // 💡 3. DHTMLX Suite 9 の仕様に基づき、オブジェクト内ではなく「第3引数」で親IDを渡して追加する [1]
+                // 第1引数: 追加するデータオブジェクト、第2引数: 挿入位置（-1は末尾）、第3引数: 親のID [1]
+                const addedRow = grid.data.add(node, -1, node.parent);
+
+                if (addedRow && addedRow.id) {
+                    // DHTMLXが自動生成した「u〜」のIDを対応表にメモ（次の世代の子要素が使えるようにする）
+                    idMap[oldId] = addedRow.id;
+                }
+            });
+
+            // 4. 金額データなどの再計算
+            if (typeof calculateTreeSum === "function") {
+                calculateTreeSum();
+            }
+
+            alert("貼り付けが完了しました。");
         }
-    });
-
-    // 4. 金額データなどの再計算
-    if (typeof calculateTreeSum === "function") {
-        calculateTreeSum();
-    }
-
-    alert("貼り付けが完了しました。");
-}
 
 
-<!--    // 1. 現在選択されている行のIDを取得-->
-<!--    const selectedId = grid.selection.getCell()?.row?.id;-->
 
-<!--    if (selectedId) {-->
-<!--        // 2. 現在の親要素の下で、自分の「一つ上」にある行（兄要素）のIDを探す-->
-<!--        const parentId = grid.data.getParent(selectedId);-->
-<!--        const siblings = grid.data.getItems(parentId); // 同じ階層のアイテム一覧-->
-<!--        const currentIndex = siblings.findIndex(item => item.id === selectedId);-->
-
-<!--        if (currentIndex > 0) {-->
-<!--            const targetParentId = siblings[currentIndex - 1].id;-->
-
-<!--            // 3. 兄要素の「一番最後の子要素」として移動（階層が下がる）-->
-<!--            grid.data.move(selectedId, -1, { parent: targetParentId });-->
-<!--            console.log("階層を下げる")-->
-<!--        }-->
-<!--    }-->
-
-
-<!-- // 【インデントを上げる（親ルート・上の階層へ移動）処理】-->
-<!--if (selectedId) {-->
-<!--    const currentParentId = grid.data.getParent(selectedId);-->
-
-<!--    // すでに最上位（親IDが空）の場合は処理しない-->
-<!--    if (currentParentId) {-->
-<!--        // 1. 現在の親の、さらに上の親（祖父）を取得-->
-<!--        const grandParentId = grid.data.getParent(currentParentId);-->
-
-<!--        // 2. 祖父要素の子リスト（同じ階層のライバル達）を取得-->
-<!--        // 祖父が最上位の場合は、引数に何も渡さないことで最上位の一覧が取れる-->
-<!--        const grandSiblings = grid.data.getItems(grandParentId);-->
-
-<!--        // 3. 現在の親が、その階層の何番目にいるかを探す-->
-<!--        const parentIndex = grandSiblings.findIndex(item => item.id === currentParentId);-->
-
-<!--        if (parentIndex !== -1) {-->
-<!--            // 4. 親のすぐ次の位置（parentIndex + 1）に移動-->
-<!--            // 祖父が最上位（undefined）なら、自動的に最上位ルートに並びます-->
-<!--            grid.data.move(selectedId, parentIndex + 1, { parent: grandParentId });-->
-<!--        }-->
-<!--    }-->
-<!--}-->
-
-<!--grid.events.on("afterDrop", function(data) {-->
-<!--    // data.start: ドラッグした行のID-->
-<!--    // data.target: ドロップ先（ターゲット）となった行のID-->
-
-<!--    // 1. 本来設定されるべき最上位（ルート）のIDを取得-->
-<!--    const rootId = grid.data.getRoot();-->
-
-<!--    // 2. ドラッグした行の現在の親IDを取得-->
-<!--    const currentParentId = grid.data.getItem(data.start).parent;-->
-
-<!--    // 【補正ロジック】-->
-<!--    // もしドロップ先(target)が最上位の行であり、かつドラッグした行がその「子要素」に-->
-<!--    // 誤って入ってしまった場合、強制的にルート直下（親なし）に変更します。-->
-<!--    if (currentParentId === data.target) {-->
-
-<!--        // 必要に応じて条件を追加してください（例：一番下の行の下に落とした時など）-->
-<!--        grid.data.update(data.start, { parent: rootId });-->
-
-<!--        // データのツリー構造を正しく再描画（リフレッシュ）-->
-<!--        grid.paint();-->
-<!--    }-->
-<!--});-->
 
         //--- イベント制御 ---
 
@@ -902,4 +827,4 @@ function pasteTreeHierarchy() {
     </script>
 </body>
 
-</html>
+{% endblock %}

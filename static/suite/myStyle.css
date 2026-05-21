@@ -61,12 +61,9 @@
     top: 50px;
 }
 
-html, body {
-  height: 100%;       /* 画面全体の高さを確保 */
-  margin: 0;          /* ブラウザ特有の余白を消去 */
-}
-
-body {
-  display: grid;
-  place-content: center; /* 上下左右のちょうど中央に配置 */
+/* 💡 編集不可セルのグレーアウトスタイル */
+.cell-disabled {
+    background-color: #f2f2f2 !important; /* 薄いグレー */
+    color: #999999 !important;            /* 文字を薄く */
+    cursor: not-allowed;                  /* 禁止マークのカーソル */
 }

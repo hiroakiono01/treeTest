@@ -1,5 +1,5 @@
-{% load static %}
-
+{{% load static %}
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="utf-8">
@@ -10,97 +10,139 @@
     <title>{% block title %}{% endblock %}</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
-    <link href="/static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<!--    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">-->
 
     <!-- Custom fonts for this template -->
-    <link href="https://fonts.googleapis.com/css?family=Catamaran:100,200,300,400,500,600,700,800,900" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Lato:100,100i,300,300i,400,400i,700,700i,900,900i"
-          rel="stylesheet">
+<!--    <link href="https://googleapis.com" rel="stylesheet">-->
+<!--    <link href="https://googleapis.com" rel="stylesheet">-->
 
     <!-- Custom styles for this template -->
-    <link href="{% static 'css/one-page-wonder.css' %}" rel="stylesheet">
+<!--    <link href="{% static 'css/one-page-wonder.css' %}" rel="stylesheet">-->
 
-    <!-- My style -->
-    <link rel="stylesheet" type="text/css" href="{% static 'css/myStyle.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/list.css' %}">
-    <!-- My js -->
+    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
+    <script src="{% static 'suite/suite.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
 
+    <!-- 共通ユーティリティ -->
+    <script src="{% static 'js/utils.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
+
+    <style>
+        /* Layoutを画面全体にフィットさせるための必須設定 */
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        /* スクロールバーはLayoutのコンテンツセル側に持たせる */
+        .dhx_layout-cell-content {
+            overflow-y: auto !important;
+        }
+        /* 埋め込み用コンテナをセルいっぱいに広げる */
+        .full-size-container {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 
     {% block head %}{% endblock %}
 </head>
-<div id="wrapper">
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top">
-        <div class="container px-5">
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
-                    aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarResponsive">
-                <ul class="navbar-nav mr-auto">
-                     <li class="nav-item">
-                        <a class="nav-link{% block active_estimate %}{% endblock %}" href="{% url 'estimate:estimate_list' %}">estimate</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link{% block active_unite %}{% endblock %}" href="{% url 'unit:unit-list' %}">unit</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link{% block active_detailMaster %}{% endblock %}" href="{% url 'reference:reference-list' %}">reference</a>
-                    </li>
-                </ul>
-                <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link">ユーザー名：{{ user.get_username }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'account_logout' %}">Log Out</a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item {% block active_signup %}{% endblock %}">
-                        <a class="nav-link" href="{% url 'account_signup' %}">Sign Up</a>
-                    </li>
-                    <li class="nav-item {% block active_login %}{% endblock %}">
-                        <a class="nav-link" href="{% url 'account_login' %}">Log In</a>
-                    </li>
-                    {% endif %}
-                </ul>
+<body>
+
+    <!-- 既存のコンテンツ全体（初期状態は非表示） -->
+    <div id="layout_content_source" style="display: none;">
+        {% block header %}{% endblock %}
+
+        {% if messages %}
+        <div class="container mt-3">
+            <div class="row">
+                <div class="my-div-style w-100">
+                    <ul class="messages" style="list-style: none;">
+                        {% for message in messages %}
+                        <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>
+                            {{ message }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
-    </nav>
+        {% endif %}
 
+        <!-- メインコンテンツ -->
+        {% block contents %}{% endblock %}
 
-    {% block header %}{% endblock %}
-    {% if messages %}
-    <div class="container">
-        <div class="row">
-            <div class="my-div-style w-100">
-                <ul class="messages" style="list-style: none;">
-                    {% for message in messages %}
-                    <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>
-                        {{ message }}
-                    </li>
-                    {% endfor %}
-                </ul>
+        <!-- Footer -->
+        <footer class="py-1 bg-black mt-5">
+            <div class="container px-5">
+                <p class="m-0 text-center text-white small">Copyright &copy; kag holdings inc 2026</p>
             </div>
-        </div>
+        </footer>
     </div>
-    {% endif %}
-
-    {% block contents%}{% endblock %}
-
-    <!-- Footer -->
-    <footer class="py-1 bg-black">
-        <div class="container px-5">
-            <p class="m-0 text-center text-white small">Copyright &copy; kag holdings inc 2025</p>
-        </div>
-    </footer>
 
     <!-- Bootstrap core JavaScript -->
-    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
-    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<!--    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>-->
+<!--    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>-->
 
-</div>
+    <!-- DHTMLX Layout & Menu 初期化スクリプト -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
 
+            // 1. Layoutの作成（下側のセルには中身が空のdiv要素だけを定義しておく）
+            var layout = new dhx.Layout(document.body, {
+                rows: [
+                    { id: "menu_cell", height: "50px" },
+                    { id: "content_cell", html: "<div id='dhx_inner_content' class='full-size-container'></div>" }
+                ]
+            });
+
+            // 2. Menuの作成
+            var menu = new dhx.Menu(null, {
+                css: "dhx_widget--bg-dark"
+            });
+
+            // 3. メニューデータの定義
+            var menuData = [
+                { id: "estimate", text: "estimate" },
+                { id: "unit", text: "unit" },
+                { id: "reference", text: "reference" },
+                { id: "spacer", type: "spacer" },
+                {% if user.is_authenticated %}
+                { id: "username", text: "ユーザー名：{{ user.get_username }}", disable: true },
+                { id: "logout", text: "Log Out" }
+                {% else %}
+                { id: "signup", text: "Sign Up" },
+                { id: "login", text: "Log In" }
+                {% endif %}
+            ];
+
+            menu.data.parse(menuData);
+
+            // 4. メニュークリック時のページ遷移
+            menu.events.on("click", function(id) {
+                if (id === "estimate")  window.location.href = "{% url 'estimate:estimate_list' %}";
+                if (id === "unit")      window.location.href = "{% url 'unit:unit-list' %}";
+                if (id === "reference") window.location.href = "{% url 'reference:reference-list' %}";
+                if (id === "logout")    window.location.href = "{% url 'account_logout' %}";
+                if (id === "signup")    window.location.href = "{% url 'account_signup' %}";
+                if (id === "login")     window.location.href = "{% url 'account_login' %}";
+            });
+
+            // 5. レイアウトのメニュー用セルにコンポーネントを配置
+            layout.getCell("menu_cell").attach(menu);
+
+            // 6. Djangoの既存コンテンツを、作成した空のdivの中に「DOMのまま」移動させる
+            var targetContainer = document.getElementById("dhx_inner_content");
+            var contentSrc = document.getElementById("layout_content_source");
+
+            if (targetContainer && contentSrc) {
+                contentSrc.style.display = "block"; // 非表示を解除
+                targetContainer.appendChild(contentSrc); // 子要素としてDOMをまるごと安全に引っ越し
+            }
+        });
+    </script>
+</body>
 </html>
+

@@ -18,14 +18,16 @@
     <div id="grid_container"></div>
     <style>
         #toolbar_container {
-            place-content: center;
-            width: 1000px;
+            width: calc(100vw - 800px);
+            max-width: none;
+            margin: 0 auto;
         }
 
         /* Gridのサイズを指定 */
         #grid_container {
-            width: 1000px;
-            max-width: 1000px;
+            width: calc(100vw - 800px);
+            max-width: none;
+            margin: 0 auto;
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
             height: calc(100vh - 150px);
             min-height: 100px;
