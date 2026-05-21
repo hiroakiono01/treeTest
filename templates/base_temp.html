@@ -1,0 +1,155 @@
+{% load static %}
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>{% block title %}{% endblock %}</title>
+
+    <!-- Bootstrap core CSS -->
+<!--    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">-->
+
+    <!-- Custom fonts for this template -->
+<!--    <link href="https://googleapis.com" rel="stylesheet">-->
+<!--    <link href="https://googleapis.com" rel="stylesheet">-->
+
+    <!-- Custom styles for this template -->
+<!--    <link href="{% static 'css/one-page-wonder.css' %}" rel="stylesheet">-->
+
+    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
+    <script src="{% static 'suite/suite.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
+
+    <!-- 共通ユーティリティ -->
+    <script src="{% static 'js/utils.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
+
+    <style>
+        /* Layoutを画面全体にフィットさせるための必須設定 */
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        /* スクロールバーはLayoutのコンテンツセル側に持たせる */
+        .dhx_layout-cell-content {
+            overflow-y: auto !important;
+        }
+        /* 埋め込み用コンテナをセルいっぱいに広げる */
+        .full-size-container {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    <!-- 既存のコンテンツ全体（初期状態は非表示） -->
+    <div id="layout_content_source" style="display: none;">
+        {% block header %}{% endblock %}
+
+        {% if messages %}
+        <div class="container mt-3">
+            <div class="row">
+                <div class="my-div-style w-100">
+                    <ul class="messages" style="list-style: none;">
+                        {% for message in messages %}
+                        <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>
+                            {{ message }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- メインコンテンツ -->
+        {% block contents %}{% endblock %}
+
+        <!-- Footer -->
+        <footer class="py-1 bg-black mt-5">
+            <div class="container px-5">
+                <p class="m-0 text-center text-white small">Copyright &copy; kag holdings inc 2026</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Bootstrap core JavaScript -->
+<!--    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>-->
+<!--    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>-->
+
+    <!-- DHTMLX Layout & Menu 初期化スクリプト -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+            // 1. Layoutの作成（下側のセルには中身が空のdiv要素だけを定義しておく）
+            var layout = new dhx.Layout(document.body, {
+                rows: [
+                    { id: "menu_cell", height: "50px" },
+                    { id: "content_cell", html: "<div id='dhx_inner_content' class='full-size-container'></div>" }
+                ]
+            });
+
+            // 2. Menuの作成
+<!--            var menu = new dhx.Menu(null, {-->
+<!--                css: "dhx_widget&#45;&#45;bg-dark"-->
+<!--            });-->
+
+            // 3. メニューデータの定義
+            var menuData = [
+                { id: "estimate", text: "estimate" },
+                { id: "unit", text: "unit" },
+                { id: "reference", text: "reference" },
+                { id: "spacer", type: "spacer" },
+                {% if user.is_authenticated %}
+                { id: "username", text: "ユーザー名：{{ user.get_username }}", disable: true },
+                { id: "logout", text: "Log Out" }
+                {% else %}
+                { id: "signup", text: "Sign Up" },
+                { id: "login", text: "Log In" }
+                {% endif %}
+            ];
+
+
+            // 3. Menuコンポーネントを単体で初期化（第1引数は必ず null）
+            var menu = new dhx.Menu(null, {
+                css: "dhx_widget--bg-dark",
+                data: menuData
+            });
+            // menu.data.parse(menuData);
+
+            // 3. 【修正】Suite 9 の正しいアタッチ方法
+            // getCell() で取得したセルオブジェクトに対して attach(menu) を実行します
+            layout.getCell("menu_cell").attach(menu);
+
+            // 4. メニュークリック時のページ遷移
+            menu.events.on("click", function(id) {
+                if (id === "estimate")  window.location.href = "{% url 'estimate:estimate_list' %}";
+                if (id === "unit")      window.location.href = "{% url 'unit:unit-list' %}";
+                if (id === "reference") window.location.href = "{% url 'reference:reference-list' %}";
+                if (id === "logout")    window.location.href = "{% url 'account_logout' %}";
+                if (id === "signup")    window.location.href = "{% url 'account_signup' %}";
+                if (id === "login")     window.location.href = "{% url 'account_login' %}";
+            });
+
+
+            // 6. Djangoの既存コンテンツを、作成した空のdivの中に「DOMのまま」移動させる
+            var targetContainer = document.getElementById("dhx_inner_content");
+            var contentSrc = document.getElementById("layout_content_source");
+
+            if (targetContainer && contentSrc) {
+                contentSrc.style.display = "block"; // 非表示を解除
+                targetContainer.appendChild(contentSrc); // 子要素としてDOMをまるごと安全に引っ越し
+            }
+        });
+    </script>
+</body>
+</html>
+

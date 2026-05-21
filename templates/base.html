@@ -1,13 +1,12 @@
-{{% load static %}
-<!DOCTYPE html>
+{% load static %}
 <html lang="ja">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
+<!--    <meta name="description" content="">-->
+<!--    <meta name="author" content="">-->
 
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% block title %}Estimate{% endblock %}</title>
 
     <!-- Bootstrap core CSS -->
 <!--    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">-->
@@ -28,48 +27,31 @@
     <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
 
     <style>
-        /* Layoutを画面全体にフィットさせるための必須設定 */
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        /* スクロールバーはLayoutのコンテンツセル側に持たせる */
-        .dhx_layout-cell-content {
-            overflow-y: auto !important;
-        }
-        /* 埋め込み用コンテナをセルいっぱいに広げる */
-        .full-size-container {
-            width: 100%;
-            height: 100%;
-        }
+<!--        /* Layoutを画面全体にフィットさせるための必須設定 */-->
+<!--        html, body {-->
+<!--            width: 100%;-->
+<!--            height: 100%;-->
+<!--            margin: 0;-->
+<!--            padding: 0;-->
+<!--            overflow: hidden;-->
+<!--        }-->
+<!--        /* スクロールバーはLayoutのコンテンツセル側に持たせる */-->
+<!--        .dhx_layout-cell-content {-->
+<!--            overflow-y: auto !important;-->
+<!--        }-->
+<!--        /* 埋め込み用コンテナをセルいっぱいに広げる */-->
+<!--        .full-size-container {-->
+<!--            width: 100%;-->
+<!--            height: 100%;-->
+<!--        }-->
     </style>
 
-    {% block head %}{% endblock %}
 </head>
 <body>
 
     <!-- 既存のコンテンツ全体（初期状態は非表示） -->
-    <div id="layout_content_source" style="display: none;">
-        {% block header %}{% endblock %}
+     <div id="menu" style="padding: 40px;"></div>
 
-        {% if messages %}
-        <div class="container mt-3">
-            <div class="row">
-                <div class="my-div-style w-100">
-                    <ul class="messages" style="list-style: none;">
-                        {% for message in messages %}
-                        <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>
-                            {{ message }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-        {% endif %}
 
         <!-- メインコンテンツ -->
         {% block contents %}{% endblock %}
@@ -77,6 +59,9 @@
         <!-- Footer -->
         <footer class="py-1 bg-black mt-5">
             <div class="container px-5">
+                <!-- 【追加】フッター用メニューの配置場所（コンテナ） -->
+                <div id="footer_menu_container" class="mb-3"></div>
+
                 <p class="m-0 text-center text-white small">Copyright &copy; kag holdings inc 2026</p>
             </div>
         </footer>
@@ -88,60 +73,199 @@
 
     <!-- DHTMLX Layout & Menu 初期化スクリプト -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
 
-            // 1. Layoutの作成（下側のセルには中身が空のdiv要素だけを定義しておく）
-            var layout = new dhx.Layout(document.body, {
-                rows: [
-                    { id: "menu_cell", height: "50px" },
-                    { id: "content_cell", html: "<div id='dhx_inner_content' class='full-size-container'></div>" }
+	const dataset = [{
+        "id": "edit",
+        "value": "Edit",
+        "hotKey": "ctrl-z",
+        "count": 25,
+        "countColor": "success",
+        "items": [{
+                "id": "undo",
+                "value": "Undo",
+                "icon": "dxi dxi-undo",
+                "hotKey": "Ctrl-z",
+                "count": 25,
+                "countColor": "danger",
+                "items": [{
+                        "id": "redo1",
+                        "value": "Redo",
+                        "icon": "dxi dxi-redo",
+                        "disabled": "true"
+                    },
+                    {
+                        "type": "separator"
+                    },
+                    {
+                        "id": "lock1",
+                        "value": "Lock cell",
+                        "icon": "dxi dxi-key"
+                    }
                 ]
-            });
-
-            // 2. Menuの作成
-            var menu = new dhx.Menu(null, {
-                css: "dhx_widget--bg-dark"
-            });
-
-            // 3. メニューデータの定義
-            var menuData = [
-                { id: "estimate", text: "estimate" },
-                { id: "unit", text: "unit" },
-                { id: "reference", text: "reference" },
-                { id: "spacer", type: "spacer" },
-                {% if user.is_authenticated %}
-                { id: "username", text: "ユーザー名：{{ user.get_username }}", disable: true },
-                { id: "logout", text: "Log Out" }
-                {% else %}
-                { id: "signup", text: "Sign Up" },
-                { id: "login", text: "Log In" }
-                {% endif %}
-            ];
-
-            menu.data.parse(menuData);
-
-            // 4. メニュークリック時のページ遷移
-            menu.events.on("click", function(id) {
-                if (id === "estimate")  window.location.href = "{% url 'estimate:estimate_list' %}";
-                if (id === "unit")      window.location.href = "{% url 'unit:unit-list' %}";
-                if (id === "reference") window.location.href = "{% url 'reference:reference-list' %}";
-                if (id === "logout")    window.location.href = "{% url 'account_logout' %}";
-                if (id === "signup")    window.location.href = "{% url 'account_signup' %}";
-                if (id === "login")     window.location.href = "{% url 'account_login' %}";
-            });
-
-            // 5. レイアウトのメニュー用セルにコンポーネントを配置
-            layout.getCell("menu_cell").attach(menu);
-
-            // 6. Djangoの既存コンテンツを、作成した空のdivの中に「DOMのまま」移動させる
-            var targetContainer = document.getElementById("dhx_inner_content");
-            var contentSrc = document.getElementById("layout_content_source");
-
-            if (targetContainer && contentSrc) {
-                contentSrc.style.display = "block"; // 非表示を解除
-                targetContainer.appendChild(contentSrc); // 子要素としてDOMをまるごと安全に引っ越し
+            },
+            {
+                "id": "redo",
+                "value": "Redo",
+                "icon": "dxi dxi-redo"
+            },
+            {
+                "type": "separator"
+            },
+            {
+                "id": "lock",
+                "value": "Lock cell",
+                "icon": "dxi dxi-key"
+            },
+            {
+                "id": "clear",
+                "value": "Clear",
+                "icon": "dxi dxi-eraser",
+                "items": [{
+                        "id": "clear-value",
+                        "value": "Clear value"
+                    },
+                    {
+                        "id": "clear-styles",
+                        "value": "Clear styles"
+                    },
+                    {
+                        "id": "clear-all",
+                        "value": "Clear all"
+                    }
+                ]
             }
-        });
+        ]
+    },
+    {
+        "type": "separator"
+    },
+    {
+        "id": "insert",
+        "value": "Insert",
+        "disabled": false,
+        "items": [{
+                "id": "columns",
+                "value": "Columns",
+                "icon": "dxi dxi-table-column",
+                "items": [{
+                        "id": "add-col",
+                        "value": "Add column",
+                        "icon": "dxi dxi-table-column-plus-before"
+                    },
+                    {
+                        "id": "remove-col",
+                        "value": "Remove column",
+                        "icon": "dxi dxi-table-column-remove"
+                    }
+                ]
+            },
+            {
+                "id": "rows",
+                "value": "Rows",
+                "icon": "dxi dxi-table-row",
+                "items": [{
+                        "id": "add-row",
+                        "value": "Add row",
+                        "icon": "dxi dxi-table-row-plus-after"
+                    },
+                    {
+                        "id": "remove-row",
+                        "value": "Remove row",
+                        "icon": "dxi dxi-table-row-remove"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "separator"
+    },
+    {
+        "id": "unit",
+        "value": "Unit",
+
+    },
+
+    {
+        "id": "configuration",
+        "value": "Format",
+        "items": [{
+                "id": "font-weight-bold",
+                "value": "Bold",
+                "icon": "dxi dxi-format-bold"
+            },
+            {
+                "id": "font-style-italic",
+                "value": "Italic",
+                "icon": "dxi dxi-format-italic"
+            },
+            {
+                "id": "text-decoration-underline",
+                "value": "Underline",
+                "icon": "dxi dxi-format-underline"
+            },
+            {
+                "type": "separator"
+            },
+            {
+                "id": "align",
+                "value": "Align",
+                "icon": "dxi dxi-empty",
+                "items": [{
+                        "id": "align-left",
+                        "value": "Left",
+                        "icon": "dxi dxi-format-align-left"
+                    },
+                    {
+                        "id": "align-center",
+                        "value": "Center",
+                        "icon": "dxi dxi-format-align-center"
+                    },
+                    {
+                        "id": "align-right",
+                        "value": "Right",
+                        "icon": "dxi dxi-format-align-right"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "spacer"
+    },
+    {
+        "value": "Help",
+        "items": [{
+                "id": "about",
+                "value": "About",
+                "icon": "mdi mdi-information-variant"
+            },
+            {
+                "id": "help",
+                "value": "Help",
+                "icon": "mdi mdi-help"
+            },
+            {
+                "id": "bug",
+                "value": "Bug reporting",
+                "icon": "mdi mdi-bug"
+            }
+        ]
+    }
+];
+    const menu = new dhx.Menu("menu", {
+    css: "dhx_widget--bordered dhx_widget--bg_white",
+    data: dataset
+});
+    menu.events.on("click", function(id) {
+    if (id === "estimate")  window.location.href = "{% url 'estimate:estimate_list' %}";
+    if (id === "unit")      window.location.href = "{% url 'unit:unit-list' %}";
+    if (id === "reference") window.location.href = "{% url 'reference:reference-list' %}";
+    if (id === "logout")    window.location.href = "{% url 'account_logout' %}";
+    if (id === "signup")    window.location.href = "{% url 'account_signup' %}";
+    if (id === "login")     window.location.href = "{% url 'account_login' %}";
+
+});
     </script>
 </body>
 </html>
