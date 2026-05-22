@@ -18,10 +18,17 @@
     <div id="grid_container"></div>
 
     <style>
+        #toolbar_container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
         /* Gridのサイズを指定 */
         #grid_container {
-            width: 900px;
-            max-width: 1000px;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
             height: calc(100vh - 150px);
             min-height: 100px;
@@ -99,33 +106,42 @@
                 { id: "id", header: [{ text: "ID" }], hidden: true, isTreeColum: true },
                 {
                     id: "detail",
+                    width: 100,
                     header: [{ text: "見積詳細", align: "center" }],
                     align: "center",
-                    width: 80,
                     htmlEnable: true,
                     template: () => "<button class='grid-btn-detail'>詳細</button>"
                 },
                 {
                     id: "estimate_year",
-                    header: [{ text: "受注年度", align: "center" }, { content: "selectFilter" }],
                     width: 100,
-                    editable: true
+                    header: [{ text: "受注年度", align: "center" }, { content: "selectFilter" }],
+                    align: "center",
+                    // editable: true
                 },
-                { id: "estimate_no", header: [{ text: "受注番号", align: "center" }], width: 100 },
-                { id: "estimate_name", header: [{ text: "工事名称", align: "center" }, { content: "inputFilter" }], },
+                {
+                    id: "estimate_no",
+                    header: [{ text: "受注番号", align: "center" }],
+                    width: 100,
+                    align: "center",
+                 },
+                {
+                    id: "estimate_name",
+                    header: [{ text: "工事名称", align: "center" },{ content: "inputFilter" }],
+                    width: 400 },
                 {
                     id: "action",
+                    width: 50,
                     header: [{ text: "修正", align: "center" }],
                     align: "center",
-                    width: 80,
                     htmlEnable: true,
                     template: () => "<button class='dxi dxi-pencil'>修正</button>"
                 },
                 {
                     id: "delete",
+                    width: 50,
                     header: [{ text: "削除", align: "center" }],
                     align: "center",
-                    width: 80,
                     htmlEnable: true,
                     template: () => "<button class='dxi dxi-delete' >削除</button>"
                 }
@@ -155,13 +171,27 @@
                 dhxWindow.show();
             }
         });
+
         // 6.3 グリッド内の「詳細」から違うプログラムをコールする
-        grid.events.on("cellClick", (row, col) => {
+        grid.events.on("cellClick", (row, col, e) => {
             if (col.id === "detail") {
-                // row.id（または row.unit_no など）を使ってURLを作成
-                const targetId = row.estimate_no;
-                window.location.href = `/task/lists/${targetId}/`;
-                // window.location.href = `/task/tasks_test/`;
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                const targetId = row.estimate_no || row.id;
+                const targetUrl = `/task/lists/${targetId}/`;
+
+                // 💡 親画面に用意した関数が「関数として存在するか」を厳密にチェック
+                if (window.parent && typeof window.parent.changeMainContent === "function") {
+                    console.log("親画面の関数を呼び出します:", targetUrl);
+                    window.parent.changeMainContent(targetUrl);
+                } else {
+                    // 親の関数が見つからない場合は、コンソールに警告を出して最上位ウィンドウを書き換える
+                    console.warn("親画面の changeMainContent 関数が見つかりません。");
+                    window.top.location.href = targetUrl;
+                }
             }
         });
 

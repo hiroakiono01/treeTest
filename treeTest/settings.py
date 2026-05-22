@@ -148,6 +148,9 @@ REST_FRAMEWORK = {
 #     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 # }
 # django-allauthで利用するdjango.contrib.sitesを使うためにサイト識別用IDを設定
+
+X_FRAME_OPTIONS = 'SAMEORIGIN'  # プロジェクト内のすべてのページで、同じドメイン内（自サイト）からの <iframe> 埋め込みを許可します。
+
 SITE_ID = 1
 
 AUTHENTICATION_BACKENDS = (

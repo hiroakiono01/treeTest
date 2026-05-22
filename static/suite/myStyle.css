@@ -26,7 +26,7 @@
 }
 
 .grid-btn-detail {
- border: none;!important;
+ border: none !important;
  background-color: transparent;
  text-decoration: none; /* これでアンダーラインが消えます */
  color: #007bff;
@@ -67,3 +67,34 @@
     color: #999999 !important;            /* 文字を薄く */
     cursor: not-allowed;                  /* 禁止マークのカーソル */
 }
+
+.footer-cell .dhx_layout-cell-content {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+
+    /* 💡 追加：セルの高さを縦いっぱいに広げる */
+    box-sizing: border-box;
+    height: 100% !important;
+
+    background-color: #000000 !important; /* 背景を黒にする */
+    color: #ffffff !important;            /* 文字を白（白抜き）にする */
+}
+
+  /* 1. メニュー全体の背景色を強制上書き */
+  .dhx_widget.dhx_menu {
+    background-color: #1e293b !important; /* ←【例】ここを好きな背景色に変更 */
+    background: #1e293b !important;
+  }
+
+  /* 2. メニュー内のボタン（文字やアイコンが入る器）の背景色と文字色 */
+  .dhx_widget.dhx_menu .dhx_menu-button {
+    background-color: transparent !important;
+    color: #ffffff !important; /* ←【例】ここを好きな文字色に変更 */
+  }
+
+  /* 3. マウスホバー（選択中）の時の色 */
+  .dhx_widget.dhx_menu .dhx_menu-button:hover {
+    background-color: #3b82f6 !important; /* ←【例】ホバー時の背景色 */
+    color: #ffffff !important;             /* ←【例】ホバー時の文字色 */
+  }

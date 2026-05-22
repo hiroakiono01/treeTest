@@ -18,15 +18,15 @@
     <div id="grid_container"></div>
     <style>
         #toolbar_container {
-            width: calc(100vw - 800px);
-            max-width: none;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 1000px:
+            margin: 0 auto0;
         }
 
         /* Gridのサイズを指定 */
         #grid_container {
-            width: calc(100vw - 800px);
-            max-width: none;
+            width: 100%;
+            max-width: 750px;
             margin: 0 auto;
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
             height: calc(100vh - 150px);
@@ -94,10 +94,12 @@
                 },
                 {
                     id: "detail_name",
+                    width: 300,
                     header: [{ text: "明細名称", align: "center" }, { content: "inputFilter" }],
                 },
                 {
                     id: "calcu_cls",
+                    width: 100,
                     header: [{ text: "計算区分", align: "center" }, { content: "selectFilter" }],
                     editable: false,
                     editorType: "select", // セレクトボックス形式
@@ -110,13 +112,15 @@
                 },
                 {
                     id: "unit_name", // ForeignKeyのIDが入る
+                    width: 100,
                     header: [{ text: "単位", align: "center" }],
                     editorType: "combobox",
-                    width: 100,
+                    align: "center",
                     options: []
                 },
                 {
                     id: "budget_price",
+                    width: 150,
                     header: [{ text: "予算単価", align: "center" }],
                     type: "number",
                     numberMask: { maxDecLength: 2 }
@@ -128,6 +132,7 @@
                 },
                 {
                     id: "actions",
+                    width: 100,
                     header: [{ text: "Actions", tooltip: true, align: "center", rowspan: 2 }],
                     mark: () => "dhx-demo_color--gray",
                     template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
@@ -143,7 +148,7 @@
                     "row-menu": event => rowMenu.showAt(event.target)
                 }
             },
-            autoWidth: true,
+            autoWidth: false,
             data: dataset, // 作成した DataCollection を直接紐付ける
             keyNavigation: true,
             editing: true,

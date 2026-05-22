@@ -2,21 +2,21 @@
 <html lang="ja">
 <head>
     <meta charset="utf-8">
-<!--    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
-<!--    <meta name="description" content="">-->
-<!--    <meta name="author" content="">-->
+    <!--    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
+    <!--    <meta name="description" content="">-->
+    <!--    <meta name="author" content="">-->
 
     <title>{% block title %}Estimate{% endblock %}</title>
 
     <!-- Bootstrap core CSS -->
-<!--    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">-->
+    <!--    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">-->
 
     <!-- Custom fonts for this template -->
-<!--    <link href="https://googleapis.com" rel="stylesheet">-->
-<!--    <link href="https://googleapis.com" rel="stylesheet">-->
+    <!--    <link href="https://googleapis.com" rel="stylesheet">-->
+    <!--    <link href="https://googleapis.com" rel="stylesheet">-->
 
     <!-- Custom styles for this template -->
-<!--    <link href="{% static 'css/one-page-wonder.css' %}" rel="stylesheet">-->
+    <!--    <link href="{% static 'css/one-page-wonder.css' %}" rel="stylesheet">-->
 
     <!-- DHTMLX SuiteのJS/CSSを読み込み -->
     <script src="{% static 'suite/suite.js' %}"></script>
@@ -27,246 +27,146 @@
     <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
 
     <style>
-<!--        /* Layoutを画面全体にフィットさせるための必須設定 */-->
-<!--        html, body {-->
-<!--            width: 100%;-->
-<!--            height: 100%;-->
-<!--            margin: 0;-->
-<!--            padding: 0;-->
-<!--            overflow: hidden;-->
-<!--        }-->
-<!--        /* スクロールバーはLayoutのコンテンツセル側に持たせる */-->
-<!--        .dhx_layout-cell-content {-->
-<!--            overflow-y: auto !important;-->
-<!--        }-->
-<!--        /* 埋め込み用コンテナをセルいっぱいに広げる */-->
-<!--        .full-size-container {-->
-<!--            width: 100%;-->
-<!--            height: 100%;-->
-<!--        }-->
+        <!--        /* Layoutを画面全体にフィットさせるための必須設定 */-->
+        <!--        html, body {-->
+        <!--            width: 100%;-->
+        <!--            height: 100%;-->
+        <!--            margin: 0;-->
+        <!--            padding: 0;-->
+        <!--            overflow: hidden;-->
+        <!--        }-->
+        <!--        /* スクロールバーはLayoutのコンテンツセル側に持たせる */-->
+        <!--        .dhx_layout-cell-content {-->
+        <!--            overflow-y: auto !important;-->
+        <!--        }-->
+        <!--        /* 埋め込み用コンテナをセルいっぱいに広げる */-->
+        <!--        .full-size-container {-->
+        <!--            width: 100%;-->
+        <!--            height: 100%;-->
+        <!--        }-->
+
+
+
+	.custom,.custom--popup-menu {
+		--dhx-background-primary: #3A434A;
+		--dhx-background-secondary: #5a6872;
+		--dhx-background-additional: #5a6872;
+		--dhx-s-toolbar-background: var(--dhx-background-primary);
+
+		--dhx-color-primary: #118d8d;
+		--dhx-color-primary-hover: #49e9e9;
+		--dhx-color-primary-active: #49e9e9;
+
+		--dhx-font-color-primary: #fff;
+		--dhx-font-color-secondary: #fff;
+		--dhx-font-color-additional: #fff;
+	}
     </style>
 
 </head>
 <body>
+<!-- 画面全体を覆うレイアウト用の器だけを用意します -->
+<div id="layout" style="height: 100vh; width: calc(100vw - 100px); margin: 0 auto;"></div>
 
-    <!-- 既存のコンテンツ全体（初期状態は非表示） -->
-     <div id="menu" style="padding: 40px;"></div>
-
-
-        <!-- メインコンテンツ -->
-        {% block contents %}{% endblock %}
-
-        <!-- Footer -->
-        <footer class="py-1 bg-black mt-5">
-            <div class="container px-5">
-                <!-- 【追加】フッター用メニューの配置場所（コンテナ） -->
-                <div id="footer_menu_container" class="mb-3"></div>
-
-                <p class="m-0 text-center text-white small">Copyright &copy; kag holdings inc 2026</p>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Bootstrap core JavaScript -->
-<!--    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>-->
-<!--    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>-->
-
-    <!-- DHTMLX Layout & Menu 初期化スクリプト -->
-    <script>
-
-	const dataset = [{
-        "id": "edit",
-        "value": "Edit",
-        "hotKey": "ctrl-z",
-        "count": 25,
-        "countColor": "success",
-        "items": [{
-                "id": "undo",
-                "value": "Undo",
-                "icon": "dxi dxi-undo",
-                "hotKey": "Ctrl-z",
-                "count": 25,
-                "countColor": "danger",
-                "items": [{
-                        "id": "redo1",
-                        "value": "Redo",
-                        "icon": "dxi dxi-redo",
-                        "disabled": "true"
-                    },
+<script>
+    // 1. レイアウトの定義（htmlプロパティを空にして、後からMenuやGridを入れられるようにします）
+    const config = {
+        type: "line",
+        rows: [
+            {
+                id: "toolbar_cell", // Menuを配置するヘッダーセル
+                height: "46px"      // DHTMLX Menuの標準的な高さに合わせるのが綺麗です
+            },
+            {
+                cols: [
                     {
-                        "type": "separator"
+                        id: "grid_cell",    // メインコンテンツ（Gridなど）を表示するセル
+                        html: "ここにメインコンテンツが表示されます"
                     },
-                    {
-                        "id": "lock1",
-                        "value": "Lock cell",
-                        "icon": "dxi dxi-key"
-                    }
                 ]
             },
             {
-                "id": "redo",
-                "value": "Redo",
-                "icon": "dxi dxi-redo"
-            },
-            {
-                "type": "separator"
-            },
-            {
-                "id": "lock",
-                "value": "Lock cell",
-                "icon": "dxi dxi-key"
-            },
-            {
-                "id": "clear",
-                "value": "Clear",
-                "icon": "dxi dxi-eraser",
-                "items": [{
-                        "id": "clear-value",
-                        "value": "Clear value"
-                    },
-                    {
-                        "id": "clear-styles",
-                        "value": "Clear styles"
-                    },
-                    {
-                        "id": "clear-all",
-                        "value": "Clear all"
-                    }
-                ]
+                id: "footer_cell",  // フッターセル
+                html: "Copyright &copy; kag holdings inc 2025",
+                height: "30px",
+                css: "footer-cell"
             }
         ]
-    },
-    {
-        "type": "separator"
-    },
-    {
-        "id": "insert",
-        "value": "Insert",
-        "disabled": false,
-        "items": [{
-                "id": "columns",
-                "value": "Columns",
-                "icon": "dxi dxi-table-column",
-                "items": [{
-                        "id": "add-col",
-                        "value": "Add column",
-                        "icon": "dxi dxi-table-column-plus-before"
-                    },
-                    {
-                        "id": "remove-col",
-                        "value": "Remove column",
-                        "icon": "dxi dxi-table-column-remove"
-                    }
-                ]
-            },
-            {
-                "id": "rows",
-                "value": "Rows",
-                "icon": "dxi dxi-table-row",
-                "items": [{
-                        "id": "add-row",
-                        "value": "Add row",
-                        "icon": "dxi dxi-table-row-plus-after"
-                    },
-                    {
-                        "id": "remove-row",
-                        "value": "Remove row",
-                        "icon": "dxi dxi-table-row-remove"
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "type": "separator"
-    },
-    {
-        "id": "unit",
-        "value": "Unit",
+    };
 
-    },
+    // レイアウトを初期化
+    const layout = new dhx.Layout("layout", {
+        config,
+        });
 
-    {
-        "id": "configuration",
-        "value": "Format",
-        "items": [{
-                "id": "font-weight-bold",
-                "value": "Bold",
-                "icon": "dxi dxi-format-bold"
-            },
-            {
-                "id": "font-style-italic",
-                "value": "Italic",
-                "icon": "dxi dxi-format-italic"
-            },
-            {
-                "id": "text-decoration-underline",
-                "value": "Underline",
-                "icon": "dxi dxi-format-underline"
-            },
-            {
-                "type": "separator"
-            },
-            {
-                "id": "align",
-                "value": "Align",
-                "icon": "dxi dxi-empty",
-                "items": [{
-                        "id": "align-left",
-                        "value": "Left",
-                        "icon": "dxi dxi-format-align-left"
-                    },
-                    {
-                        "id": "align-center",
-                        "value": "Center",
-                        "icon": "dxi dxi-format-align-center"
-                    },
-                    {
-                        "id": "align-right",
-                        "value": "Right",
-                        "icon": "dxi dxi-format-align-right"
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        "type": "spacer"
-    },
-    {
-        "value": "Help",
-        "items": [{
-                "id": "about",
-                "value": "About",
-                "icon": "mdi mdi-information-variant"
-            },
-            {
-                "id": "help",
-                "value": "Help",
-                "icon": "mdi mdi-help"
-            },
-            {
-                "id": "bug",
-                "value": "Bug reporting",
-                "icon": "mdi mdi-bug"
-            }
-        ]
-    }
-];
+<!--        // 💡 子画面（iframe）からいつでも呼び出せるように、window全体に公開します-->
+<!--        window.changeMainContent = function(url) {-->
+<!--            console.log("親画面側でコンテンツ切り替え関数が実行されました。URL:", url);-->
+
+<!--            // DHTMLX Suite 9 の正しいメソッド-->
+<!--            const mainCell = layout.getCell("grid_cell");-->
+
+<!--            if (mainCell) {-->
+<!--                // 中央のセルの中身を、新しい詳細画面の iframe で上書きする-->
+<!--                mainCell.attachHTML(-->
+<!--                    `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`-->
+<!--                );-->
+<!--            } else {-->
+<!--                console.error("親画面側：grid_cell が見つかりません。configのIDを確認してください。");-->
+<!--            }-->
+<!--        };-->
+
+
+    // 2. メニューのデータ定義
+    const dataset = [
+        { "id": "unit", "value": "Unit" },
+        { "type": "separator" },
+        { "id": "reference", "value": "Reference" },
+        { "type": "separator" },
+        { "id": "estimate", "value": "Estimate" },
+        { "type": "separator" },
+        { "type": "spacer" },
+        { "type": "separator" },
+        { "id": "account_signup", "value": "Sign Up" }, // IDをイベント側の初期値に合わせました
+        { "type": "separator" },
+        { "id": "account_login", "value": "Log In" }    // IDをイベント側の初期値に合わせました
+    ];
+
+    // 💡 修正ポイント①: メモリ上だけでMenuを生成（第一引数を null にする）
     const menu = new dhx.Menu("menu", {
-    css: "dhx_widget--bordered dhx_widget--bg_white",
-    data: dataset
-});
-    menu.events.on("click", function(id) {
-    if (id === "estimate")  window.location.href = "{% url 'estimate:estimate_list' %}";
-    if (id === "unit")      window.location.href = "{% url 'unit:unit-list' %}";
-    if (id === "reference") window.location.href = "{% url 'reference:reference-list' %}";
-    if (id === "logout")    window.location.href = "{% url 'account_logout' %}";
-    if (id === "signup")    window.location.href = "{% url 'account_signup' %}";
-    if (id === "login")     window.location.href = "{% url 'account_login' %}";
+        css: "custom",
+    });
+    menu.data.parse(dataset);
 
-});
-    </script>
+    // 💡 修正ポイント②: レイアウトの最上部セル（toolbar_cell）にMenuを合体させる
+    layout.getCell("toolbar_cell").attach(menu);
+
+    // 3. メニュークリック時の遷移イベント（ID名をデータと一致させました）
+    menu.events.on("click", function(id) {
+        // メインコンテンツを表示するセルを取得
+        const mainCell = layout.getCell("grid_cell");
+
+        if (id === "estimate") {
+            // iframeを使って、指定したURLのページをセルいっぱいに表示する
+            mainCell.attachHTML(
+                `<iframe src="{% url 'estimate:estimate_list' %}" style="width:100%; height:100%; border:none;"></iframe>`
+            );
+        }
+        if (id === "unit") {
+            mainCell.attachHTML(
+                `<iframe src="{% url 'unit:unit-list' %}" style="width:100%; height:100%; border:none;"></iframe>`
+            );
+        }
+        if (id === "reference") {
+            mainCell.attachHTML(
+                `<iframe src="{% url 'reference:reference-list' %}" style="width:100%; height:100%; border:none;"></iframe>`
+            );
+        }
+        // サインアップやログインは画面全体を遷移させることが多いためそのまま
+        if (id === "account_signup") window.location.href = "{% url 'account_signup' %}";
+        if (id === "account_login")  window.location.href = "{% url 'account_login' %}";
+    });
+</script>
 </body>
 </html>
 
