@@ -14,9 +14,11 @@
 
 <body>
     <div id="toolbar_container"></div>
-    <div id="grid_container"></div>
-    <style>
+    <div id="grid_container0" style="display: flex; justify-content: center; width: 100%;">
 
+        <div id="grid_container"></div>
+    </div>
+    <style>
         #toolbar_container {
             width: 100%;
             max-width: 1000px;
@@ -27,8 +29,9 @@
         #grid_container {
             //justify-content: right;
             width: 100%;
-            max-width: 480px;
-            margin: 0 auto;;
+            max-width: 1000px;
+            margin: 0 auto;
+            ;
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
             height: calc(100vh - 150px);
             min-height: 100px;
@@ -112,6 +115,7 @@
             editing: true,
             //dragMode: "both", // ドラッグ＆ドロップを有効にする
             //selection: "row",
+
         });
 
         // --- ページネーション ---

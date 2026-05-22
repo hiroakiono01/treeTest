@@ -27,7 +27,7 @@
         /* Gridのサイズを指定 */
         #grid_container {
             width: 100%;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
             height: calc(100vh - 150px);
@@ -131,7 +131,7 @@
                     width: 400 },
                 {
                     id: "action",
-                    width: 50,
+                    width: 80,
                     header: [{ text: "修正", align: "center" }],
                     align: "center",
                     htmlEnable: true,
@@ -139,7 +139,7 @@
                 },
                 {
                     id: "delete",
-                    width: 50,
+                    width: 80,
                     header: [{ text: "削除", align: "center" }],
                     align: "center",
                     htmlEnable: true,
@@ -174,25 +174,28 @@
 
         // 6.3 グリッド内の「詳細」から違うプログラムをコールする
         grid.events.on("cellClick", (row, col, e) => {
-            if (col.id === "detail") {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
+    if (col.id === "detail") {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
-                const targetId = row.estimate_no || row.id;
-                const targetUrl = `/task/lists/${targetId}/`;
+        // 1. estimate_no を取得（なければ id）
+        const rawId = row.estimate_no || row.id;
 
-                // 💡 親画面に用意した関数が「関数として存在するか」を厳密にチェック
-                if (window.parent && typeof window.parent.changeMainContent === "function") {
-                    console.log("親画面の関数を呼び出します:", targetUrl);
-                    window.parent.changeMainContent(targetUrl);
-                } else {
-                    // 親の関数が見つからない場合は、コンソールに警告を出して最上位ウィンドウを書き換える
-                    console.warn("親画面の changeMainContent 関数が見つかりません。");
-                    window.top.location.href = targetUrl;
-                }
-            }
+        // 2. 💡「001」などの文字列を数値の「1」に変換（Djangoの <int:> に合わせるため）
+        const targetId = parseInt(rawId, 10);
+
+        // 3. 💡 Djangoのルーティング構造に合わせたルート相対パスを作成
+        // ※ もし task アプリケーション内なら /task/lists/1/、直下なら /lists/1/ に調整してください
+        const targetUrl = `/task/lists/${targetId}/`;
+
+        if (window.parent && typeof window.parent.changeMainContent === "function") {
+            window.parent.changeMainContent(targetUrl);
+        } else {
+            window.top.location.href = targetUrl;
+        }
+    }
         });
 
         // 6.3. 保存ボタンの処理

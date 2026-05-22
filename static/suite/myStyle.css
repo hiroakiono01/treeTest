@@ -98,3 +98,16 @@
     background-color: #3b82f6 !important; /* ←【例】ホバー時の背景色 */
     color: #ffffff !important;             /* ←【例】ホバー時の文字色 */
   }
+
+
+/* メニュー全体の選択時の色を上書き */
+.dhx_menu {
+    /* 選択された（アクティブな）メニューの背景色 */
+    --dhx-background-selected: #007bff; /* 例：青色（お好みの色に変えてください） */
+
+    /* 選択された（アクティブな）メニューの文字色 */
+    --dhx-color-selected: #ffffff;      /* 例：白 */
+
+    /* （必要に応じて）マウスを上に載せた時の背景色 */
+    --dhx-background-hover: #e9ecef;     /* 例：薄いグレー */
+}

@@ -45,7 +45,12 @@
         <!--            height: 100%;-->
         <!--        }-->
 
-
+	.layout-header {
+		--dhx-background-primary: #73797d;
+	}
+    .layout-content {
+		--dhx-background-primary: #fff;
+	}
 
 	.custom,.custom--popup-menu {
 		--dhx-background-primary: #3A434A;
@@ -61,6 +66,8 @@
 		--dhx-font-color-secondary: #fff;
 		--dhx-font-color-additional: #fff;
 	}
+
+
     </style>
 
 </head>
@@ -69,19 +76,24 @@
 <div id="layout" style="height: 100vh; width: calc(100vw - 100px); margin: 0 auto;"></div>
 
 <script>
-    // 1. レイアウトの定義（htmlプロパティを空にして、後からMenuやGridを入れられるようにします）
-    const config = {
+    // レイアウトやメニューを初期化した後の任意のタイミングで実行
+    dhx.setTheme("light");
+
+    // 1. レイアウトの定義 (Suite 9 準拠: rows/colsをオブジェクト直下に配置)
+    const layout = new dhx.Layout("layout", {
         type: "line",
         rows: [
             {
                 id: "toolbar_cell", // Menuを配置するヘッダーセル
-                height: "46px"      // DHTMLX Menuの標準的な高さに合わせるのが綺麗です
+                height: "46px",
+                css: "layout-header"
             },
             {
                 cols: [
                     {
-                        id: "grid_cell",    // メインコンテンツ（Gridなど）を表示するセル
-                        html: "ここにメインコンテンツが表示されます"
+                        id: "grid_cell",    // メインコンテンツを表示するセル
+                        html: "",
+                        css: "layout-content",
                     },
                 ]
             },
@@ -92,30 +104,7 @@
                 css: "footer-cell"
             }
         ]
-    };
-
-    // レイアウトを初期化
-    const layout = new dhx.Layout("layout", {
-        config,
-        });
-
-<!--        // 💡 子画面（iframe）からいつでも呼び出せるように、window全体に公開します-->
-<!--        window.changeMainContent = function(url) {-->
-<!--            console.log("親画面側でコンテンツ切り替え関数が実行されました。URL:", url);-->
-
-<!--            // DHTMLX Suite 9 の正しいメソッド-->
-<!--            const mainCell = layout.getCell("grid_cell");-->
-
-<!--            if (mainCell) {-->
-<!--                // 中央のセルの中身を、新しい詳細画面の iframe で上書きする-->
-<!--                mainCell.attachHTML(-->
-<!--                    `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`-->
-<!--                );-->
-<!--            } else {-->
-<!--                console.error("親画面側：grid_cell が見つかりません。configのIDを確認してください。");-->
-<!--            }-->
-<!--        };-->
-
+    });
 
     // 2. メニューのデータ定義
     const dataset = [
@@ -127,27 +116,53 @@
         { "type": "separator" },
         { "type": "spacer" },
         { "type": "separator" },
-        { "id": "account_signup", "value": "Sign Up" }, // IDをイベント側の初期値に合わせました
+        { "id": "account_signup", "value": "Sign Up" },
         { "type": "separator" },
-        { "id": "account_login", "value": "Log In" }    // IDをイベント側の初期値に合わせました
+        { "id": "account_login", "value": "Log In" }
     ];
 
-    // 💡 修正ポイント①: メモリ上だけでMenuを生成（第一引数を null にする）
-    const menu = new dhx.Menu("menu", {
-        css: "custom",
-    });
-    menu.data.parse(dataset);
+    /**
+     * 子画面（iframe）のGridから呼び出されるコンテンツ切り替え用関数
+     */
+    function changeMainContent(targetUrl) {
+        const mainCell = layout.getCell("grid_cell");
 
-    // 💡 修正ポイント②: レイアウトの最上部セル（toolbar_cell）にMenuを合体させる
+        // 1. メインセルの中身を新しい iframe に書き換える
+        mainCell.attachHTML(
+            `<iframe src="${targetUrl}" style="width:100%; height:100%; border:none;"></iframe>`
+        );
+
+        // 2. URLの文字列をチェックして、対応するメニューのアクティブ色を連動させる
+        if (targetUrl.includes("task/lists/") || targetUrl.includes("estimate")) {
+            menu.select("estimate");
+        } else if (targetUrl.includes("unit")) {
+            menu.select("unit");
+        } else if (targetUrl.includes("reference")) {
+            menu.select("reference");
+        }
+    }
+
+    // 💡 超重要：この関数を window オブジェクトに登録して、iframeの中から覗けるようにします
+    window.changeMainContent = changeMainContent;
+
+    // 3. メニューをコンテナなし(null)で初期化
+    const menu = new dhx.Menu(null, {
+        css: "dhx_widget--bordered dhx_widget--bg_white",
+        data: dataset
+    });
+
+    // Suite 9の標準メソッドで、toolbar_cellへMenuをアタッチ
     layout.getCell("toolbar_cell").attach(menu);
 
-    // 3. メニュークリック時の遷移イベント（ID名をデータと一致させました）
+
+    // 4. メニュークリック時の遷移イベント
     menu.events.on("click", function(id) {
-        // メインコンテンツを表示するセルを取得
+
+        menu.select(id);
+
         const mainCell = layout.getCell("grid_cell");
 
         if (id === "estimate") {
-            // iframeを使って、指定したURLのページをセルいっぱいに表示する
             mainCell.attachHTML(
                 `<iframe src="{% url 'estimate:estimate_list' %}" style="width:100%; height:100%; border:none;"></iframe>`
             );
@@ -162,10 +177,10 @@
                 `<iframe src="{% url 'reference:reference-list' %}" style="width:100%; height:100%; border:none;"></iframe>`
             );
         }
-        // サインアップやログインは画面全体を遷移させることが多いためそのまま
         if (id === "account_signup") window.location.href = "{% url 'account_signup' %}";
         if (id === "account_login")  window.location.href = "{% url 'account_login' %}";
     });
+
 </script>
 </body>
 </html>
