@@ -1,45 +1,115 @@
-<html lang="ja">
+{% extends 'base.html' %}
+{% block head %}
+<title>Unit list</title>
 
-<head>
-    {% load static %}
-    {% csrf_token %}
-    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
-    <script src="{% static 'suite/suite.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
+<style>
+    /* 画面全体にレイアウトを広げるための設定 */
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
 
-    <!-- 共通ユーティリティ -->
-    <script src="{% static 'js/utils.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
-</head>
+    /* 💡 全体の中央寄せと最大幅の制限は、最外枠のコンテナに対して行う */
+    #layout-main-container {
+        width: 100%;
+        max-width: 1000px;
+        height: 100vh;
+        margin: 0 auto;
+        box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
+        /* 浮き出し効果 */
+    }
+
+    /* 必要に応じて各セルの背景色などを指定 */
+    .layout-header {
+        background-color: #879eba;
+    }
+
+    .layout-content {
+        background-color: #ffffff;
+    }
+
+    .layout-footer {
+        background-color: #1a1a1a;
+        /* 💡 深みのある黒を指定 */
+        color: #ffffff;
+        /* 💡 文字色を白に指定 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        /* 必要に応じて文字間隔を調整 */
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<div class="my-div-style col-sm mx-auto text-center">
+    <h5>Unit List</h5>
+</div>
+{% endblock %}
+
+{% block contents %}
 
 <body>
-    <div id="toolbar_container"></div>
-    <div id="grid_container0" style="display: flex; justify-content: center; width: 100%;">
+    <!-- 画面全体を覆うレイアウト用の器だけを用意します -->
 
-        <div id="grid_container"></div>
-    </div>
-    <style>
-        #toolbar_container {
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+    <!--<div id="layout"></div>-->
 
-        /* Gridのサイズを指定 */
-        #grid_container {
-            //justify-content: right;
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-            ;
-            /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
-            height: calc(100vh - 150px);
-            min-height: 100px;
-            /* 浮き出し効果 */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-    </style>
+    <!--<div id="toolbar_container"></div>-->
+    <!--<div id="grid_container"></div>-->
+
+
+    <!-- 💡 レイアウトを描画する最外枠のコンテナ -->
+    <div id="layout-main-container"></div>
+
+
     <script>
+        // 1. レイアウトの定義 (Suite 9 準拠)
+        // 第一引数には、HTML上のコンテナ要素のIDを指定します。
+        const layout = new dhx.Layout("layout-main-container", {
+            type: "line",
+            rows: [
+                {
+                    id: "toolbar_container", // Menuを配置するヘッダーセル
+                    height: "60px",
+                    css: "layout-header"
+                },
+                {
+                    // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
+                    id: "main_content_row",
+                    cols: [
+                        {
+                            // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
+                            id: "grid_and_page_container",
+                            rows: [
+                                {
+                                    id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
+                                },
+                                {
+                                    id: "pagination_cell", // 下側：Pagination用のセル
+                                    height: "60px" // Paginationが収まる高さを指定
+                                }
+                            ],
+                            css: "layout-content"
+                        }
+                    ]
+                },
+                {
+                    id: "footer_cell",  // フッターセル
+                    html: "Copyright &copy; kag holdings inc 2025",
+                    height: "30px",
+                    css: "layout-footer"
+                }
+            ]
+        });
+
+
+
         // --- ツールバーの処理 ---
         const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
@@ -60,7 +130,9 @@
             }
         })
 
+        // TODO:
 
+// CONNECT:
 
         // --- DRFからMainデータの読み込み
         const dataset = new dhx.DataCollection();
@@ -71,8 +143,8 @@
             })
             .catch(err => console.error("unitデータ取得失敗:", err));
 
-        // --- Gridの初期化 ---
-        const grid = new dhx.Grid("grid_container", {
+        // GRID:--- 検索　Gridの初期化 ---
+        const grid = new dhx.Grid(null, {
             columns: [
                 {
                     id: "id",
@@ -83,10 +155,10 @@
                     id: "unit_no",
                     width: 200,
                     header: [
-                        { text: "表示順 <span style='color:red'>*</span>", align: "center" },
+                        { text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },
                     ],
                     htmlEnable: true, // 赤くするため必要
-                    rowspan: 2,
+
                     //editable: true
                 },
                 {
@@ -101,10 +173,10 @@
                 },
                 {
                     id: "delete",
-                    header: [{ text: "削除", align: "center" }],
+                    header: [{ text: "削除", align: "center", rowspan: 2 }],
                     align: "center",
                     width: 80,
-                    rowspan: 2,
+
                     htmlEnable: true,
                     template: () => "<button class='dxi dxi-delete' >削除</button>"
                 }
@@ -112,17 +184,51 @@
             autoWidth: false,
             data: dataset, // 作成した DataCollection を直接紐付ける
             //keyNavigation: true,
-            editing: true,
-            //dragMode: "both", // ドラッグ＆ドロップを有効にする
-            //selection: "row",
+            editing: true
+            // dragMode: "both", // ドラッグ＆ドロップを有効にする
+            // selection: "row",
 
         });
 
+        // 💡 修正した「grid_cell」にGridをアタッチ
+        layout.getCell("grid_cell").attach(grid);
+
         // --- ページネーション ---
-        const pagination = new dhx.Pagination("pagination", {
+        const pagination = new dhx.Pagination(null, {
             css: "dhx_widget--bordered dhx_widget--no-border_top",
             data: grid.data,
             pageSize: 50
+        });
+
+        // 💡 修正した「pagination_cell」にPaginationをアタッチ
+        layout.getCell("pagination_cell").attach(pagination);
+
+        // === 検索　自動で行を追加し入力が何もない時一括で更新した時その行を削除する ===  
+        // 自動追加された行を識別するためのフラグ用プロパティ名
+        const AUTO_ADDED_FLAG = "_isAutoAdded";
+
+        // 2. 最後のカラム編集終了時に行を自動追加するイベント設定
+        grid.events.on("afterEditEnd", (value, row, column) => {
+            const columns = grid.config.columns;
+            const lastColumnId = columns[columns.length - 1].id; // 最後のカラムのID
+
+            // 全データ行を取得
+            const allRows = grid.data.map(item => item);
+            const lastRowId = allRows[allRows.length - 1].id; // 最終行のID
+
+            console.log("lastColumnId",lastColumnId,"lastRowId",lastRowId)
+
+            // 「編集されたのが最後のカラム」かつ「現在の行が最終行」の場合に新しい行を追加
+            if (column.id === lastColumnId && row.id === lastRowId) {
+                const newRowId = "auto_" + Date.now(); // ユニークなIDを生成
+
+                grid.data.add({
+                    id: newRowId,
+                    unit_no: "",
+                    unit_name: "",
+                    [AUTO_ADDED_FLAG]: true // 自動追加された行であることをマーク
+                });
+            }
         });
 
         // --- ワンクリックで入力ができる ---　
@@ -155,8 +261,10 @@
                 });
         }
 
-        // --- 保存ボタンで一括更新処理 ---
+        // --- 検索　保存ボタンで一括更新処理 ---
         function updateAll() {
+            // 自動追加された行のうち、何も入力されていない行を抽出して削除
+            const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
             const requiredFields = ["unit_no", "unit_name"];
@@ -166,6 +274,26 @@
                 requiredFields.forEach(field => {
                     grid.removeCellCss(row.id, field, "required-error");
                 });
+            });
+
+            grid.data.forEach(item => {
+                // 自動追加フラグが立っている行をチェック
+                if (item[AUTO_ADDED_FLAG]) {
+                    // IDやフラグ用のプロパティを除いた、純粋な入力値がすべて空か確認
+                    const hasInput = Object.keys(item).some(key => {
+                        if (key === "id" || key === AUTO_ADDED_FLAG) return false;
+                        return item[key] !== undefined && item[key] !== null && String(item[key]).trim() !== "";
+                    });
+
+                    // 何も入力されていなければ削除対象リストに追加
+                    if (!hasInput) {
+                        rowsToRemove.push(item.id);
+                    }
+                }
+            });
+            // 該当する未入力行をグリッドから削除
+            rowsToRemove.forEach(id => {
+                grid.data.remove(id);
             });
 
             // フロントエンドの必須入力チェック
@@ -332,7 +460,7 @@
             }
         });
 
-        // --- 
+        // ---
         // grid.events.on("afterEditEnd", (value, row, col) => {
         //     // 必須にしたいカラムIDを指定（例: unit_display）
         //     if (col.id === "unit_name") {
@@ -350,4 +478,4 @@
     </script>
 </body>
 
-</html>
+{% endblock %}

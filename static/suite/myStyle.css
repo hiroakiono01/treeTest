@@ -111,3 +111,12 @@
     /* （必要に応じて）マウスを上に載せた時の背景色 */
     --dhx-background-hover: #e9ecef;     /* 例：薄いグレー */
 }
+
+/* ナビゲーションバー内のリンク文字サイズを一括変更 */
+.navbar-nav .nav-link {
+    font-size: 1.1rem !important; /* 好みの大きさに数値を調整してください */
+}
+
+.my-layout {
+    margin-top:6rem;
+}

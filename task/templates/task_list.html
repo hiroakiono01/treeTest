@@ -1,53 +1,101 @@
 {% extends "base.html" %}
+{% block head %}
+<title>Task</title>
+<style>
+    /* 画面全体にレイアウトを広げるための設定 */
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    /* 💡 全体の中央寄せと最大幅の制限は、最外枠のコンテナに対して行う */
+    #layout-main-container {
+        width: 100%;
+        max-width: 1500px;
+        height: 100vh;
+        margin: 0 auto;
+        box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
+        /* 浮き出し効果 */
+    }
+
+    /* 必要に応じて各セルの背景色などを指定 */
+    .layout-header {
+        background-color: #879eba;
+    }
+
+    .layout-content {
+        background-color: #ffffff;
+    }
+
+    .layout-footer {
+        background-color: #1a1a1a;
+        /* 💡 深みのある黒を指定 */
+        color: #ffffff;
+        /* 💡 文字色を白に指定 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        /* 必要に応じて文字間隔を調整 */
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<div class="my-div-style col-sm mx-auto text-center">
+    <h5>Task {{ estimate_no_display }}</h5>
+</div>
+{% endblock %}
+
 {% block contents %}
 
-<head>
-    {% load static %}
-    {% csrf_token %}
-    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
-    <script src="{% static 'suite/suite.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
-
-    <!-- 共通ユーティリティ -->
-    <script src="{% static 'js/utils.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
-</head>
-
 <body>
-    <div id="toolbar_container"></div>
-    <div id="grid_container"></div>
-    <style>
-        #toolbar_container {
-            width: calc(100vw - 40px);
-            max-width: none;
-            /* 💡 画面の中央に配置する */
-            margin: 0 auto;
-        }
-
-        #grid_container {
-            width: calc(100vw - 40px);
-            max-width: none;
-            /* 💡 画面の中央に配置する */
-            margin: 0 auto;
-            /* 💡 修正：画面の高さ（100vh）からヘッダーなどの高さ（例：150px）を引く */
-            height: calc(100vh - 100px);
-            min-height: 100px;
-            /* 浮き出し効果 */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            /* 💡 修正：Grid自体も画面中央に寄せる設定を追加 */
-            margin: 0 auto;
-            /* 💡 念のためGrid内部の余計なはみ出しを防ぐ */
-            overflow: hidden;
-        }
-    </style>
+    <div id="layout-main-container"></div>
 
     <script>
-        window.addEventListener("resize", function () {
-            if (grid) {
-                grid.paint(); /* 💡 コンテナの100%幅に合わせて枠線を再描画 */
-            }
+        // 1. レイアウトの定義 (Suite 9 準拠)
+        // 第一引数には、HTML上のコンテナ要素のIDを指定します。
+        const layout = new dhx.Layout("layout-main-container", {
+            type: "line",
+            rows: [
+                {
+                    id: "toolbar_container", // Menuを配置するヘッダーセル
+                    height: "60px",
+                    css: "layout-header"
+                },
+                {
+                    // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
+                    id: "main_content_row",
+                    cols: [
+                        {
+                            // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
+                            id: "grid_and_page_container",
+                            rows: [
+                                {
+                                    id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
+                                },
+                                {
+                                    id: "pagination_cell", // 下側：Pagination用のセル
+                                    height: "60px" // Paginationが収まる高さを指定
+                                }
+                            ],
+                            css: "layout-content"
+                        }
+                    ]
+                },
+                {
+                    id: "footer_cell",  // フッターセル
+                    html: "Copyright &copy; kag holdings inc 2025",
+                    height: "30px",
+                    css: "layout-footer"
+                }
+            ]
         });
-
 
 
         // --- ツールバーの処理 ---
@@ -105,7 +153,7 @@
                 id:
                     "id",
                 header: [{ text: "ID" }],
-                hidden: false,
+                hidden: true,
                 isTreeColumn: true
             },
             {
@@ -214,7 +262,7 @@
                 numberMask: { customFormat: "#,##0" },
             },
             {
-                id: "parent", header: [{ text: "parent" }], hidden: false
+                id: "parent", header: [{ text: "parent" }], hidden: true
             },
             {
                 id: "sort_order", header: [{ text: "sort_order" }], hidden: true
@@ -257,6 +305,59 @@
             // clipboard: "row"
             // autoEmptyRow: true
         });
+
+        // 💡 修正した「grid_cell」にGridをアタッチ
+        layout.getCell("grid_cell").attach(grid);
+
+        // --- ページネーション ---
+        const pagination = new dhx.Pagination(null, {
+            css: "dhx_widget--bordered dhx_widget--no-border_top",
+            data: grid.data,
+            pageSize: 50
+        });
+
+        // 💡 修正した「pagination_cell」にPaginationをアタッチ
+        layout.getCell("pagination_cell").attach(pagination);
+
+        // === 検索　自動で行を追加し入力が何もない時一括で更新した時その行を削除する ===
+
+        // 自動追加された行を識別するためのフラグ用プロパティ名
+        const AUTO_ADDED_FLAG = "_isAutoAdded";
+        // 2. 最後のカラム編集終了時に行を自動追加するイベント設定
+        grid.events.on("afterEditEnd", (value, row, column) => {
+            const columns = grid.config.columns;
+            const lastColumnId = columns[columns.length - 1].id; // 最後のカラムのID
+
+            // 全データ行を取得
+            const allRows = grid.data.map(item => item);
+            const lastRowId = allRows[allRows.length - 1].id; // 最終行のID
+
+            // 「編集されたのが最後のカラム」かつ「現在の行が最終行」の場合に新しい行を追加
+            if (column.id === lastColumnId && row.id === lastRowId) {
+                const newRowId = "auto_" + Date.now(); // ユニークなIDを生成
+
+                grid.data.add({
+                    id: newRowId,
+                    estimate_no: "estimate_no",
+                    task_name: "",
+                    material_dimensions: "",
+                    calcu_cls: "",
+                    budget_quantity: "",
+                    budget_unit: "",
+                    budget_price: "",
+                    budget_amount: "",
+                    markup_rate: "",
+                    quantity: "",
+                    unit: "",
+                    price: "",
+                    amount: "",
+                    parent: "",
+                    sort_order: "",
+                    [AUTO_ADDED_FLAG]: true // 自動追加された行であることをマーク
+                });
+            }
+        });
+
         // 💡 2. 編集を開始する直前にインターセプト（編集不可の制御）
         grid.events.on("beforeEditStart", function (row, col) {
             // 対象の列が「calcu_cls」かつ、値が "2" または "3" の場合は編集をキャンセル
@@ -531,11 +632,11 @@
             if (value === "Completed") status = "dhx-demo_grid-status--completed";
             if (value === "In progress") status = "dhx-demo_grid-status--in-progress";
             return `
-                    <div class='dhx-demo_grid-status ${status}'>
-                        <div class='dhx-demo_grid-status-indicator'></div>
-                        <span class='dhx-demo_grid-status-text'>${value}</span>
-                    </div>
-                    `
+                <div class='dhx-demo_grid-status ${status}'>
+                    <div class='dhx-demo_grid-status-indicator'></div>
+                    <span class='dhx-demo_grid-status-text'>${value}</span>
+                </div>
+                `
         }
 
         function collapseAll() {
@@ -758,9 +859,37 @@
         //--- イベント制御 ---
 
         const rawData = grid.data.serialize(true);
-        // 7. 保存ボタンの処理
+
+        // === 検索　一括保存ボタンの処理 ===
         function updateAll() {
+
+            // 1.1 自動追加された行のうち、何も入力されていない行を抽出して削除
+            const rowsToRemove = [];
+
+            grid.data.forEach(item => {
+                // 自動追加フラグが立っている行をチェック
+                if (item[AUTO_ADDED_FLAG]) {
+                    // IDやフラグ用のプロパティを除いた、純粋な入力値がすべて空か確認
+                    const hasInput = Object.keys(item).some(key => {
+                        if (key === "id" || key === AUTO_ADDED_FLAG) return false;
+                        return item[key] !== undefined && item[key] !== null && String(item[key]).trim() !== "";
+                    });
+
+                    // 何も入力されていなければ削除対象リストに追加
+                    if (!hasInput) {
+                        rowsToRemove.push(item.id);
+                    }
+                }
+            });
+
+            // 1.2 該当する未入力行をグリッドから削除
+            rowsToRemove.forEach(id => {
+                grid.data.remove(id);
+            });
+
+
             const allData = grid.data.serialize();
+            
             if (allData.length === 0) return;
             fetch("/task/bulk_sync/", {
                 method: "POST",

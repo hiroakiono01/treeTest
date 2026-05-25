@@ -1,0 +1,187 @@
+{% load static %}
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <!--    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">-->
+    <!--    <meta name="description" content="">-->
+    <!--    <meta name="author" content="">-->
+
+    <title>{% block title %}Estimate{% endblock %}</title>
+
+    <!-- Bootstrap core CSS -->
+    <!--    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">-->
+
+    <!-- Custom fonts for this template -->
+    <!--    <link href="https://googleapis.com" rel="stylesheet">-->
+    <!--    <link href="https://googleapis.com" rel="stylesheet">-->
+
+    <!-- Custom styles for this template -->
+    <!--    <link href="{% static 'css/one-page-wonder.css' %}" rel="stylesheet">-->
+
+    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
+    <script src="{% static 'suite/suite.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
+
+    <!-- 共通ユーティリティ -->
+    <script src="{% static 'js/utils.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
+
+    <style>
+        <!--        /* Layoutを画面全体にフィットさせるための必須設定 */-->
+        <!--        html, body {-->
+        <!--            width: 100%;-->
+        <!--            height: 100%;-->
+        <!--            margin: 0;-->
+        <!--            padding: 0;-->
+        <!--            overflow: hidden;-->
+        <!--        }-->
+        <!--        /* スクロールバーはLayoutのコンテンツセル側に持たせる */-->
+        <!--        .dhx_layout-cell-content {-->
+        <!--            overflow-y: auto !important;-->
+        <!--        }-->
+        <!--        /* 埋め込み用コンテナをセルいっぱいに広げる */-->
+        <!--        .full-size-container {-->
+        <!--            width: 100%;-->
+        <!--            height: 100%;-->
+        <!--        }-->
+
+	.layout-header {
+		--dhx-background-primary: #73797d;
+	}
+    .layout-content {
+		--dhx-background-primary: #fff;
+	}
+
+	.custom,.custom--popup-menu {
+		--dhx-background-primary: #3A434A;
+		--dhx-background-secondary: #5a6872;
+		--dhx-background-additional: #5a6872;
+		--dhx-s-toolbar-background: var(--dhx-background-primary);
+
+		--dhx-color-primary: #118d8d;
+		--dhx-color-primary-hover: #49e9e9;
+		--dhx-color-primary-active: #49e9e9;
+
+		--dhx-font-color-primary: #fff;
+		--dhx-font-color-secondary: #fff;
+		--dhx-font-color-additional: #fff;
+	}
+
+
+    </style>
+
+</head>
+<body>
+<!-- 画面全体を覆うレイアウト用の器だけを用意します -->
+<div id="layout" style="height: 100vh; width: calc(100vw - 100px); margin: 0 auto;"></div>
+
+<script>
+    // レイアウトやメニューを初期化した後の任意のタイミングで実行
+    dhx.setTheme("light");
+
+    // 1. レイアウトの定義 (Suite 9 準拠: rows/colsをオブジェクト直下に配置)
+    const layout = new dhx.Layout("layout", {
+        type: "line",
+        rows: [
+            {
+                id: "toolbar_cell", // Menuを配置するヘッダーセル
+                height: "46px",
+                css: "layout-header"
+            },
+            {
+                cols: [
+                    {
+                        id: "grid_cell",    // メインコンテンツを表示するセル
+                        html: "",
+                        css: "layout-content",
+                    },
+                ]
+            },
+            {
+                id: "footer_cell",  // フッターセル
+                html: "Copyright &copy; kag holdings inc 2025",
+                height: "30px",
+                css: "footer-cell"
+            }
+        ]
+    });
+
+    // 2. メニューのデータ定義
+    const dataset = [
+        { "id": "unit", "value": "Unit" },
+        { "type": "separator" },
+        { "id": "reference", "value": "Reference" },
+        { "type": "separator" },
+        { "id": "estimate", "value": "Estimate" },
+        { "type": "separator" },
+        { "type": "spacer" },
+        { "type": "separator" },
+        { "id": "account_signup", "value": "Sign Up" },
+        { "type": "separator" },
+        { "id": "account_login", "value": "Log In" }
+    ];
+
+    /**
+     * 子画面（iframe）のGridから呼び出されるコンテンツ切り替え用関数
+     */
+    function changeMainContent(targetUrl) {
+        const mainCell = layout.getCell("grid_cell");
+
+        // 1. メインセルの中身を新しい iframe に書き換える
+        mainCell.attachHTML(
+            `<iframe src="${targetUrl}" style="width:100%; height:100%; border:none;"></iframe>`
+        );
+
+        // 2. URLの文字列をチェックして、対応するメニューのアクティブ色を連動させる
+        if (targetUrl.includes("task/lists/") || targetUrl.includes("estimate")) {
+            menu.select("estimate");
+        } else if (targetUrl.includes("unit")) {
+            menu.select("unit");
+        } else if (targetUrl.includes("reference")) {
+            menu.select("reference");
+        }
+    }
+
+    // 💡 超重要：この関数を window オブジェクトに登録して、iframeの中から覗けるようにします
+    window.changeMainContent = changeMainContent;
+
+    // 3. メニューをコンテナなし(null)で初期化
+    const menu = new dhx.Menu(null, {
+        css: "dhx_widget--bordered dhx_widget--bg_white",
+        data: dataset
+    });
+
+    // Suite 9の標準メソッドで、toolbar_cellへMenuをアタッチ
+    layout.getCell("toolbar_cell").attach(menu);
+
+
+    // 4. メニュークリック時の遷移イベント
+    menu.events.on("click", function(id) {
+
+        menu.select(id);
+
+        const mainCell = layout.getCell("grid_cell");
+
+        if (id === "estimate") {
+            mainCell.attachHTML(
+                `<iframe src="{% url 'estimate:estimate_list' %}" style="width:100%; height:100%; border:none;"></iframe>`
+            );
+        }
+        if (id === "unit") {
+            mainCell.attachHTML(
+                `<iframe src="{% url 'unit:unit-list' %}" style="width:100%; height:100%; border:none;"></iframe>`
+            );
+        }
+        if (id === "reference") {
+            mainCell.attachHTML(
+                `<iframe src="{% url 'reference:reference-list' %}" style="width:100%; height:100%; border:none;"></iframe>`
+            );
+        }
+        if (id === "account_signup") window.location.href = "{% url 'account_signup' %}";
+        if (id === "account_login")  window.location.href = "{% url 'account_login' %}";
+    });
+
+</script>
+</body>
+</html>
+

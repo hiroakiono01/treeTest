@@ -17,7 +17,7 @@ def unit_list_call(request):
 @api_view(['GET', 'POST'])
 def unit_list(request):
     if request.method == 'GET':
-        units = Unit.objects.order_by("unit_no").all()
+        units = Unit.objects.order_by("unit_no").exclude(unit_name="").exclude(unit_name__isnull=True).all()
         serializer = UnitSerializer(units, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
@@ -161,5 +161,3 @@ def bulk_sync_units(request):
         'id_map': id_map,  # 新規作成した行のID変換表をフロントに伝える
         'data': response_data
     }, status=status.HTTP_200_OK)
-
-
