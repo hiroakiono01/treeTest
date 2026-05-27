@@ -186,7 +186,7 @@
         layout.getCell("grid_cell").attach(grid);
 
 
-        // PASGINATION: ページネーション ---
+        // PAGINATION: ページネーション ---
         const pagination = new dhx.Pagination(null, {
             css: "dhx_widget--bordered dhx_widget--no-border_top",
             data: grid.data,
@@ -203,7 +203,7 @@
         });
 
 
-        // AUTO_NEWROW: 自動で行を追加しする　この行は何も入力がないときは一括更新で削除
+        // AUTO_ADD_ROW: 自動で行を追加しする　この行は何も入力がないときは一括更新で削除
         const AUTO_ADDED_FLAG = "_isAutoAdded"; // 自動追加フラグ
 
         grid.events.on("afterEditEnd", (value, row, column) => {
@@ -238,7 +238,7 @@
 
 
 
-        // BUTTON_NEWROW: -- 新規ボタンを押した時の振る舞い ---
+        // BUTTON_ADD_ROW: -- 新規ボタンを押した時の振る舞い ---
         function addRow() {
             const newRowData = {};
             const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加

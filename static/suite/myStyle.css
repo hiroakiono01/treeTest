@@ -4,56 +4,73 @@
 }
 
 .dhx_form-group__label-required {
-    color: #ff0000 !important; /* 好みの赤色に変更してください */
-    margin-left: 4px;           /* 少し隙間をあけると見やすいです */
+    color: #ff0000 !important;
+    /* 好みの赤色に変更してください */
+    margin-left: 4px;
+    /* 少し隙間をあけると見やすいです */
 }
 
 /* 必須エラー用のスタイル */
 .required-error {
-    background: #fff0f0 !important; /* 薄い赤背景 */
-    border: 1px solid #ff4d4d !important; /* 赤い枠線 */
+    background: #fff0f0 !important;
+    /* 薄い赤背景 */
+    border: 1px solid #ff4d4d !important;
+    /* 赤い枠線 */
 }
+
 .grid-btn-edit {
-  border: 1px solid #28a745; /* 線の太さ、種類、色を指定 */
-  background-color: transparent;
-  color: #28a745;
+    border: 1px solid #28a745;
+    /* 線の太さ、種類、色を指定 */
+    background-color: transparent;
+    color: #28a745;
 }
 
 .grid-btn-delete {
- border: 1px solid #dc3545;
- background-color: transparent;
- color: #dc3545;
+    border: 1px solid #dc3545;
+    background-color: transparent;
+    color: #dc3545;
 }
 
 .grid-btn-detail {
- border: none !important;
- background-color: transparent;
- text-decoration: none; /* これでアンダーラインが消えます */
- color: #007bff;
- font-size: 14px;
+    border: none !important;
+    background-color: transparent;
+    text-decoration: none;
+    /* これでアンダーラインが消えます */
+    color: #007bff;
+    font-size: 14px;
 }
 
 .dxi.dxi-pencil {
-    background: none !important;    /* 背景を透明にする */
-    border: none !important;        /* 枠線を消す */
-    outline: none !important;       /* フォーカス時の線を消す */
-    box-shadow: none !important;    /* 影がある場合は消す */
+    background: none !important;
+    /* 背景を透明にする */
+    border: none !important;
+    /* 枠線を消す */
+    outline: none !important;
+    /* フォーカス時の線を消す */
+    box-shadow: none !important;
+    /* 影がある場合は消す */
 }
 
 /* ホバー時も同様に手を出したい場合 */
 .dxi.dxi-pencil:hover {
-    color: red;          /* ホバー時の色（少し濃い青など） */
+    color: red;
+    /* ホバー時の色（少し濃い青など） */
 }
 
 .dxi.dxi-delete {
-    background-color: transparent;   /* 背景を透明にする */
-    border: none !important;        /* 枠線を消す */
-    outline: none !important;       /* フォーカス時の線を消す */
-    box-shadow: none !important;    /* 影がある場合は消す */
+    background-color: transparent;
+    /* 背景を透明にする */
+    border: none !important;
+    /* 枠線を消す */
+    outline: none !important;
+    /* フォーカス時の線を消す */
+    box-shadow: none !important;
+    /* 影がある場合は消す */
 }
 
 .dxi.dxi-delete:hover {
-    color: red;         /* ホバー時の色（少し濃い青など） */
+    color: red;
+    /* ホバー時の色（少し濃い青など） */
     /* もし背景色も変えたい場合は background-color を指定してください */
 }
 
@@ -63,9 +80,12 @@
 
 /* 💡 編集不可セルのグレーアウトスタイル */
 .cell-disabled {
-    background-color: #f2f2f2 !important; /* 薄いグレー */
-    color: #999999 !important;            /* 文字を薄く */
-    cursor: not-allowed;                  /* 禁止マークのカーソル */
+    background-color: #f2f2f2 !important;
+    /* 薄いグレー */
+    color: #999999 !important;
+    /* 文字を薄く */
+    cursor: not-allowed;
+    /* 禁止マークのカーソル */
 }
 
 .footer-cell .dhx_layout-cell-content {
@@ -77,52 +97,76 @@
     box-sizing: border-box;
     height: 100% !important;
 
-    background-color: #000000 !important; /* 背景を黒にする */
-    color: #ffffff !important;            /* 文字を白（白抜き）にする */
+    background-color: #000000 !important;
+    /* 背景を黒にする */
+    color: #ffffff !important;
+    /* 文字を白（白抜き）にする */
 }
 
-  /* 1. メニュー全体の背景色を強制上書き */
-  .dhx_widget.dhx_menu {
-    background-color: #1e293b !important; /* ←【例】ここを好きな背景色に変更 */
+/* 1. メニュー全体の背景色を強制上書き */
+.dhx_widget.dhx_menu {
+    background-color: #1e293b !important;
+    /* ←【例】ここを好きな背景色に変更 */
     background: #1e293b !important;
-  }
+}
 
-  /* 2. メニュー内のボタン（文字やアイコンが入る器）の背景色と文字色 */
-  .dhx_widget.dhx_menu .dhx_menu-button {
+/* 2. メニュー内のボタン（文字やアイコンが入る器）の背景色と文字色 */
+.dhx_widget.dhx_menu .dhx_menu-button {
     background-color: transparent !important;
-    color: #ffffff !important; /* ←【例】ここを好きな文字色に変更 */
-  }
+    color: #ffffff !important;
+    /* ←【例】ここを好きな文字色に変更 */
+}
 
-  /* 3. マウスホバー（選択中）の時の色 */
-  .dhx_widget.dhx_menu .dhx_menu-button:hover {
-    background-color: #3b82f6 !important; /* ←【例】ホバー時の背景色 */
-    color: #ffffff !important;             /* ←【例】ホバー時の文字色 */
-  }
+/* 3. マウスホバー（選択中）の時の色 */
+.dhx_widget.dhx_menu .dhx_menu-button:hover {
+    background-color: #3b82f6 !important;
+    /* ←【例】ホバー時の背景色 */
+    color: #ffffff !important;
+    /* ←【例】ホバー時の文字色 */
+}
 
 
 /* メニュー全体の選択時の色を上書き */
 .dhx_menu {
     /* 選択された（アクティブな）メニューの背景色 */
-    --dhx-background-selected: #007bff; /* 例：青色（お好みの色に変えてください） */
+    --dhx-background-selected: #007bff;
+    /* 例：青色（お好みの色に変えてください） */
 
     /* 選択された（アクティブな）メニューの文字色 */
-    --dhx-color-selected: #ffffff;      /* 例：白 */
+    --dhx-color-selected: #ffffff;
+    /* 例：白 */
 
     /* （必要に応じて）マウスを上に載せた時の背景色 */
-    --dhx-background-hover: #e9ecef;     /* 例：薄いグレー */
+    --dhx-background-hover: #e9ecef;
+    /* 例：薄いグレー */
 }
 
 /* ナビゲーションバー内のリンク文字サイズを一括変更 */
 .navbar-nav .nav-link {
-    font-size: 1.1rem !important; /* 好みの大きさに数値を調整してください */
+    font-size: 1.1rem !important;
+    /* 好みの大きさに数値を調整してください */
 }
 
 .my-layout {
-    margin-top:6rem;
+    margin-top: 6rem;
 }
 
 /* 赤いトースト用のカスタムCSS */
 .my-toast-danger {
-    background-color: #e2adad !important; /* 好みの赤色 */
-    color: #ffffff !important;           /* 文字を白に */
+    background-color: #e2adad !important;
+    /* 好みの赤色 */
+    color: #ffffff !important;
+    /* 文字を白に */
+}
+
+.dhx_context-menu {
+    --dhx-background-primary: #f0f4f8 !important;
+    /* お好みの背景色を指定 */
+    /* 必要に応じて文字色も変更できます */
+    --dhx-color-primary: #333333;
+}
+
+/* マウスホバー時の背景色を変更したい場合 */
+.dhx_context-menu .dhx_menu-button:hover {
+    background-color: #d0e2ff;
 }

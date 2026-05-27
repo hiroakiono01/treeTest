@@ -61,6 +61,7 @@
     <!--<div id="grid_container"></div>-->
 
     <script>
+        dhx.setTheme("dark");
         // 1. レイアウトの定義 (Suite 9 準拠)
         // 第一引数には、HTML上のコンテナ要素のIDを指定します。
         const layout = new dhx.Layout("layout-main-container", {
@@ -153,7 +154,7 @@
                 {
                     id: "id",
                     header: [{ text: "ID" }],
-                    hidden: true
+                    hidden: false
                 },
                 {
                     id: "detail_name",
@@ -248,21 +249,26 @@
                 { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
             ]
         });
+        let activeRowId = null;
 
-        // 2. クリックしたセルの内容を取得
-        let rowIndex = null;
-        let rowId = null;
-        grid.events.on("cellClick", function (row, col, e) {
-            rowIndex = grid.data.getIndex(row.id);
-            rowId = row.id;
-        });
-
-        // ３。行を右クリックでコンテキストメニューを表示する ---
+        // 2。行を右クリックでコンテキストメニューを表示する ---
         grid.events.on("cellRightClick", (row, column, event) => {
             event.preventDefault();
             grid.selection.setCell(row, column);
+            activeRowId = row.id; // 右クリックした行のIDを保存
             rowMenu.showAt(event.target);
         });
+        let rowIndex = null;
+        let rowId = null;
+
+        // 3. クリックしたセルの内容を取得
+        grid.events.on("cellClick", function (row, col, e) {
+            rowIndex = grid.data.getIndex(row.id);
+            rowId = row.id;
+            //activeRowId = row.id; // 左クリックした行のIDを保存
+        });
+
+        const currentIndex = grid.data.getIndex(activeRowId);
 
         // 4. コンテキストメニューの実行 ---
         rowMenu.events.on("click", id => {
@@ -294,7 +300,7 @@
                     });
                     break;
                 case "deleteRow":
-                    deleteRow(row.id);
+                    deleteRow(rowId);
                     // grid.data.remove(row.id);
                     break;
             }
@@ -457,42 +463,51 @@
 
         // DELETE: 削除ボタンの即時実行
         function deleteRow(rowId) {
-            if (confirm("選択した行を削除してもよろしいですか？")) {
-                // 1. サーバー側のデータを削除
-                fetch(`/reference/references/${rowId}/`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
-                    }
-                })
-                    .then(res => {
-                        if (res.ok) {
-                            // 2. サーバー削除成功後、フロントエンド(Grid)から削除
+            if (confirm("削除しますか？")) {
+                if (String(rowId).startsWith('u')) {
+                    grid.data.remove(rowId);
+                } else {
+                    // サーバーへ削除リクエスト
+                    fetch(`/reference/references/${rowId}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+                        },
+                        // body: JSON.stringify(sendingData)
+                    })
+                        .then(res => {
+                            if (!res.ok) {
+                                return res.json().then(err => { throw err; });
+                            }
+                            return res.json();
+                        })
+                        .then(result => {
                             grid.data.remove(rowId);
                             dhx.message({
                                 text: "削除しました",
                                 css: "dhx_widget--bg_success",
                                 expire: 3000
                             });
-                        } else {
+                        })
+                        .catch(err => {
+                            const errorMsg = err.detail || err.message || "削除に失敗しました";
+                            if (typeof grid.editEnd === "function") {
+                                grid.editEnd();
+                            }
                             dhx.message({
-                                text: "削除に失敗しました",
-                                css: "dhx_widget--bg_danger",
-                                expire: -1
+                                text: errorMsg,
+                                css: "dhx_message--error",  // 赤いトースト
+                                icon: "dxi dxi-delete-forever",
+                                expire: 6000
                             });
-                        }
-                    })
-                    .catch(err => {
-                        //console.error(err);
-                        dhx.message({
-                            text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
+
                         });
-                    });
+                }
             }
 
         };
 
-        // --- 行のドラグアンドドロップ ---
+        // DRAG: --- 行のドラグアンドドロップ ---
         grid.events.on("afterRowDrag", (data, id, targetId) => {
             // 1. 画面の上から順番に全行をループ
             grid.data.forEach((row, index) => {

@@ -37,7 +37,7 @@ def reference_detail(request, pk):
     try:
         instance = Reference.objects.get(pk=pk)
     except Reference.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
 
     # if request.method == "GET":
     #     serializer = ReferenceSerializer(reference)
