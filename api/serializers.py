@@ -6,12 +6,11 @@ from app.models import Task, Estimate, Unit, Reference
 
 
 class UnitSerializer(serializers.ModelSerializer):
+    client_id = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = Unit
-        fields = ('id',
-                  'unit_no',
-                  'unit_name',
-                  'sort_order')
+        fields = '__all__'
 
 
 class ReferenceSerializer(serializers.ModelSerializer):

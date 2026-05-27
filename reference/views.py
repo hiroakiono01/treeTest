@@ -1,11 +1,7 @@
-from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
-from django.views import generic
-from django.views.generic import TemplateView
-from rest_framework import status, generics
+from django.shortcuts import render
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -106,4 +102,3 @@ def bulk_sync_references(request):
             return Response(serializer.errors, status=400)
 
     return Response(response_data, status=200)
-

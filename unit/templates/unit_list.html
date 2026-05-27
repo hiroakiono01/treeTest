@@ -110,7 +110,7 @@
 
 
 
-        // --- ツールバーの処理 ---
+        // TOOLBAR: --- ツールバーの処理 ---
         const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
@@ -157,7 +157,7 @@
                         { text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },
                     ],
                     htmlEnable: true, // 赤くするため必要
-
+                    type: "number",
                     editable: true
                 },
                 {
@@ -192,7 +192,7 @@
         // 💡 修正した「grid_cell」にGridをアタッチ
         layout.getCell("grid_cell").attach(grid);
 
-        // --- ページネーション ---
+        // PSGENATION --- ページネーション ---
         const pagination = new dhx.Pagination(null, {
             css: "dhx_widget--bordered dhx_widget--no-border_top",
             data: grid.data,
@@ -498,20 +498,64 @@
                 }
             }
         });
+// TODO:リターンキーで移動
+grid.events.on("keydown", function(e) {
+    // 押されたのが Enter キー（Returnキー）の場合
+    if (e.key === "Enter") {
+        // 現在選択されているセルの情報を取得
+        const cell = grid.selection.getCell();
+        if (!cell || !cell.row || !cell.column) return;
 
-        // ---
-        // grid.events.on("afterEditEnd", (value, row, col) => {
-        //     // 必須にしたいカラムIDを指定（例: unit_display）
-        //     if (col.id === "unit_name") {
-        //         if (!value || value.trim() === "") {
-        //             // 空ならエラークラスを適用
-        //             grid.addCellCss(row.id, col.id, "required-error");
-        //         } else {
-        //             // 入力されていればエラークラスを削除
-        //             grid.removeCellCss(row.id, col.id, "required-error");
-        //         }
-        //     }
-        // });
+        // ブラウザのデフォルト挙動（改行など）を防止
+        e.preventDefault();
+
+        // 💡 もし現在セルが「編集状態」なら、まず変更を確定してエディタを閉じる
+        if (grid.getEditor()) {
+            grid.editEnd();
+        }
+
+        const currentRowId = cell.row.id;
+        const currentColumnId = cell.column.id;
+
+        // 💡 現在表示されているすべての列オブジェクトの配列を取得
+        const columns = grid.getColumns();
+        // 現在選択している列が、左から何番目（インデックス）かを探す
+        const currentColIndex = columns.findIndex(col => col.id === currentColumnId);
+
+        // 次の移動先を決定する変数
+        let nextRowId = currentRowId;
+        let nextColumnId = null;
+
+        // 1. 右隣にまだ列がある場合
+        if (currentColIndex > -1 && currentColIndex < columns.length - 1) {
+            nextColumnId = columns[currentColIndex + 1].id;
+        }
+        // 2. 現在が「最後の列」だった場合 ＝ 下の行の「最初の列」へ移動
+        else {
+            nextRowId = grid.data.getNextId(currentRowId); // 1つ下の行のIDを取得
+            if (nextRowId) {
+                nextColumnId = columns[0].id; // 最初の列のID
+            }
+        }
+
+        // 💡 移動先のセルが存在すれば、フォーカスを移動する
+        if (nextRowId && nextColumnId) {
+            grid.selection.setCell(nextRowId, nextColumnId);
+
+            // 【オプション】移動後に自動で入力状態（エディタ起動）にしたい場合は以下を追加
+            setTimeout(() => {
+                grid.editCell(nextRowId, nextColumnId);
+            }, 50);
+        } else {
+            // 💡 【オプション】最終行の最後の列でEnterを押した場合：新規行を自動追加する（u+日時仕様）
+            // const newId = "u" + Date.now();
+            // grid.data.add({ id: newId });
+            // grid.selection.setCell(newId, columns[0].id);
+            // setTimeout(() => { grid.editCell(newId, columns[0].id); }, 50);
+        }
+    }
+});
+
 
 
     </script>
