@@ -43,470 +43,468 @@
         letter-spacing: 0.5px;
         /* 必要に応じて文字間隔を調整 */
     }
-
 </style>
 {% endblock %}
 
 {% block header %}
 <div class="my-div-style col-sm mx-auto text-center">
-    <h5>Reference  list</h5>
+    <h5>Reference list</h5>
 </div>
 {% endblock %}
 
 {% block contents %}
+
 <body>
-<div id="layout"></div>
-<div id="layout-main-container"></div>
-<!--<div id="toolbar_container"></div>-->
-<!--<div id="grid_container"></div>-->
 
-<script>
+    <div id="layout-main-container"></div>
+    <!--<div id="toolbar_container"></div>-->
+    <!--<div id="grid_container"></div>-->
+
+    <script>
         // 1. レイアウトの定義 (Suite 9 準拠)
-    // 第一引数には、HTML上のコンテナ要素のIDを指定します。
-    const layout = new dhx.Layout("layout-main-container", {
-        type: "line",
-        rows: [
-            {
-                id: "toolbar_container", // Menuを配置するヘッダーセル
-                height: "60px",
-                css: "layout-header"
-            },
-            {
-                // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
-                id: "main_content_row",
-                cols: [
-                    {
-                        // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
-                        id: "grid_and_page_container",
-                        rows: [
-                            {
-                                id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
-                            },
-                            {
-                                id: "pagination_cell", // 下側：Pagination用のセル
-                                height: "60px" // Paginationが収まる高さを指定
-                            }
-                        ],
-                        css: "layout-content"
-                    }
-                ]
-            },
-            {
-                id: "footer_cell",  // フッターセル
-                html: "Copyright &copy; kag holdings inc 2025",
-                height: "30px",
-                css: "layout-footer"
-            }
-        ]
-    });
-
-    // --- ツールバーの処理 ---
-    const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
-    toolbar.data.add([
-        { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
-        { type: "spacer" },
-        { id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
-        { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
-    ]);
-    toolbar.events.on("click", function (id) {
-        if (id === "add") {
-            addRow();
-        }
-        if (id === "update") {
-            updateAll();
-        }
-        if (id === "resetGrid") {
-            resetGrid();
-        }
-    })
-
-
-
-    // --- Unit一覧を取得してGridのプルダウンに反映 ---
-    const unitFields = ["unit_name"]
-    fetch("/api/unit-options/")
-        .then(res => res.json())
-        .then(data => {
-            // 2. Grid のカラムに適用
-            unitFields.forEach(fieldId => {
-                const column = grid.getColumn(fieldId);
-                if (column) {
-                    if (column.options = data.units);
+        // 第一引数には、HTML上のコンテナ要素のIDを指定します。
+        const layout = new dhx.Layout("layout-main-container", {
+            type: "line",
+            rows: [
+                {
+                    id: "toolbar_container", // Menuを配置するヘッダーセル
+                    height: "60px",
+                    css: "layout-header"
+                },
+                {
+                    // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
+                    id: "main_content_row",
+                    cols: [
+                        {
+                            // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
+                            id: "grid_and_page_container",
+                            rows: [
+                                {
+                                    id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
+                                },
+                                {
+                                    id: "pagination_cell", // 下側：Pagination用のセル
+                                    height: "60px" // Paginationが収まる高さを指定
+                                }
+                            ],
+                            css: "layout-content"
+                        }
+                    ]
+                },
+                {
+                    id: "footer_cell",  // フッターセル
+                    html: "Copyright &copy; kag holdings inc 2025",
+                    height: "30px",
+                    css: "layout-footer"
                 }
-            });
-            grid.paint();
+            ]
+        });
+
+        // TOOLBAR:  ツールバーの処理 ---
+        const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+        toolbar.data.add([
+            { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
+            { type: "spacer" },
+            { id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
+            { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
+        ]);
+        toolbar.events.on("click", function (id) {
+            if (id === "add") {
+                addRow();
+            }
+            if (id === "update") {
+                updateAll();
+            }
+            if (id === "resetGrid") {
+                resetGrid();
+            }
         })
-        .catch(err => console.error("unitデータ取得失敗:", err));
 
 
-    // 4. DRFからデータの読み込む（Django の API から取得する場合）
-    const dataset = new dhx.DataCollection();
-    fetch("/reference/references/")
-        .then(response => response.json())
-        .then(data => {
-            grid.data.parse(data); // data.reference (配列部分) を渡す
-        })
-        .catch(err => console.error("referenceデータ取得失敗:", err));
-
-    // Gridの初期化
-    const grid = new dhx.Grid(null, {
-        columns: [
-            {
-                id: "id",
-                header: [{ text: "ID" }],
-                hidden: true
-            },
-            {
-                id: "detail_name",
-                width: 300,
-                header: [{ text: "明細名称", align: "center" }, { content: "inputFilter" }],
-            },
-            {
-                id: "calcu_cls",
-                width: 100,
-                header: [{ text: "計算区分", align: "center" }, { content: "selectFilter" }],
-                editable: false,
-                editorType: "select", // セレクトボックス形式
-                options: [
-                    { id: "0", value: "加算対象" },
-                    { id: "1", value: "加算なし" },
-                    { id: "2", value: "税抜合計" },
-                    { id: "3", value: "消費税" }
-                ],
-            },
-            {
-                id: "unit_name", // ForeignKeyのIDが入る
-                width: 100,
-                header: [{ text: "単位", align: "center", rowspan: 2 }],
-                editorType: "combobox",
-                align: "center",
-                options: []
-            },
-            {
-                id: "budget_price",
-                width: 150,
-                header: [{ text: "予算単価", align: "center", rowspan: 2 }],
-                type: "number",
-                numberMask: { maxDecLength: 2 }
-            },
-            {
-                id: "sort_order",
-                header: [{ text: "sort_order" }],
-                hidden: true
-            },
-            {
-                id: "actions",
-                width: 100,
-                header: [{ text: "Actions", tooltip: true, align: "center", rowspan: 2 }],
-                mark: () => "dhx-demo_color--gray",
-                template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
-                align: "center",
-                tooltip: false,
-                editable: false,
-                sortable: false,
-                htmlEnable: true,
-            }
-        ],
-        eventHandlers: {
-            onclick: {
-                "row-menu": event => rowMenu.showAt(event.target)
-            }
-        },
-        autoWidth: false,
-        data: dataset, // 作成した DataCollection を直接紐付ける
-        keyNavigation: true,
-        editing: true,
-        dragMode: "both", // ドラッグ＆ドロップを有効にする
-        // selection: "row",
-    });
-
-    // 💡 修正した「grid_cell」にGridをアタッチ
-    layout.getCell("grid_cell").attach(grid);
-
-    // --- ページネーション ---
-    const pagination = new dhx.Pagination(null, {
-        css: "dhx_widget--bordered dhx_widget--no-border_top",
-        data: grid.data,
-        pageSize: 50
-    });
-
-    // 💡 修正した「pagination_cell」にPaginationをアタッチ
-    layout.getCell("pagination_cell").attach(pagination);
-
-    // --- ワンクリックで入力ができる ---
-    grid.events.on("cellClick", function (row, column) {
-        grid.editCell(row.id, column.id);
-
-    });
-
-    // --- コンテキストメニューの処理 ---
-    const rowMenu = new dhx.ContextMenu(null, {
-        data: [
-            { "id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus" },
-            { "id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus" },
-            { "id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close" },
-            { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
-        ]
-    });
-
-    // クリックしたセルの内容を取得
-    let rowIndex = null;
-    let rowId = null;
-    grid.events.on("cellClick", function (row, col, e) {
-        rowIndex = grid.data.getIndex(row.id);
-        rowId = row.id;
-    });
-
-    // ---　コンテキストメニューの処理 ---
-    rowMenu.events.on("click", id => {
-
-        switch (id) {
-            case "insertRowAbove":
-                const newAboveRow = grid.data.add({
-                }, rowIndex);
-                // 3. 追加した行へフォーカス
-                if (newAboveRow) {
-                    grid.editCell(newAboveRow, "detail_name");
-                }
-                break;
-            case "insertRowBelow":
-                const newBelowRow = grid.data.add({
-                }, rowIndex + 1);
-                console.log("追加された行のID:", rowIndex);
-                // 3. 追加した行へフォーカス
-                if (newBelowRow) {
-                    grid.editCell(newBelowRow, "detail_name");
-                }
-                break;
-            case "clearRow":
-                grid.data.update(rowId, {
-                    detail_name: "",
-                    calcu_cls: "",
-                    unit_name: "",
-                    budget_price: "",
-                });
-                break;
-            case "deleteRow":
-                deleteRow(row.id);
-                // grid.data.remove(row.id);
-                break;
-        }
-    });
-
-    // -- 新規ボタンを押した時の振る舞い ---
-    function addRow() {
-        // 1. 新しい行のデータを定義（空オブジェクトでも自動で一意のIDが生成されます）
-        const newRowData = {};
-        const newRow = grid.data.add(newRowData, 0); // 戻り値で追加された行オブジェクトが取得できます
-        // grid.selection.setCell(newRowId, "detail_name");
-        console.log("追加された行のID:", newRow);
-        // 3. 追加した行へフォーカス
-        if (newRow) {
-            grid.editCell(newRow, "detail_name");
-        }
-    }
-
-    // --- リセット処理 ---
-    function resetGrid() {
-        // ユーザーに確認（キャンセルされたら処理を中断）
-        // if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
-
-        // 1. サーバーから最新のデータを再取得
-        fetch("/reference/references/") // 👈 初期読み込み時と同じAPIのURLを指定してください
+        // CONNECT: DRFからデータの読み込み
+        // 1. Unit一覧を取得してGridのプルダウンに反映 ---
+        const unitFields = ["unit_name"]
+        fetch("/api/unit-options/")
             .then(res => res.json())
-            .then(result => {
-                // 2. 現在のGridデータをすべてクリア
-                grid.data.removeAll();
-
-                // 3. 取得したデータを再読み込み
-                grid.data.parse(result);
-
-                // 💡 必須チェック等で付いたエラーの赤枠CSSも自動で消えます
-
-                // dhx.message({ text: "変更をリセットしました", expire: 2000 });
+            .then(data => {
+                // 2. Grid のカラムに適用
+                unitFields.forEach(fieldId => {
+                    const column = grid.getColumn(fieldId);
+                    if (column) {
+                        if (column.options = data.units);
+                    }
+                });
+                // grid.paint();
             })
-            .catch(err => {
-                console.error("リセット失敗:", err);
-                dhx.message({ text: "データの再取得に失敗しました", status: "error" });
-            });
-    }
+            .catch(err => console.error("unitデータ取得失敗:", err));
 
+        // 2. DRFからデータの読み込む（Django の API から取得する場合）
+        const dataset = new dhx.DataCollection();
+        fetch("/reference/references/")
+            .then(response => response.json())
+            .then(data => {
+                grid.data.parse(data); // data.reference (配列部分) を渡す
+            })
+            .catch(err => console.error("referenceデータ取得失敗:", err));
 
-    // --- 行を右クリックでコンテキストメニューを表示する ---
-    grid.events.on("cellRightClick", (row, column, event) => {
-        event.preventDefault();
-        grid.selection.setCell(row, column);
-        rowMenu.showAt(event.target);
-    });
-
-    // --- 保存ボタンで一括更新処理 ---
-    function updateAll() {
-        let hasError = false;
-        let mainMessage = "";
-        const requiredFields = ["detail_name", "calcu_cls"];
-
-        grid.data.forEach(row => {
-            requiredFields.forEach(field => {
-                const value = row[field];
-                grid.removeCellCss(row.id, field, "required-error");
-
-            });
-        });
-
-        // フロントエンドの必須入力チェック
-        grid.data.forEach(row => {
-            requiredFields.forEach(field => {
-                const value = row[field];
-                if (value === null || value === undefined || String(value).trim() === "") {
-                    grid.addCellCss(row.id, field, "required-error");
-                    mainMessage = "必須項目を入力してください。";
-                    hasError = true;
+        // GRID: dhx.Gridの初期化
+        const grid = new dhx.Grid(null, {
+            columns: [
+                {
+                    id: "id",
+                    header: [{ text: "ID" }],
+                    hidden: true
+                },
+                {
+                    id: "detail_name",
+                    width: 300,
+                    header: [{ text: "明細名称", align: "center" }, { content: "inputFilter" }],
+                },
+                {
+                    id: "calcu_cls",
+                    width: 100,
+                    header: [{ text: "計算区分", align: "center" }, { content: "selectFilter" }],
+                    // editable: false,
+                    editorType: "select", // セレクトボックス形式
+                    options: [
+                        { id: "0", value: "加算対象" },
+                        { id: "1", value: "加算なし" },
+                        { id: "2", value: "税抜合計" },
+                        { id: "3", value: "消費税" }
+                    ],
+                },
+                {
+                    id: "unit_name", // ForeignKeyのIDが入る
+                    width: 100,
+                    header: [{ text: "単位", align: "center", rowspan: 2 }],
+                    editorType: "combobox",
+                    align: "center",
+                    options: []
+                },
+                {
+                    id: "budget_price",
+                    width: 150,
+                    header: [{ text: "予算単価", align: "center", rowspan: 2 }],
+                    type: "number",
+                    numberMask: { maxDecLength: 2 }
+                },
+                {
+                    id: "sort_order",
+                    header: [{ text: "sort_order" }],
+                    hidden: true
+                },
+                {
+                    id: "actions",
+                    width: 100,
+                    header: [{ text: "Actions", tooltip: true, align: "center", rowspan: 2 }],
+                    mark: () => "dhx-demo_color--gray",
+                    template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
+                    align: "center",
+                    tooltip: false,
+                    editable: false,
+                    sortable: false,
+                    htmlEnable: true,
                 }
-            });
-        });
-
-        // エラーを表示する
-        if (hasError) {
-            dhx.message({
-                text: mainMessage,
-                expire: 3000,
-                css: "dhx_widget--bg_danger", // 修正: statusからcssへ変更
-            });
-            return; // ここで処理を中断
-        }
-        // 3. チェック通過後に、最新の綺麗なデータをシリアライズする
-
-        const allData = grid.data.serialize();
-
-        fetch("/reference/bulk_sync/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCookie('csrftoken') // ✨重要: CSRFトークンを追加
+            ],
+            eventHandlers: {
+                onclick: {
+                    "row-menu": event => rowMenu.showAt(event.target)
+                }
             },
-            body: JSON.stringify(allData)
-        })
-            .then(response => {
-                if (!response.ok) {
-                    // 修正: サーバーがHTML（403や500エラー）を返した際のエラー落ちを防ぐ
-                    const contentType = response.headers.get("content-type");
-                    if (contentType && contentType.includes("application/json")) {
-                        return response.json().then(errData => { throw errData; });
-                    } else {
-                        throw new Error(`サーバーエラーが発生しました (${response.status})`);
+            autoWidth: false,
+            data: dataset, // 作成した DataCollection を直接紐付ける
+            keyNavigation: true,
+            editing: true,
+            dragMode: "both", // ドラッグ＆ドロップを有効にする
+            selection: "row", // ドラッグ＆ドロップを有効にする
+        });
+
+        // ATTACH: grid_cell にGridをアタッチ
+        layout.getCell("grid_cell").attach(grid);
+
+        // PASGINATION: ページネーション ---
+        const pagination = new dhx.Pagination(null, {
+            css: "dhx_widget--bordered dhx_widget--no-border_top",
+            data: grid.data,
+            pageSize: 50
+        });
+
+        // ATTACH: pagination_cell にPaginationをアタッチ
+        layout.getCell("pagination_cell").attach(pagination);
+
+        // ONECLICK: ワンクリックで入力ができる ---　
+        grid.events.on("cellClick", function (row, column) {
+            grid.editCell(row.id, column.id);
+
+        });
+
+        // CONTEXT:  コンテキストメニューの処理 ---
+        // 1. 宣言
+        const rowMenu = new dhx.ContextMenu(null, {
+            data: [
+                { "id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus" },
+                { "id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus" },
+                { "id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close" },
+                { "id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete" }
+            ]
+        });
+
+        // 2. クリックしたセルの内容を取得
+        let rowIndex = null;
+        let rowId = null;
+        grid.events.on("cellClick", function (row, col, e) {
+            rowIndex = grid.data.getIndex(row.id);
+            rowId = row.id;
+        });
+
+        // ３。行を右クリックでコンテキストメニューを表示する ---
+        grid.events.on("cellRightClick", (row, column, event) => {
+            event.preventDefault();
+            grid.selection.setCell(row, column);
+            rowMenu.showAt(event.target);
+        });
+
+        // 4. コンテキストメニューの実行 ---
+        rowMenu.events.on("click", id => {
+
+            switch (id) {
+                case "insertRowAbove":
+                    const newAboveRow = grid.data.add({
+                    }, rowIndex);
+                    // 3. 追加した行へフォーカス
+                    if (newAboveRow) {
+                        grid.editCell(newAboveRow, "detail_name");
                     }
-                }
-                return response.json();
-            })
-            .then(result => {
-                // 成功時の処理
-                dhx.message({
-                    text: "更新しました。",
-                    expire: 3000,
-                    css: "dhx_widget--bg_success", // 修正: statusからcssへ変更
-                });
-            })
-            .catch(err => {
-                console.error("Error details:", err);
-                let mainMessage = "入力内容を確認してください。";
-
-                if (typeof err === "object" && err !== null) {
-                    // パターンA: サーバーから [ { id: 1, unit_name: ["..."] } ] のような配列型エラーが返る場合
-                    if (Array.isArray(err)) {
-                        err.forEach(errorRow => {
-                            if (errorRow.id) {
-                                grid.addCellCss(errorRow.id, "detail_name", "required-error");
-                                if (errorRow.detail_name) {
-                                    mainMessage = Array.isArray(errorRow.detail_name) ? errorRow.detail_name[0] : errorRow.detail_name;
-                                }
-                            }
-                        });
-                        // パターンB: { "unit_name": ["..."] } のように単一オブジェクトで返る場合
-                    } else if (err.unit_name) {
-                        mainMessage = Array.isArray(err.detail_name) ? err.detail_name[0] : err.detail_name;
-
-                        // 重複エラーが発生したため、該当行）のセルに赤枠を付与
-                        const values = [];
-                        grid.data.forEach(row => {
-                            const val = String(row.detail_name || "").trim();
-                            if (val !== "") {
-                                if (values.includes(val)) {
-                                    // 画面内で重複している行に赤枠を付与
-                                    grid.addCellCss(row.id, "detail_name", "required-error");
-                                }
-                                values.push(val);
-                            }
-                        });
-                    } else if (err.detail) {
-                        mainMessage = err.detail;
+                    break;
+                case "insertRowBelow":
+                    const newBelowRow = grid.data.add({
+                    }, rowIndex + 1);
+                    // console.log("追加された行のID:", rowIndex);
+                    // 3. 追加した行へフォーカス
+                    if (newBelowRow) {
+                        grid.editCell(newBelowRow, "detail_name");
                     }
-                } else {
-                    mainMessage = "サーバーとの通信に失敗しました";
-                }
+                    break;
+                case "clearRow":
+                    grid.data.update(rowId, {
+                        detail_name: "",
+                        calcu_cls: "",
+                        unit_name: "",
+                        budget_price: "",
+                    });
+                    break;
+                case "deleteRow":
+                    deleteRow(row.id);
+                    // grid.data.remove(row.id);
+                    break;
+            }
+        });
 
-                // エラーメッセージをトースト表示
-                dhx.message({
-                    text: mainMessage,
-                    css: "dhx_widget--bg_danger", // Suite 9 の赤い背景
-                    expire: 6000,
-                    node: document.body
-                });
-            });
-
-    }
 
 
+        // BUTTON_NEWROW: -- 新規ボタンを押した時の振る舞い ---
+        function addRow() {
+            // 1. 新しい行のデータを定義（空オブジェクトでも自動で一意のIDが生成されます）
+            const newRowData = {};
+            const newRow = grid.data.add(newRowData, 0); // 戻り値で追加された行オブジェクトが取得できます
+            // grid.selection.setCell(newRowId, "detail_name");
+            //console.log("追加された行のID:", newRow);
+            // 3. 追加した行へフォーカス
+            if (newRow) {
+                grid.editCell(newRow, "detail_name");
+            }
+        }
 
-    // 8. 削除処理
-    function deleteRow(rowId) {
-        if (confirm("選択した行を削除してもよろしいですか？")) {
-            // 1. サーバー側のデータを削除
-            fetch(`/reference/references/${rowId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
-                }
-            })
-                .then(res => {
-                    if (res.ok) {
-                        // 2. サーバー削除成功後、フロントエンド(Grid)から削除
-                        grid.data.remove(rowId);
-                        dhx.message({
-                            text: "削除しました",
-                            css: "dhx_widget--bg_success",
-                            expire: 3000
-                        });
-                    } else {
-                        dhx.message({
-                            text: "削除に失敗しました",
-                            css: "dhx_widget--bg_danger",
-                            expire: -1
-                        });
-                    }
+        // RESET: リセット処理 ---
+        function resetGrid() {
+            // ユーザーに確認（キャンセルされたら処理を中断）
+            // if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
+
+            // 1. サーバーから最新のデータを再取得
+            fetch("/reference/references/") // 👈 初期読み込み時と同じAPIのURLを指定してください
+                .then(res => res.json())
+                .then(result => {
+                    // 2. 現在のGridデータをすべてクリア
+                    grid.data.removeAll();
+                    // 3. 取得したデータを再読み込み
+                    grid.data.parse(result);
                 })
                 .catch(err => {
-                    //console.error(err);
-                    dhx.message({
-                        text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
-                    });
+                    console.error("リセット失敗:", err);
+                    dhx.message({ text: "データの再取得に失敗しました", status: "error" });
                 });
         }
 
-    };
 
-    // --- 行のドラグアンドドロップ ---
-    grid.events.on("afterRowDrag", (data, id, targetId) => {
-        // 1. 画面の上から順番に全行をループ
-        grid.data.forEach((row, index) => {
-            // 各行の sort_order プロパティを新しい連番（0, 1, 2...）で更新
-            grid.data.update(row.id, { sort_order: index });
+
+        //UPDATE: 保存ボタンで一括更新処理 ---
+        function updateAll() {
+            let hasError = false;
+            let mainMessage = "";
+            const requiredFields = ["detail_name", "calcu_cls"];
+
+            grid.data.forEach(row => {
+                requiredFields.forEach(field => {
+                    const value = row[field];
+                    grid.removeCellCss(row.id, field, "required-error");
+
+                });
+            });
+
+            // フロントエンドの必須入力チェック
+            grid.data.forEach(row => {
+                requiredFields.forEach(field => {
+                    const value = row[field];
+                    if (value === null || value === undefined || String(value).trim() === "") {
+                        grid.addCellCss(row.id, field, "required-error");
+                        mainMessage = "必須項目を入力してください。";
+                        hasError = true;
+                    }
+                });
+            });
+
+            // エラーを表示する
+            if (hasError) {
+                dhx.message({
+                    text: mainMessage,
+                    expire: 3000,
+                    css: "dhx_widget--bg_danger", // 修正: statusからcssへ変更
+                });
+                return; // ここで処理を中断
+            }
+            // 3. チェック通過後に、最新の綺麗なデータをシリアライズする
+
+            const allData = grid.data.serialize();
+
+            fetch("/reference/bulk_sync/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken') // ✨重要: CSRFトークンを追加
+                },
+                body: JSON.stringify(allData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        // 修正: サーバーがHTML（403や500エラー）を返した際のエラー落ちを防ぐ
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.includes("application/json")) {
+                            return response.json().then(errData => { throw errData; });
+                        } else {
+                            throw new Error(`サーバーエラーが発生しました (${response.status})`);
+                        }
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    // 成功時の処理
+                    dhx.message({
+                        text: "更新しました。",
+                        expire: 3000,
+                        css: "dhx_widget--bg_success", // 修正: statusからcssへ変更
+                    });
+                })
+                .catch(err => {
+                    console.error("Error details:", err);
+                    let mainMessage = "入力内容を確認してください。";
+
+                    if (typeof err === "object" && err !== null) {
+                        // パターンA: サーバーから [ { id: 1, unit_name: ["..."] } ] のような配列型エラーが返る場合
+                        if (Array.isArray(err)) {
+                            err.forEach(errorRow => {
+                                if (errorRow.id) {
+                                    grid.addCellCss(errorRow.id, "detail_name", "required-error");
+                                    if (errorRow.detail_name) {
+                                        mainMessage = Array.isArray(errorRow.detail_name) ? errorRow.detail_name[0] : errorRow.detail_name;
+                                    }
+                                }
+                            });
+                            // パターンB: { "unit_name": ["..."] } のように単一オブジェクトで返る場合
+                        } else if (err.unit_name) {
+                            mainMessage = Array.isArray(err.detail_name) ? err.detail_name[0] : err.detail_name;
+
+                            // 重複エラーが発生したため、該当行）のセルに赤枠を付与
+                            const values = [];
+                            grid.data.forEach(row => {
+                                const val = String(row.detail_name || "").trim();
+                                if (val !== "") {
+                                    if (values.includes(val)) {
+                                        // 画面内で重複している行に赤枠を付与
+                                        grid.addCellCss(row.id, "detail_name", "required-error");
+                                    }
+                                    values.push(val);
+                                }
+                            });
+                        } else if (err.detail) {
+                            mainMessage = err.detail;
+                        }
+                    } else {
+                        mainMessage = "サーバーとの通信に失敗しました";
+                    }
+
+                    // エラーメッセージをトースト表示
+                    dhx.message({
+                        text: mainMessage,
+                        css: "dhx_widget--bg_danger", // Suite 9 の赤い背景
+                        expire: 6000,
+                        node: document.body
+                    });
+                });
+
+        }
+
+
+
+        // DELETE: 削除ボタンの即時実行
+        function deleteRow(rowId) {
+            if (confirm("選択した行を削除してもよろしいですか？")) {
+                // 1. サーバー側のデータを削除
+                fetch(`/reference/references/${rowId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
+                    }
+                })
+                    .then(res => {
+                        if (res.ok) {
+                            // 2. サーバー削除成功後、フロントエンド(Grid)から削除
+                            grid.data.remove(rowId);
+                            dhx.message({
+                                text: "削除しました",
+                                css: "dhx_widget--bg_success",
+                                expire: 3000
+                            });
+                        } else {
+                            dhx.message({
+                                text: "削除に失敗しました",
+                                css: "dhx_widget--bg_danger",
+                                expire: -1
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        //console.error(err);
+                        dhx.message({
+                            text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
+                        });
+                    });
+            }
+
+        };
+
+        // --- 行のドラグアンドドロップ ---
+        grid.events.on("afterRowDrag", (data, id, targetId) => {
+            // 1. 画面の上から順番に全行をループ
+            grid.data.forEach((row, index) => {
+                // 各行の sort_order プロパティを新しい連番（0, 1, 2...）で更新
+                grid.data.update(row.id, { sort_order: index });
+            });
+
+            // 2. 作成済みの updateAll 関数を呼び出してサーバーへ最新データを送信
+            // (自動で保存させたい場合に実行。ボタンを押して保存させたい場合はこの行は不要です)
+            // updateAll();
         });
-
-        // 2. 作成済みの updateAll 関数を呼び出してサーバーへ最新データを送信
-        // (自動で保存させたい場合に実行。ボタンを押して保存させたい場合はこの行は不要です)
-        // updateAll();
-    });
-</script>
+    </script>
 </body>
 
 {% endblock %}

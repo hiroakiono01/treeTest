@@ -14,18 +14,18 @@ def unit_list_call(request):
     return render(request, 'unit_list.html')
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 def unit_list(request):
     if request.method == 'GET':
         units = Unit.objects.order_by("unit_no").exclude(unit_name="").exclude(unit_name__isnull=True).all()
         serializer = UnitSerializer(units, many=True)
         return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = UnitSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status.HTTP_201_CREATED)
-        return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+    # elif request.method == 'POST':
+    #     serializer = UnitSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data, status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["DELETE"])

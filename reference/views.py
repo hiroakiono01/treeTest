@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import status
@@ -13,7 +13,7 @@ def reference_list_call(request):
     return render(request, 'reference_list.html')
 
 
-@api_view(['GET', "POST"])
+@api_view(['GET'])
 def reference_list(request):
     if request.method == 'GET':
         references = Reference.objects.order_by("sort_order").all()
@@ -63,42 +63,97 @@ def reference_detail(request, pk):
 def bulk_sync_references(request):
     data_list = request.data
     response_data = []
-    id_map = {}
 
-    # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
-    for index, item in enumerate(data_list):
-        temp_id = item.get('id')
-        parent_val = item.get('parent')
-        item['sort_order'] = index
+    try:
+        with transaction.atomic():
+            # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
+            for index, item in enumerate(data_list):
+                raw_id = item.get('id')
+                # 元のデータを汚さないようにコピー
+                save_data = item.copy()
 
-        is_temp_id = (
-                temp_id is None or
-                temp_id == "" or
-                (isinstance(temp_id, str) and temp_id.startswith('u'))
-        )
-        instance = None
-        if not is_temp_id:
-            # 既存データをDBから探す（エラーにならないように filter().first() を使用）
-            instance = Reference.objects.filter(id=temp_id).first()
+                if isinstance(raw_id, str) and raw_id.startswith('u'):
+                    # 1. シリアライザのバリデーションを通すため、save_data から 'id' キーごと完全に削除する
+                    save_data.pop('id', None)
 
-        if instance:
-            # 【更新】DBに存在する場合
-            serializer = ReferenceSerializer(instance, data=item, partial=True)
-        else:
-            # 【新規】DBに存在しない、または一時IDの場合
-            item.pop('id', None)  # IDを削除して新規作成として扱う
-            serializer = ReferenceSerializer(data=item)
+                    # 2. シリアライザに余計なフィールドを渡さない（エラー防止）
+                    serializer = ReferenceSerializer(data=save_data)
+                    instance_exists = False
+                else:
+                    # 💡 既存データの更新
+                    instance = Reference.objects.filter(id=raw_id).first()
+                    if not instance:
+                        raise ValueError({'error': f'{index + 1}件目のデータ（ID: {raw_id}）がデータベースに存在しません。'})
 
-        if serializer.is_valid():
-            saved_instance = serializer.save()
+                    serializer = ReferenceSerializer(instance, data=save_data, partial=True)
 
-            # マッピングの記録（後続の子要素のため）
-            if is_temp_id or not instance:
-                id_map[temp_id] = saved_instance.id
+                    instance_exists = True
 
-            response_data.append(serializer.data)
-        else:
-            print(f"Serializer Error: {serializer.errors}")  # デバッグ用
-            return Response(serializer.errors, status=400)
+                if serializer.is_valid():
+                    saved_instance = serializer.save()
+                    # 保存後のオブジェクトから、正式に出力用データを生成
+                    result_item = ReferenceSerializer(saved_instance).data
+                    # マッピングの記録（後続の子要素のため）
+                    if not instance_exists:
+                        result_item['client_id'] = raw_id
 
-    return Response(response_data, status=200)
+                    response_data.append(serializer.data)
+                else:
+                    error_message = {
+                        'error': f'{index + 1}件目のデータ（送信ID: {raw_id}）のバリデーションに失敗しました。',
+                        'details': serializer.errors
+                    }
+                    raise ValueError(error_message)
+
+        return Response({
+            'status': 'success',
+            'data': response_data
+        }, status=status.HTTP_200_OK)
+
+    except ValueError as e:
+        # 発生したエラーメッセージの辞書をそのまま400エラーとして返す
+        return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+
+# @api_view(['POST'])
+# def bulk_sync_references(request):
+#     data_list = request.data
+#     response_data = []
+#     id_map = {}
+#
+#     # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
+#     for index, item in enumerate(data_list):
+#         temp_id = item.get('id')
+#         parent_val = item.get('parent')
+#         item['sort_order'] = index
+#
+#         is_temp_id = (
+#                 temp_id is None or
+#                 temp_id == "" or
+#                 (isinstance(temp_id, str) and temp_id.startswith('u'))
+#         )
+#         instance = None
+#         if not is_temp_id:
+#             # 既存データをDBから探す（エラーにならないように filter().first() を使用）
+#             instance = Reference.objects.filter(id=temp_id).first()
+#
+#         if instance:
+#             # 【更新】DBに存在する場合
+#             serializer = ReferenceSerializer(instance, data=item, partial=True)
+#         else:
+#             # 【新規】DBに存在しない、または一時IDの場合
+#             item.pop('id', None)  # IDを削除して新規作成として扱う
+#             serializer = ReferenceSerializer(data=item)
+#
+#         if serializer.is_valid():
+#             saved_instance = serializer.save()
+#
+#             # マッピングの記録（後続の子要素のため）
+#             if is_temp_id or not instance:
+#                 id_map[temp_id] = saved_instance.id
+#
+#             response_data.append(serializer.data)
+#         else:
+#             print(f"Serializer Error: {serializer.errors}")  # デバッグ用
+#             return Response(serializer.errors, status=400)
+#
+#     return Response(response_data, status=200)

@@ -120,3 +120,9 @@
 .my-layout {
     margin-top:6rem;
 }
+
+/* 赤いトースト用のカスタムCSS */
+.my-toast-danger {
+    background-color: #e2adad !important; /* 好みの赤色 */
+    color: #ffffff !important;           /* 文字を白に */
+}
