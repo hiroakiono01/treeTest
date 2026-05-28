@@ -159,13 +159,15 @@
                 {
                     id: "detail_name",
                     width: 300,
-                    header: [{ text: "明細名称", align: "center" }, { content: "inputFilter" }],
+                    header: [{ text: "明細名称　<span style='color:red'>*</span>", align: "center" }, { content: "inputFilter" }],
+                    htmlEnable: true, // 赤くするため必要
                 },
                 {
                     id: "calcu_cls",
                     width: 100,
-                    header: [{ text: "計算区分", align: "center" }, { content: "selectFilter" }],
+                    header: [{ text: "計算区分　<span style='color:red'>*</span>", align: "center" }, { content: "selectFilter" }],
                     // editable: false,
+                    htmlEnable: true, // 赤くするため必要
                     editorType: "select", // セレクトボックス形式
                     options: [
                         { id: "0", value: "加算対象" },

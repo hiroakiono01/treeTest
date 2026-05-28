@@ -170,3 +170,8 @@
 .dhx_context-menu .dhx_menu-button:hover {
     background-color: #d0e2ff;
 }
+
+/* DHTMLX Formの必須マーク（アスタリスク）を赤色にする */
+.dhx_form-element__label .dhx_label__required {
+    color: #ff5252 !important; /* お好みの赤色（DHTMLXのデフォルト警告赤は#ff5252） */
+}
