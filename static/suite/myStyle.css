@@ -153,9 +153,9 @@
 
 /* 赤いトースト用のカスタムCSS */
 .my-toast-danger {
-    background-color: #e2adad !important;
+    background-color: #ab5858 !important;
     /* 好みの赤色 */
-    color: #ffffff !important;
+    color: #2e0c72 !important;
     /* 文字を白に */
 }
 

@@ -174,10 +174,10 @@
             //keyNavigation: true,
 
             // dragMode: "both", // ドラッグ＆ドロップを有効にする
-            // selection: "row",
+            selection: "row",
             selection: "cell",
             editing: true,
-            // keyNavigation: false // ★必ずtrueに設定してください
+            keyNavigation: true // ★必ずtrueに設定してください
 
         });
 
@@ -281,7 +281,7 @@
                 // 【判定の修正】IDが文字列であり、かつ 'u_' から始まっている行を自動追加行とみなす
 
                 if (row[AUTO_ADDED_FLAG] === true) {
-                    console.log("row[AUTO_ADDED_FLAG]", row[AUTO_ADDED_FLAG])
+                    // console.log("row[AUTO_ADDED_FLAG]", row[AUTO_ADDED_FLAG])
                     // IDプロパティ以外に、何か文字が入力されているかチェック
                     const hasInput = requiredFields.some(key => {
                         const value = row[key];
@@ -488,66 +488,79 @@
 
         // TODO:リターンキーで移動
         // 2. エディタ内とGrid全体のEnterキーを制御するイベント
+        // // 共通の横移動処理（関数化してスッキリさせます）
+        // function moveToNextCell(grid, currentCell) {
+        //     if (!currentCell || !currentCell.row || !currentCell.column) return;
+
+        //     const currentRowId = currentCell.row.id;
+        //     const currentColumnId = currentCell.column.id;
+
+        //     // 有効な列オブジェクトを抽出
+        //     const validColumns = grid.config.columns.filter(col => col && typeof col.id === "string");
+        //     const currentColIndex = validColumns.findIndex(col => col.id === currentColumnId);
+
+        //     let nextRowId = currentRowId;
+        //     let nextColumnId = null;
+
+        //     // 1. 右隣に列がある場合は右へ移動
+        //     if (currentColIndex > -1 && currentColIndex < validColumns.length - 1) {
+        //         nextColumnId = validColumns[currentColIndex + 1].id;
+        //     }
+        //     // 2. 最後の列だった場合は、次の行の最初の列へ折り返し
+        //     else {
+        //         nextRowId = grid.data.getNextId(currentRowId);
+        //         if (nextRowId && validColumns.length > 0) {
+        //             nextColumnId = validColumns[0].id;
+        //         }
+        //     }
+
+        //     // 移動先セル情報が揃っている場合のみ実行
+        //     if (nextRowId && nextColumnId) {
+        //         // 先に選択状態（フォーカス）を切り替える
+        //         grid.selection.setCell(nextRowId, nextColumnId);
+
+        //         // 描画完了を待ってからスクロールと編集を開始
+        //         dhx.awaitRedraw().then(() => {
+        //             try {
+        //                 grid.scrollTo(nextRowId, nextColumnId);
+        //                 grid.editCell(nextRowId, nextColumnId);
+        //             } catch (err) {
+        //                 console.warn("DHTMLX key navigation adjusted:", err);
+        //             }
+        //         });
+        //     }
+        // }
+
+        // // 【対策①】文字入力中ではない（セルを選択しているだけの状態）でのEnter対応
         // grid.events.on("beforeKeyDown", function (e) {
         //     if (e.key === "Enter") {
-        //         // 現在アクティブなセル情報を取得
         //         const cell = grid.selection.getCell();
-        //         if (!cell || !cell.row || !cell.column) return;
+        //         if (!cell) return;
 
-        //         // DHTMLX標準のEnterキー挙動（真下への移動など）を完全に停止
+        //         // 編集中の場合は確定して終了（これにより対策②が発火します）
+        //         if (grid.getEditState()) {
+        //             grid.editEnd();
+        //         } else {
+        //             // 編集モードではない場合は、その場で次のセルへ移動
+        //             moveToNextCell(grid, cell);
+        //         }
+
         //         e.preventDefault();
         //         e.stopPropagation();
-
-        //         const currentRowId = cell.row.id;
-        //         const currentColumnId = cell.column.id;
-
-        //         // 有効な ID を持つ列オブジェクトを抽出
-        //         const validColumns = grid.config.columns.filter(col => col && typeof col.id === "string");
-        //         const currentColIndex = validColumns.findIndex(col => col.id === currentColumnId);
-
-        //         let nextRowId = currentRowId;
-        //         let nextColumnId = null;
-
-        //         // 1. 右隣に列がある場合は右へ移動
-        //         if (currentColIndex > -1 && currentColIndex < validColumns.length - 1) {
-        //             nextColumnId = validColumns[currentColIndex + 1].id;
-        //         }
-        //         // 2. 最後の列だった場合は、次の行の最初の列へ折り返し
-        //         else {
-        //             nextRowId = grid.data.getNextId(currentRowId);
-        //             if (nextRowId && validColumns.length > 0) {
-        //                 nextColumnId = validColumns[0].id;
-        //             }
-        //         }
-
-        //         // 移動先セル情報が揃っている場合のみ実行
-        //         if (nextRowId && nextColumnId) {
-        //             // 現在の入力を確定してエディタを確実に閉じる
-        //             grid.editEnd();
-
-        //             // セルを先に切り替える
-        //             grid.selection.setCell(nextRowId, nextColumnId);
-
-        //             const targetRow = nextRowId;
-        //             const targetCol = nextColumnId;
-
-        //             // 【最重要】新規行の描画完了をしっかり待ってからスクロールと編集を起動
-        //             dhx.awaitRedraw().then(() => {
-        //                 try {
-        //                     // ★公式仕様通り、第一引数が「行ID」、第二引数が「列ID」で実行
-        //                     grid.scrollTo(targetRow, targetCol);
-
-        //                     // スクロール直後に次のセルを編集モードに突入させる
-        //                     grid.editCell(targetRow, targetCol);
-        //                 } catch (err) {
-        //                     console.warn("DHTMLX key navigation adjusted:", err);
-        //                 }
-        //             });
-        //         }
-
         //         return false;
         //     }
         // });
+
+        // // 【対策②：最重要】type: "number" などでイベントが遮断された場合の対応
+        // // セルの編集が確定（Enterやタブ、フォーカスアウトなど）した直後に動作します
+        // grid.events.on("afterEditEnd", function (value, cell, toSave) {
+        //     // 編集が確定したセル（現在地）の情報を元に、非同期で次のセルへ移動させる
+        //     // (DHTMLX内部のDOMクローズ処理の競合を防ぐためsetTimeoutを使用)
+        //     setTimeout(() => {
+        //         moveToNextCell(grid, cell);
+        //     }, 50);
+        // });
+
 
 
 
