@@ -1,54 +1,11 @@
 {% extends 'base.html' %}
 {% block head %}
-<title>Estimate list</title>
-<style>
-    /* 画面全体にレイアウトを広げるための設定 */
-    html,
-    body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    /* 💡 全体の中央寄せと最大幅の制限は、最外枠のコンテナに対して行う */
-    #layout-main-container {
-        width: 100%;
-        max-width: 1000px;
-        height: 100vh;
-        margin: 0 auto;
-        box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
-        /* 浮き出し効果 */
-    }
-
-    /* 必要に応じて各セルの背景色などを指定 */
-    .layout-header {
-        background-color: #879eba;
-    }
-
-    .layout-content {
-        background-color: #ffffff;
-    }
-
-    .layout-footer {
-        background-color: #1a1a1a;
-        /* 💡 深みのある黒を指定 */
-        color: #ffffff;
-        /* 💡 文字色を白に指定 */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        letter-spacing: 0.5px;
-        /* 必要に応じて文字間隔を調整 */
-    }
-</style>
+<title>事業者　一覧表</title>
 {% endblock %}
 
 {% block header %}
 <div class="my-div-style col-sm mx-auto text-center">
-    <h5>Estimate list</h5>
+    <h5>事業者一覧表</h5>
 </div>
 {% endblock %}
 
@@ -56,48 +13,11 @@
 
 <body>
     <div id="layout-main-container"></div>
-
     <script>
-        // 1. レイアウトの定義 (Suite 9 準拠)
-        // 第一引数には、HTML上のコンテナ要素のIDを指定します。
-        const layout = new dhx.Layout("layout-main-container", {
-            type: "line",
-            rows: [
-                {
-                    id: "toolbar_container", // Menuを配置するヘッダーセル
-                    height: "60px",
-                    css: "layout-header"
-                },
-                {
-                    // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
-                    id: "main_content_row",
-                    cols: [
-                        {
-                            // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
-                            id: "grid_and_page_container",
-                            rows: [
-                                {
-                                    id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
-                                },
-                                {
-                                    id: "pagination_cell", // 下側：Pagination用のセル
-                                    height: "60px" // Paginationが収まる高さを指定
-                                }
-                            ],
-                            css: "layout-content"
-                        }
-                    ]
-                },
-                {
-                    id: "footer_cell",  // フッターセル
-                    html: "Copyright &copy; kag holdings inc 2025",
-                    height: "30px",
-                    css: "layout-footer"
-                }
-            ]
-        });
+        // layoutの準備
+        const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
 
-        // 1. --- ツールバーの処理 ---
+        // TOOLBAR: ツールバーの処理 ---
         const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
@@ -109,46 +29,161 @@
         })
 
 
-        //  2. --- モーダルウインドウの準備 ---
+        //  FORM: --- モーダルウインドウの準備 ---
         const dhxWindow = new dhx.Window({
-            width: 400,
-            height: 400,
+            width: 800,
+            height: 800,
             title: "新規",
             modal: true
         });
 
         // 3. --- フォームの準備 ---
         const form = new dhx.Form(null, {
+
             rows: [
-                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
                 {
-                    name: "estimate_year",
-                    type: "input",
-                    label: "受注年度",
-                    required: true,
-                    css: "my-custom-required" // 任意のクラス名を追加
-                },
-                {
-                    name: "estimate_no",
-                    type: "input",
-                    label: "受注番号",
-                    required: true
-                },
-                {
-                    name: "estimate_name",
-                    type: "input",
-                    label: "工事名称",
-                    required: true
-                },
-                {
-                    type: "button",
-                    name: "save",
-                    text: "保存",
-                    view: "flat",
-                    color: "primary"
+                    cols: [
+                        {
+                            rows: [
+                                {
+                                    type: "input",
+                                    name: "id",
+                                    hidden: true
+                                    // 見えないが値は保持される
+                                },
+                                {
+                                    name: "client_no",
+                                    type: "input",
+                                    label: "事業者番号",
+                                    required: true,
+                                    width: 100
+                                },
+                                {
+                                    name: "client_rep_name",
+                                    type: "input",
+                                    label: "代表者名称",
+                                    required: false,
+                                    width: 200
+                                },
+
+                            ]
+                        },
+                        {
+                            rows: [
+                                {
+                                    type: "input",
+                                    name: "id",
+                                    hidden: true
+                                    // 見えないが値は保持される
+                                },
+                                {
+                                    name: "client_no",
+                                    type: "input",
+                                    label: "事業者番号",
+                                    required: true,
+                                    width: 100
+                                },
+                                {
+                                    name: "client_rep_name",
+                                    type: "input",
+                                    label: "代表者名称",
+                                    required: false,
+                                    width: 200
+                                },
+
+                            ]
+                        },
+
+
+                        {
+
+
+                            rows: [
+                                {
+                                    name: "client_name",
+                                    type: "input",
+                                    label: "事業者名称",
+                                    required: true,
+                                    width: 300
+                                },
+                                {
+                                    name: "client_name_kana",
+                                    type: "input",
+                                    label: "事業者名称カナ",
+                                    required: false,
+                                    width: 300
+                                },
+
+                                {
+                                    name: "client_cls",
+                                    type: "input",
+                                    label: "事業者区分",
+                                    required: false,
+                                    type: "select", // セレクトボックス形式
+                                    options: [
+                                        { value: "", content: "" },
+                                        { value: "1", content: "法人" },
+                                        { value: "2", content: "個人" }
+                                    ],
+                                    width: 100
+                                },
+                                {
+                                    name: "client_zip_code",
+                                    type: "input",
+                                    label: "郵便番号",
+                                    required: false,
+                                    width: 100
+                                },
+                                {
+                                    name: "client_address1",
+                                    type: "input",
+                                    label: "住所１",
+                                    required: false,
+                                    width: 300
+                                },
+                                {
+                                    name: "client_address2",
+                                    type: "input",
+                                    label: "住所２",
+                                    required: false,
+                                    width: 300
+                                },
+                                {
+                                    name: "client_phone_no",
+                                    type: "input",
+                                    label: "電話番号",
+                                    required: false,
+                                    width: 100
+                                },
+                                {
+                                    name: "client_fax_no",
+                                    type: "input",
+                                    label: "FAX",
+                                    required: false,
+                                    width: 100
+                                },
+                                {
+                                    type: "button",
+                                    name: "save",
+                                    text: "保存",
+                                    view: "flat",
+                                    color: "primary"
+                                }
+
+
+                            ]
+                        }
+
+
+
+                    ]
                 }
             ]
+
         });
+
+
+
         dhxWindow.attach(form);
 
         // 4. --- DRFからデータの読み込み ---
