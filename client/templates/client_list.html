@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% block head %}
+<title>Estimate list</title>
+<style>
+    /* 画面全体にレイアウトを広げるための設定 */
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    /* 💡 全体の中央寄せと最大幅の制限は、最外枠のコンテナに対して行う */
+    #layout-main-container {
+        width: 100%;
+        max-width: 1000px;
+        height: 100vh;
+        margin: 0 auto;
+        box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
+        /* 浮き出し効果 */
+    }
+
+    /* 必要に応じて各セルの背景色などを指定 */
+    .layout-header {
+        background-color: #879eba;
+    }
+
+    .layout-content {
+        background-color: #ffffff;
+    }
+
+    .layout-footer {
+        background-color: #1a1a1a;
+        /* 💡 深みのある黒を指定 */
+        color: #ffffff;
+        /* 💡 文字色を白に指定 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        /* 必要に応じて文字間隔を調整 */
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<div class="my-div-style col-sm mx-auto text-center">
+    <h5>Estimate list</h5>
+</div>
+{% endblock %}
+
+{% block contents %}
+
+<body>
+    <div id="layout-main-container"></div>
+
+    <script>
+        // 1. レイアウトの定義 (Suite 9 準拠)
+        // 第一引数には、HTML上のコンテナ要素のIDを指定します。
+        const layout = new dhx.Layout("layout-main-container", {
+            type: "line",
+            rows: [
+                {
+                    id: "toolbar_container", // Menuを配置するヘッダーセル
+                    height: "60px",
+                    css: "layout-header"
+                },
+                {
+                    // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
+                    id: "main_content_row",
+                    cols: [
+                        {
+                            // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
+                            id: "grid_and_page_container",
+                            rows: [
+                                {
+                                    id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
+                                },
+                                {
+                                    id: "pagination_cell", // 下側：Pagination用のセル
+                                    height: "60px" // Paginationが収まる高さを指定
+                                }
+                            ],
+                            css: "layout-content"
+                        }
+                    ]
+                },
+                {
+                    id: "footer_cell",  // フッターセル
+                    html: "Copyright &copy; kag holdings inc 2025",
+                    height: "30px",
+                    css: "layout-footer"
+                }
+            ]
+        });
+
+        // 1. --- ツールバーの処理 ---
+        const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+        toolbar.data.add([
+            { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
+        ]);
+        toolbar.events.on("click", function (id) {
+            if (id === "add") {
+                addRow(); // 関数を呼ぶ
+            }
+        })
+
+
+        //  2. --- モーダルウインドウの準備 ---
+        const dhxWindow = new dhx.Window({
+            width: 400,
+            height: 400,
+            title: "新規",
+            modal: true
+        });
+
+        // 3. --- フォームの準備 ---
+        const form = new dhx.Form(null, {
+            rows: [
+                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
+                {
+                    name: "estimate_year",
+                    type: "input",
+                    label: "受注年度",
+                    required: true,
+                    css: "my-custom-required" // 任意のクラス名を追加
+                },
+                {
+                    name: "estimate_no",
+                    type: "input",
+                    label: "受注番号",
+                    required: true
+                },
+                {
+                    name: "estimate_name",
+                    type: "input",
+                    label: "工事名称",
+                    required: true
+                },
+                {
+                    type: "button",
+                    name: "save",
+                    text: "保存",
+                    view: "flat",
+                    color: "primary"
+                }
+            ]
+        });
+        dhxWindow.attach(form);
+
+        // 4. --- DRFからデータの読み込み ---
+        // 4.1 main dataの取得
+        const dataset = new dhx.TreeCollection();
+        fetch(`/estimate/estimates/`)
+            .then(response => response.json())
+            .then(data => {
+                grid.data.parse(data); // 配列部分を渡す
+            })
+            .catch(err => console.error("estimateデータ取得失敗:", err));
+
+        // 5. Gridの初期化
+        const grid = new dhx.Grid("grid_container", {
+            columns: [
+                { id: "id", header: [{ text: "ID" }], hidden: true, isTreeColum: true },
+                {
+                    id: "detail",
+                    width: 100,
+                    header: [{ text: "見積明細", align: "center", rowspan: 2 }],
+                    align: "center",
+                    htmlEnable: true,
+                    template: () => "<button class='grid-btn-detail'>明細</button>"
+                },
+                {
+                    id: "estimate_year",
+                    width: 100,
+                    header: [{ text: "受注年度", align: "center" }, { content: "selectFilter" }],
+                    align: "center",
+                    // editable: true
+                },
+                {
+                    id: "estimate_no",
+                    header: [{ text: "受注番号", align: "center", rowspan: 2 }],
+                    width: 100,
+                    align: "center",
+                },
+                {
+                    id: "estimate_name",
+                    header: [{ text: "工事名称", align: "center" }, { content: "inputFilter" }],
+                    width: 400
+                },
+                {
+                    id: "action",
+                    width: 80,
+                    header: [{ text: "修正", align: "center", rowspan: 2 }],
+                    align: "center",
+                    htmlEnable: true,
+                    template: () => "<button class='dxi dxi-pencil'>修正</button>"
+                },
+                {
+                    id: "delete",
+                    width: 80,
+                    header: [{ text: "削除", align: "center", rowspan: 2 }],
+                    align: "center",
+                    htmlEnable: true,
+                    template: () => "<button class='dxi dxi-delete' >削除</button>"
+                }
+            ],
+            autoWidth: true,
+            //rootParent: null
+            //data: dataset, // 作成した DataCollection を直接紐付ける
+        });
+
+        // 💡 修正した「grid_cell」にGridをアタッチ
+        layout.getCell("grid_cell").attach(grid);
+
+        // --- ページネーション ---
+        const pagination = new dhx.Pagination(null, {
+            css: "dhx_widget--bordered dhx_widget--no-border_top",
+            data: grid.data,
+            pageSize: 50
+        });
+
+        // 💡 修正した「pagination_cell」にPaginationをアタッチ
+        layout.getCell("pagination_cell").attach(pagination);
+
+        //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
+
+
+        // 6. --- イベントの処理 ---
+        // 6.1 新規作成のウインドウを表示する
+        function addRow() {
+            if (form) {
+                form.clear({});
+            }
+            dhxWindow.header.data.update("title", { value: "新規登録" });
+            dhxWindow.setPosition(100, 50);
+            dhxWindow.paint();
+            dhxWindow.show();
+        }
+        // 6.2 グリッド内の「編集」ボタンクリック時
+        grid.events.on("cellClick", (row, col) => {
+            if (col.id === "action") {
+                form.setValue(row); // 選択した行のデータをフォームにセット
+                dhxWindow.header.data.update("title", { value: "編集" });
+                dhxWindow.paint();
+                dhxWindow.show();
+            }
+        });
+
+        // 6.3 グリッド内の「」から違うプログラムをコールする
+        grid.events.on("cellClick", (row, col, e) => {
+            if (col.id === "detail") {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                // 1. estimate_no を取得（なければ id）
+                const rawId = row.estimate_no || row.id;
+
+                // 2. 💡「001」などの文字列を数値の「1」に変換（Djangoの <int:> に合わせるため）
+                const targetId = parseInt(rawId, 10);
+
+                // 3. 💡 Djangoのルーティング構造に合わせたルート相対パスを作成
+                // ※ もし task アプリケーション内なら /task/lists/1/、直下なら /lists/1/ に調整してください
+                const targetUrl = `/task/lists/${targetId}/`;
+
+                if (window.parent && typeof window.parent.changeMainContent === "function") {
+                    window.parent.changeMainContent(targetUrl);
+                } else {
+                    window.top.location.href = targetUrl;
+                }
+            }
+        });
+
+        // 6.3. 保存ボタンの処理
+        form.getItem("save").events.on("click", () => {
+
+            // 6.3.1 バリデーションを実行
+            if (!form.validate()) {
+                // エラー時のカーソルセット
+                const info = form.getInfo();
+                const firstErrorId = Object.keys(info).find(itemId => info[itemId].error);
+                if (firstErrorId) {
+                    form.getItem(firstErrorId).setFocus();
+                }
+                return; // ← 重要：ここで処理を終了させ、以降のfetchを実行させない
+            }
+
+            // 6.3.2. バリデーション成功後に値を取得
+            const formData = form.getValue();
+            console.log("送信データ:", formData);
+
+            const isNew = !formData.id || formData.id === "";
+
+            // 6.3.3. 新規(POST)か更新(PUT)の判定
+            const url = isNew ? "/estimate/estimates/" : `/estimate/estimates/${formData.id}/`;
+            const method = isNew ? "POST" : "PUT";
+
+            // 6.3.4. 通信開始
+            fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie('csrftoken')
+                },
+                body: JSON.stringify(formData)
+            })
+                .then(res => {
+                    if (!res.ok) {
+                        // DRFのバリデーションエラー(400)などをキャッチ
+                        return res.json().then(err => { throw err; });
+                    }
+                    return res.json();
+                })
+                .then(result => {
+                    dhx.message({
+                        text: isNew ? "追加されました" : "更新されました",
+                        css: "dhx_widget--bg_success",
+                        expire: 3000
+                    });
+
+                    dhxWindow.hide();
+
+                    // グリッドの再読み込み
+                    grid.data.removeAll();
+                    // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
+                    return fetch("/estimate/estimates/");
+                })
+                .then(res => res && res.json())
+                .then(data => {
+                    if (data) grid.data.parse(data);
+                })
+                .catch(err => {
+                    console.error(err);
+                    // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
+                    let msg = "エラーが発生しました";
+                    if (typeof err === 'object') {
+                        // 最初のエラー内容を抽出して表示
+                        const firstKey = Object.keys(err)[0];
+                        msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
+                    }
+                    dhx.message({ text: msg, css: "dhx_widget--bg_danger" });
+                });
+        });
+
+        // 6.4. 削除処理
+        grid.events.on("cellClick", (row, col) => {
+            if (col.id === "delete") {
+                if (confirm("選択した行を削除してもよろしいですか？")) {
+                    // 6.4.1. サーバー側のデータを削除
+                    fetch(`/estimate/estimates/${row.id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
+                        }
+                    })
+                        .then(res => {
+                            if (res.ok) {
+                                // 6.4.2. サーバー削除成功後、フロントエンド(Grid)から削除
+                                grid.data.remove(row.id);
+                                dhx.message({
+                                    text: "削除しました",
+                                    css: "dhx_widget--bg_success",
+                                    expire: 3000
+                                });
+                            } else {
+                                dhx.message({
+                                    text: "削除に失敗しました",
+                                    css: "dhx_widget--bg_danger",
+                                    expire: -1
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            //console.error(err);
+                            dhx.message({
+                                text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
+                            });
+                        });
+                }
+            }
+        });
+    </script>
+</body>
+
+{% endblock %}

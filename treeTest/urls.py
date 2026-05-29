@@ -25,6 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('app.urls')),
     path('accounts/', include('allauth.urls')),
+    path('client/', include('client.urls')),
     path('estimate/', include('estimate.urls')),
     # path('api/', include('unit.urls')),  # api call
     # re_path(r'', include('unit.urls')),

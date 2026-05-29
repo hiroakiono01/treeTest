@@ -113,6 +113,7 @@ contract_manager_select = [
     ('1', 'システム管理者'),
 ]
 
+
 class Client(models.Model):
     class Meta:
         db_table = 'client'

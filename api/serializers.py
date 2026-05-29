@@ -2,7 +2,15 @@
 
 from rest_framework import serializers
 
-from app.models import Task, Estimate, Unit, Reference
+from app.models import Client, Task, Estimate, Unit, Reference
+
+
+class ClientSerializer(serializers.ModelSerializer):
+    # client_id = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = Client
+        fields = '__all__'
 
 
 class UnitSerializer(serializers.ModelSerializer):

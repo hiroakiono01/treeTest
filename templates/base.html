@@ -34,7 +34,10 @@
     <script src="{% static 'suite/suite.js' %}"></script>
     <!-- 共通ユーティリティ -->
     <script src="{% static 'js/utils.js' %}"></script>
-
+    <!-- 共通のレイアウト設定ファイルを先に読み込む -->
+    <script src="{% static 'js/layout-config.js' %}"></script>
+        <!-- 共通CSSもここで読み込んでおく -->
+    <link rel="stylesheet" href="{% static 'suite/layout-common.css' %}">
 
     {% block head %}{% endblock %}
 </head>

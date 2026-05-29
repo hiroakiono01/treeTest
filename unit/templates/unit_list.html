@@ -2,49 +2,7 @@
 {% block head %}
 <title>Unit list</title>
 
-<style>
-    /* 画面全体にレイアウトを広げるための設定 */
-    html,
-    body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
 
-    /* 💡 全体の中央寄せと最大幅の制限は、最外枠のコンテナに対して行う */
-    #layout-main-container {
-        width: 100%;
-        max-width: 1000px;
-        height: 100vh;
-        margin: 0 auto;
-        box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
-        /* 浮き出し効果 */
-    }
-
-    /* 必要に応じて各セルの背景色などを指定 */
-    .layout-header {
-        background-color: #879eba;
-    }
-
-    .layout-content {
-        background-color: #ffffff;
-    }
-
-    .layout-footer {
-        background-color: #1a1a1a;
-        /* 💡 深みのある黒を指定 */
-        color: #ffffff;
-        /* 💡 文字色を白に指定 */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        letter-spacing: 0.5px;
-        /* 必要に応じて文字間隔を調整 */
-    }
-</style>
 {% endblock %}
 
 {% block header %}
@@ -58,44 +16,8 @@
 <body>
     <div id="layout-main-container"></div>
     <script>
-        // 1. レイアウトの定義 (Suite 9 準拠)
-        // 第一引数には、HTML上のコンテナ要素のIDを指定します。
-        const layout = new dhx.Layout("layout-main-container", {
-            type: "line",
-            rows: [
-                {
-                    id: "toolbar_container", // Menuを配置するヘッダーセル
-                    height: "60px",
-                    css: "layout-header"
-                },
-                {
-                    // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
-                    id: "main_content_row",
-                    cols: [
-                        {
-                            // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
-                            id: "grid_and_page_container",
-                            rows: [
-                                {
-                                    id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
-                                },
-                                {
-                                    id: "pagination_cell", // 下側：Pagination用のセル
-                                    height: "60px" // Paginationが収まる高さを指定
-                                }
-                            ],
-                            css: "layout-content"
-                        }
-                    ]
-                },
-                {
-                    id: "footer_cell",  // フッターセル
-                    html: "Copyright &copy; kag holdings inc 2025",
-                    height: "30px",
-                    css: "layout-footer"
-                }
-            ]
-        });
+        const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+
 
 
 
