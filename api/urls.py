@@ -1,4 +1,5 @@
-from django.urls import path, re_path
+from django.urls import path
+
 # from rest_framework import routers
 #
 from . import views
@@ -17,9 +18,10 @@ app_name = 'api'
 
 urlpatterns = [
     #
-    path('unit-options/', views.get_unit_options,),
-    path('estimate-options/', views.get_estimate_options, ),
-    path('get_estimate_name/', views.get_estimate_name,)
+    # path('unit-options/', views.get_unit_options,),
+    # path('estimate-options/', views.get_estimate_options, ),
+    path('get_estimate_name/', views.get_estimate_name, ),
+    path('get_current_client/', views.get_current_client),
 
     # path('', views.ReferenceList.as_view(), name='reference_list'),  # 一覧
     # path('add/', views.ReferenceAdd.as_view(), name='reference_add'),  # 登録

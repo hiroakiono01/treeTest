@@ -61,7 +61,7 @@
     <!--<div id="grid_container"></div>-->
 
     <script>
-        dhx.setTheme("dark");
+        dhx.setTheme("light");
         // 1. レイアウトの定義 (Suite 9 準拠)
         // 第一引数には、HTML上のコンテナ要素のIDを指定します。
         const layout = new dhx.Layout("layout-main-container", {
@@ -123,6 +123,7 @@
 
 
         // CONNECT: DRFからデータの読み込み
+
         // 1. Unit一覧を取得してGridのプルダウンに反映 ---
         const unitFields = ["unit_name"]
         fetch("/api/unit-options/")
@@ -147,6 +148,7 @@
                 grid.data.parse(data); // data.reference (配列部分) を渡す
             })
             .catch(err => console.error("referenceデータ取得失敗:", err));
+
 
         // GRID: dhx.Gridの初期化
         const grid = new dhx.Grid(null, {

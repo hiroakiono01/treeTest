@@ -14,8 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include, re_path
-from django.views.generic import RedirectView
+from django.urls import path, include
 
 # from api.urls import router as estimate_router  # ルーターに名前をつける
 
@@ -26,6 +25,7 @@ urlpatterns = [
     path('', include('app.urls')),
     path('accounts/', include('allauth.urls')),
     path('client/', include('client.urls')),
+    path('customer/', include('customer.urls')),
     path('estimate/', include('estimate.urls')),
     # path('api/', include('unit.urls')),  # api call
     # re_path(r'', include('unit.urls')),

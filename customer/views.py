@@ -5,23 +5,23 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from api.serializers import ClientSerializer
-from app.models import Client
+from api.serializers import CustomerSerializer
+from app.models import Customer
 
 
-def client_list_call(request):
-    return render(request, 'client_list.html')
+def customer_list_call(request):
+    return render(request, 'customer_list.html')
 
 
 @api_view(['GET', 'POST'])
-def client_list(request):
+def customer_list(request, client_id):
     if request.method == 'GET':
-        clients = Client.objects.order_by("client_no").all()
-        serializer = ClientSerializer(clients, many=True)
+        customers = Customer.objects.order_by("custom_no").filter(client_id=client_id).all()
+        serializer = CustomerSerializer(customers, many=True)
         return Response(serializer.data)
 
     elif request.method == "POST":
-        serializer = ClientSerializer(data=request.data)
+        serializer = CustomerSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -29,10 +29,10 @@ def client_list(request):
 
 
 @api_view(["PUT", "PATCH", "DELETE"])
-def client_detail(request, pk):
+def customer_detail(request, pk):
     try:
-        instance = Client.objects.get(pk=pk)
-    except Client.DoesNotExist:
+        instance = Customer.objects.get(pk=pk)
+    except Customer.DoesNotExist:
         return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
 
     # 1. 削除（DELETE）処理の共通化
@@ -45,10 +45,10 @@ def client_detail(request, pk):
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
 
     # if request.method == "GET":
-    #     serializer = ClientSerializer(instance)
+    #     serializer = CustomerSerializer(instance)
     #     return Response(serializer.data)
 
-    serializer = ClientSerializer(instance, data=request.data, partial=True)
+    serializer = CustomerSerializer(instance, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -59,7 +59,7 @@ def client_detail(request, pk):
 
 
 @api_view(['POST'])
-def bulk_sync_clients(request):
+def bulk_sync_customers(request):
     data_list = request.data
     response_data = []
 
@@ -76,25 +76,25 @@ def bulk_sync_clients(request):
                     save_data.pop('id', None)
 
                     # 2. シリアライザに余計なフィールドを渡さない（エラー防止）
-                    serializer = ClientSerializer(data=save_data)
+                    serializer = CustomerSerializer(data=save_data)
                     instance_exists = False
                 else:
                     # 💡 既存データの更新
-                    instance = Client.objects.filter(id=raw_id).first()
+                    instance = Customer.objects.filter(id=raw_id).first()
                     if not instance:
                         raise ValueError({'error': f'{index + 1}件目のデータ（ID: {raw_id}）がデータベースに存在しません。'})
 
-                    serializer = ClientSerializer(instance, data=save_data, partial=True)
+                    serializer = CustomerSerializer(instance, data=save_data, partial=True)
 
                     instance_exists = True
 
                 if serializer.is_valid():
                     saved_instance = serializer.save()
                     # 保存後のオブジェクトから、正式に出力用データを生成
-                    result_item = ClientSerializer(saved_instance).data
+                    result_item = CustomerSerializer(saved_instance).data
                     # マッピングの記録（後続の子要素のため）
                     if not instance_exists:
-                        result_item['client_id'] = raw_id
+                        result_item['customer_id'] = raw_id
 
                     response_data.append(serializer.data)
                 else:

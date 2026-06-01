@@ -1,5 +1,4 @@
 from django.db import models
-from django.db import models
 from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import status
@@ -43,8 +42,7 @@ def estimate_detail(request, pk):
             msg = f'「{instance}」は他で使われているため削除がきません'
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 3. 取得処理 (GET)
-    if request.method == "GET":
+    # if request.method == "GET":
         serializer = EstimateSerializer(instance)
         return Response(serializer.data)
 

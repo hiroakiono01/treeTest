@@ -1,5 +1,7 @@
 from django.db import models
 
+from accounts.models import CustomUser
+
 Calc_clas_select = [
     ('0', 'Items to include in The total　amount'),
     ('1', 'Aggregate within the hierarchy but do not include in The total amount'),
@@ -118,6 +120,7 @@ class Client(models.Model):
     class Meta:
         db_table = 'client'
 
+    id = models.AutoField(primary_key=True)
     client_no = models.CharField(max_length=10, null=True, blank=True, verbose_name='事業者番号')
     client_name = models.CharField(max_length=40, null=True, blank=True, verbose_name='事業者名称')
     client_name_kana = models.CharField(max_length=40, null=True, blank=True, verbose_name='事業者名称カナ')
@@ -145,7 +148,7 @@ class Client(models.Model):
     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
     def __str__(self):
-        return self.client_name
+        return self.client_name or "名称未設定"
 
     def get_client_cls_cha(self) -> str:
         if self.client_cls == '0':
@@ -196,6 +199,17 @@ class Client(models.Model):
             return "個人"
 
 
+class CurrentClient(models.Model):
+    class Meta:
+        db_table = 'currentClient'
+
+    customUser = models.ForeignKey(CustomUser, null=True, blank=True, verbose_name='利用者', on_delete=models.PROTECT)
+    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='顧問先', on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.customUser.username + '  :' + self.client.client_name
+
+
 class User(models.Model):
     class Meta:
         db_table = 'users'
@@ -222,27 +236,28 @@ class User(models.Model):
         return self.user_no + " " + self.user_name
 
 
-class Group(models.Model):
-    class Meta:
-        db_table = 'groups'
-
-    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
-    group_code = models.CharField(max_length=4, null=True, blank=True, verbose_name='グループコード', unique=True)
-    group_cls = models.CharField(max_length=1, null=True, blank=True, choices=groupClsData, verbose_name='グループクラス')
-    group_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='グループ名称')
-
-    create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
-    update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
-    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
-    updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
+# class Group(models.Model):
+#     class Meta:
+#         db_table = 'groups'
+#
+#     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
+#     group_code = models.CharField(max_length=4, null=True, blank=True, verbose_name='グループコード', unique=True)
+#     group_cls = models.CharField(max_length=1, null=True, blank=True, choices=groupClsData, verbose_name='グループクラス')
+#     group_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='グループ名称')
+#
+#     create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
+#     update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
+#     created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+#     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
 
 class Customer(models.Model):
     class Meta:
         db_table = 'customer'
 
+    id = models.AutoField(primary_key=True)
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
-    customer_no = models.CharField(max_length=13, null=True, blank=True, verbose_name='得意先管理番号', unique=True)
+    customer_no = models.CharField(max_length=13, null=True, blank=True, verbose_name='得意先管理番号')
     customer_name = models.CharField(max_length=60, null=True, blank=True, verbose_name='得意先名称')
     customer_short_name = models.CharField(max_length=14, null=True, blank=True, verbose_name='得意先略称')
     customer_kana = models.CharField(max_length=14, null=True, blank=True, verbose_name='得意先カナ')
@@ -253,7 +268,7 @@ class Customer(models.Model):
     customer_personal_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name='携帯電話番号')
     customer_fax_no = models.CharField(max_length=20, null=True, blank=True, verbose_name='FAX')
     customer_person = models.CharField(max_length=30, null=True, blank=True, verbose_name='担当者名')
-    group_id = models.ForeignKey(Group, null=True, blank=True, verbose_name='グループ', on_delete=models.PROTECT)
+    group_cls = models.CharField(max_length=1, null=True, blank=True, verbose_name='グループ')
     payment_close_date = models.CharField(max_length=2, null=True, blank=True, verbose_name='請求締め日')
     payment_sight = models.CharField(max_length=10, null=True, blank=True, verbose_name='請求サイト')
     payment_payday = models.CharField(max_length=2, null=True, blank=True, verbose_name='入金予定日')
@@ -272,7 +287,13 @@ class Customer(models.Model):
     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
     def __str__(self):
-        return str(self.customer_no) + " " + self.customer_short_name
+        return str(self.customer_no) + " " + self.customer_name
+
+    def get_group_cls_cha(self) -> str:
+        if self.group_cls == '1':
+            return "官庁"
+        if self.group_cls == '2':
+            return "民間"
 
     def get_use_flg_cha(self) -> str:
         if self.use_flg == '0':

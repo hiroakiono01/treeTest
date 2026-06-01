@@ -171,7 +171,16 @@
     background-color: #d0e2ff;
 }
 
-/* DHTMLX Formの必須マーク（アスタリスク）を赤色にする */
-.dhx_form-element__label .dhx_label__required {
-    color: #ff5252 !important; /* お好みの赤色（DHTMLXのデフォルト警告赤は#ff5252） */
+/* 追加したカスタムクラス配下の必須マークを赤くする */
+.my-custom-required [class*="required"],
+.my-custom-required ::after {
+    color: #ff5252 !important;
+}
+
+ /* 枠を波線で囲む -----*/
+.my-div-border{
+    padding: 10px;
+    margin-bottom:
+    10px; border:
+    1px dotted #333333;
 }
