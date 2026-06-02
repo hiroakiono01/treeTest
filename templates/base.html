@@ -77,6 +77,10 @@
                         <a class="nav-link{% block active_estimate %}{% endblock %}"
                            href="{% url 'estimate:estimate_list' %}">estimate</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% block active_metadataImport_list %}{% endblock %}"
+                           href="{% url 'customer:customer-import' %}">得意先マスタインポート</a>
+                    </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block header %}
+<div class="my-div-style">
+    <div class="container">
+        <div class="row">
+            <h3 class="my-3 text-center">得意先インポート</h3>
+        </div>
+        <div clas="col-md-3 col-lg-6 text-center">
+            <div class="dropzone" id="dropzone">Drop files here</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block contents %}
+<div class="container">
+    <div class="row">
+        <div class="col-12 mx-6 text-left" offset-3>
+            <table class="my-3 mb-2 bg-light text-black table-bordered">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="file" name="csv_file" accept=".csv" required>
+                    <button type="submit">アップロード</button>
+                </form>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="{% static  './js/dropzone.js' %}" defer></script>
+
+{% endblock %}

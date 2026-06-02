@@ -184,3 +184,33 @@
     10px; border:
     1px dotted #333333;
 }
+
+/* 「利用状況」ラベルと右側の選択肢全体の縦位置を真ん中に合わせる */
+.custom-radio-align {
+    align-items: bottom !important;
+}
+
+/* 「○ボタン」と「利用中/停止の文言」の縦位置を真ん中に合わせる */
+.custom-radio-align .dhx_radiobutton {
+    display: inline-flex !important;
+    align-items: bottom !important;
+}
+
+/* 文字の高さ（ベースライン）のズレを補正する微調整 */
+.custom-radio-align .dhx_radiobutton__label {
+    line-height: 1 !important;
+    margin-top: 8px; /* 環境によって文字が上にズレる場合はここで微調整 */
+}
+
+.dropzone{
+    width:400px;
+    height:250px;
+    border:2px dashed #ccc;
+    color:#ccc;
+    line-height:300px;
+    text-align:center;
+    }
+.dropzone.dragover{
+    border-color:#000;
+    color:#000;
+}

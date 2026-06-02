@@ -16,7 +16,7 @@ def estimate_list_call(request):
 @api_view(['GET', 'POST'])
 def estimate_list(request):
     if request.method == 'GET':
-        estimates = Estimate.objects.all()
+        estimates = Estimate.objects.order_by('estimate_year', 'estimate_no').reverse()
         serializer = EstimateSerializer(estimates, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
@@ -42,7 +42,7 @@ def estimate_detail(request, pk):
             msg = f'「{instance}」は他で使われているため削除がきません'
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
 
-    # if request.method == "GET":
+        # if request.method == "GET":
         serializer = EstimateSerializer(instance)
         return Response(serializer.data)
 

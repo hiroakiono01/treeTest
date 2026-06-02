@@ -1,12 +1,17 @@
 from django.db import models
 from django.db import transaction
 from django.shortcuts import render
+from django.urls import reverse_lazy
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
+from django.views import generic
 from api.serializers import CustomerSerializer
 from app.models import Customer
+
+import csv
+import io
+from django.shortcuts import render
 
 
 def customer_list_call(request):
@@ -16,7 +21,7 @@ def customer_list_call(request):
 @api_view(['GET', 'POST'])
 def customer_list(request, client_id):
     if request.method == 'GET':
-        customers = Customer.objects.order_by("custom_no").filter(client_id=client_id).all()
+        customers = Customer.objects.order_by("customer_no").filter(client_id=client_id).all()
         serializer = CustomerSerializer(customers, many=True)
         return Response(serializer.data)
 
@@ -113,46 +118,100 @@ def bulk_sync_customers(request):
         # 発生したエラーメッセージの辞書をそのまま400エラーとして返す
         return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['POST'])
-# def bulk_sync_references(request):
-#     data_list = request.data
-#     response_data = []
-#     id_map = {}
-#
-#     # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
-#     for index, item in enumerate(data_list):
-#         temp_id = item.get('id')
-#         parent_val = item.get('parent')
-#         item['sort_order'] = index
-#
-#         is_temp_id = (
-#                 temp_id is None or
-#                 temp_id == "" or
-#                 (isinstance(temp_id, str) and temp_id.startswith('u'))
-#         )
-#         instance = None
-#         if not is_temp_id:
-#             # 既存データをDBから探す（エラーにならないように filter().first() を使用）
-#             instance = Reference.objects.filter(id=temp_id).first()
-#
-#         if instance:
-#             # 【更新】DBに存在する場合
-#             serializer = ReferenceSerializer(instance, data=item, partial=True)
-#         else:
-#             # 【新規】DBに存在しない、または一時IDの場合
-#             item.pop('id', None)  # IDを削除して新規作成として扱う
-#             serializer = ReferenceSerializer(data=item)
-#
-#         if serializer.is_valid():
-#             saved_instance = serializer.save()
-#
-#             # マッピングの記録（後続の子要素のため）
-#             if is_temp_id or not instance:
-#                 id_map[temp_id] = saved_instance.id
-#
-#             response_data.append(serializer.data)
-#         else:
-#             print(f"Serializer Error: {serializer.errors}")  # デバッグ用
-#             return Response(serializer.errors, status=400)
-#
-#     return Response(response_data, status=200)
+    # @api_view(['POST'])
+    # def bulk_sync_references(request):
+    #     data_list = request.data
+    #     response_data = []
+    #     id_map = {}
+    #
+    #     # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
+    #     for index, item in enumerate(data_list):
+    #         temp_id = item.get('id')
+    #         parent_val = item.get('parent')
+    #         item['sort_order'] = index
+    #
+    #         is_temp_id = (
+    #                 temp_id is None or
+    #                 temp_id == "" or
+    #                 (isinstance(temp_id, str) and temp_id.startswith('u'))
+    #         )
+    #         instance = None
+    #         if not is_temp_id:
+    #             # 既存データをDBから探す（エラーにならないように filter().first() を使用）
+    #             instance = Reference.objects.filter(id=temp_id).first()
+    #
+    #         if instance:
+    #             # 【更新】DBに存在する場合
+    #             serializer = ReferenceSerializer(instance, data=item, partial=True)
+    #         else:
+    #             # 【新規】DBに存在しない、または一時IDの場合
+    #             item.pop('id', None)  # IDを削除して新規作成として扱う
+    #             serializer = ReferenceSerializer(data=item)
+    #
+    #         if serializer.is_valid():
+    #             saved_instance = serializer.save()
+    #
+    #             # マッピングの記録（後続の子要素のため）
+    #             if is_temp_id or not instance:
+    #                 id_map[temp_id] = saved_instance.id
+    #
+    #             response_data.append(serializer.data)
+    #         else:
+    #             print(f"Serializer Error: {serializer.errors}")  # デバッグ用
+    #             return Response(serializer.errors, status=400)
+    #
+    #     return Response(response_data, status=200)
+
+
+def customer_import(request):
+    if request.method == "POST" and request.FILES.get("csv_file"):
+        csv_file = request.FILES["csv_file"]
+
+        # ファイルオブジェクトをテキストモードに変換（UTF-8）
+        # Excelで作成したCSVの場合は 'shift_jis' や 'cp932' を指定
+        data_set = csv_file.read().decode("cp932")
+        io_string = io.StringIO(data_set)
+
+        # CSVを1行ずつループ処理
+        reader = csv.reader(io_string, delimiter=",")
+
+        # 1行目がヘッダー（列名）の場合は next() でスキップ可能
+        # header = next(reader)
+
+        for row in reader:
+            # rowは配列です。例：['田中', '30', '東京都']
+            print(row)
+            add_customer_db(row)
+
+            # ここでデータベースに保存する処理（モデルの作成など）を行う
+            # MyModel.objects.create(name=row[0], age=row[1], city=row[2])
+
+        return render(request, "complete.html")
+
+    return render(request, "importCustomer.html")
+
+
+def add_customer_db(row):
+    if row[13] == "当月":
+        payment_sight = "0"
+    elif row[13] == "翌月":
+        payment_sight = "1"
+    elif row[13] == "翌々月":
+        payment_sight = "2"
+    else:
+        payment_sight = ""
+    Customer(
+        client_id=1,
+        customer_no=row[1],
+        customer_name=row[4],
+        customer_zip_code=row[5],
+        customer_address1=row[6],
+        customer_address2=row[7],
+        customer_phone_no=row[8],
+        customer_fax_no=row[9],
+        customer_person=row[10],
+        payment_close_date=row[11],
+        payment_limit_date=row[12],
+        payment_sight=payment_sight,
+        payment_payday=row[14]
+    ).save()
