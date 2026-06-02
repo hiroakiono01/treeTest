@@ -16,56 +16,43 @@
 <body>
     <div id="layout-main-container"></div>
     <script>
+        // ===================================================
+        //  1. VARIABLES （変数の宣言とデータの準備）
+        // ===================================================
+
         const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+        let grid = null;
+        let form = null;
+        let toolbar = null;
+        let pagination = null;
+        let dhxWindow = null;
+        const dataset = new dhx.DataCollection();
+        let AUTO_ADDED_FLAG = "_isAutoAdded"; // 自動追加フラグ
+
+        // ===================================================
+        // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
+        // ===================================================
 
 
 
-
-        // TOOLBAR: ツールバーの処理 ---
-        const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+        // TOOLBAR 2.1 ツールバーの作成
+        toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
             { type: "spacer" },
             { id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
             { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
         ]);
-        toolbar.events.on("click", function (id) {
-            if (id === "add") {
-                addRow();
-            }
-            if (id === "update") {
-                updateAll();
-            }
-            if (id === "resetGrid") {
-                resetGrid();
-            }
-        })
 
 
-        // CONNECT:DRFからデータの読み込み
-        const dataset = new dhx.DataCollection();
-        fetch("/unit/units/")
-            .then(response => response.json())
-            .then(data => {
-                grid.data.parse(data); // data.units (配列部分) を渡す
-            })
-            .catch(err => console.error("unitデータ取得失敗:", err));
 
-        // GRID: dhx.Gridの初期化
-        const grid = new dhx.Grid(null, {
+        // GRID 2.2 dhx.Gridの作成
+        grid = new dhx.Grid(null, {
             columns: [
+                { id: "id", header: [{ text: "ID" }], hidden: true },
                 {
-                    id: "id",
-                    header: [{ text: "ID" }],
-                    hidden: true
-                },
-                {
-                    id: "unit_no",
-                    width: 200,
-                    header: [
-                        { text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },
-                    ],
-                    htmlEnable: true, // 赤くするため必要
+                    id: "unit_no", width: 200,
+                    header: [{ text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
                     type: "number",
                     keyNavigation: true,
                     editable: true
@@ -81,42 +68,18 @@
                     keyNavigation: true,
                     editable: true
                 },
-                {
-                    id: "delete",
-                    header: [{ text: "削除", align: "center", rowspan: 2 }],
-                    align: "center",
-                    width: 80,
-
-                    htmlEnable: true,
-                    template: () => "<button class='dxi dxi-delete' >削除</button>"
-                }
+                { id: "delete", header: [{ text: "削除", align: "center", rowspan: 2 }], align: "center", width: 80, htmlEnable: true, template: () => "<button class='dxi dxi-delete' >削除</button>" }
             ],
             autoWidth: false,
-            data: dataset, // 作成した DataCollection を直接紐付ける
+            //data: dataset, // 作成した DataCollection を直接紐付ける
             //keyNavigation: true,
 
             // dragMode: "both", // ドラッグ＆ドロップを有効にする
-            selection: "row",
-            selection: "cell",
+            //selection: "row",
+            //selection: "cell",
             editing: true,
             keyNavigation: true // ★必ずtrueに設定してください
-
         });
-
-
-        // ATTACH: grid_cell」にGridをアタッチ
-        layout.getCell("grid_cell").attach(grid);
-
-
-        // PAGINATION: ページネーション ---
-        const pagination = new dhx.Pagination(null, {
-            css: "dhx_widget--bordered dhx_widget--no-border_top",
-            data: grid.data,
-            pageSize: 50
-        });
-
-        // ATTACH: 「pagination_cell」にPaginationをアタッチ
-        layout.getCell("pagination_cell").attach(pagination);
 
         // ONECLICK: ワンクリックで入力ができる ---　
         // TODO: ワンクリックにならない
@@ -124,9 +87,64 @@
             grid.editCell(row.id, column.id);
         });
 
+        // レイアウトの「grid_cell」にGridをアタッチ
+        layout.getCell("grid_cell").attach(grid);
 
-        // AUTO_ADD_ROW: 自動で行を追加しする　この行は何も入力がないときは一括更新で削除
-        const AUTO_ADDED_FLAG = "_isAutoAdded"; // 自動追加フラグ
+
+        // PAGINATION: 2.3 ページネーション ---
+        pagination = new dhx.Pagination(null, {
+            css: "dhx_widget--bordered dhx_widget--no-border_top",
+            data: grid.data,
+            pageSize: 50
+        });
+        //「pagination_cell」にPaginationをアタッチ
+        layout.getCell("pagination_cell").attach(pagination);
+
+
+        // ===================================================
+        // 3. DATA LOADING （データ通信・サーバーとのやり取り）
+        // ===================================================
+
+
+        // CONNECT: 3.1 DRFからデータの読み込み
+
+        fetch("/unit/units/")
+            .then(response => response.json())
+            .then(data => {
+                grid.data.parse(data); // data.units (配列部分) を渡す
+            })
+            .catch(err => console.error("unitデータ取得失敗:", err));
+
+        // ===================================================
+        // 4. USER EVENTS （ボタン操作・イベントリスナー）
+        // ===================================================
+
+        // 4.1 toolbar
+        toolbar.events.on("click", function (id) {
+            if (id === "add") {
+                addRow();
+            }
+            if (id === "update") {
+                updateAll();
+            }
+            if (id === "resetGrid") {
+                resetGrid();
+            }
+        })
+
+
+        // 4.2 BUTTON_ADD_ROW: -- 新規ボタンを押した時の振る舞い ---
+        function addRow() {
+            const newRowData = {};
+            const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
+            // 追加した行へフォーカス
+            if (newRow) {
+                grid.editCell(newRow, "unit_no");
+            }
+        }
+
+        // 4.3 AUTO_ADD_ROW: 自動で行を追加しする　この行は何も入力がないときは一括更新で削除
+
 
         grid.events.on("afterEditEnd", (value, row, column) => {
             // 新規行（IDが 'u' から始まる）かつ、指定の最終列（unit_name）の編集が終わった場合
@@ -160,24 +178,31 @@
 
 
 
-        // BUTTON_ADD_ROW: -- 新規ボタンを押した時の振る舞い ---
-        function addRow() {
-            const newRowData = {};
-            const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
-            // 追加した行へフォーカス
-            if (newRow) {
-                grid.editCell(newRow, "unit_no");
-            }
-        }
 
-        // RESET: リセット処理 ---
+        // RESET: 4.4 リセット処理 ---
         function resetGrid() {
-            // 1. サーバーから最新のデータを再取得
-            fetch("/unit/units/") // 👈 初期読み込み時と同じAPIのURLを指定してください
-                .then(res => res.json())
+            // 1. 前回のサーバーエラー赤枠をクリア（エラーが起きても無視して進む）
+            try {
+                grid.data.forEach(row => {
+                    if (row && row.id && requiredFields) {
+                        requiredFields.forEach(field => {
+                            grid.removeCellCss(row.id, field, "required-error");
+                        });
+                    }
+                });
+            } catch (e) {
+                console.warn("エラー枠のクリア中に問題が発生しましたが、リセットを続行します:", e);
+            }
+
+            // 2. サーバーから最新のデータを再取得（ここが確実に実行されます）
+            fetch("/unit/units/")
+                .then(res => {
+                    if (!res.ok) throw new Error("HTTP error " + res.status);
+                    return res.json();
+                })
                 .then(result => {
-                    grid.data.removeAll();// 現在のGridデータをすべてクリア
-                    grid.data.parse(result);// 3. 取得したデータを再読み込み
+                    grid.data.removeAll(); // 現在のGridデータをすべてクリア
+                    grid.data.parse(result); // 取得したデータを再読み込み
                 })
                 .catch(err => {
                     console.error("リセット失敗:", err);
@@ -185,7 +210,9 @@
                 });
         }
 
-        //UPDATE: 保存ボタンで一括更新処理 ---
+
+
+        //UPDATE:  4.5 保存ボタンで一括更新処理 ---
         function updateAll() {
             // 自動追加された行のうち、何も入力されていない行を抽出して削除
             const rowsToRemove = [];
@@ -241,6 +268,7 @@
 
             // フロントエンドでunito_noの二重登録のチェック
             const unitNoMap = {};
+            const unitNameMap = {};
             grid.data.forEach(row => {
                 const unitNo = String(row.unit_no || "").trim();
                 if (unitNo !== "") {
@@ -254,11 +282,6 @@
                         unitNoMap[unitNo] = row.id; // 行IDを記憶
                     }
                 }
-            });
-
-            // フロントエンドでunit_nameの二重登録のチェック
-            const unitNameMap = {};
-            grid.data.forEach(row => {
                 const unitName = String(row.unit_name || "").trim();
                 if (unitName !== "") {
                     if (unitNameMap[unitName]) {
@@ -272,6 +295,11 @@
                     }
                 }
             });
+
+            // フロントエンドでunit_nameの二重登録のチェック
+
+            // grid.data.forEach(row => {
+            // });
 
             // エラーを表示する
 
@@ -361,7 +389,7 @@
 
 
 
-        // DELETE: 削除ボタンの即時実行
+        // DELETE: 4.6 削除ボタンの即時実行
         grid.events.on("cellClick", (row, col) => {
             if (col.id === "delete") {
                 if (confirm("削除しますか？")) {
