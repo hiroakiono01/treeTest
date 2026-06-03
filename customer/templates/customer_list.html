@@ -132,6 +132,7 @@
 
             // FORM: 3. --- フォームの準備 ---
             form = new dhx.Form(null, {
+                css: "dhx_widget--bordered",
                 rows: [
                     {
                         type: "input",
@@ -266,11 +267,7 @@
                         ]
                     },
                     {
-                        type: "fieldset",
-                        name: "account",
-                        label: "",
-                        labelAlignment: "center",
-                        width: "100%",
+
                         rows: [
                             {
                                 alingn: "between",
@@ -280,15 +277,17 @@
                                         name: "personal",
                                         label: "入金情報",
                                         labelAlignment: "center",
-                                        width: "70%",
+                                        width: "68%",
                                         rows: [
                                             {
                                                 cols: [
                                                     {
                                                         name: "payment_limit_date",
-                                                        type: "input",
+                                                        type: "select",
                                                         label: "請求書提出期限",
                                                         required: false,
+                                                        options: closeDateOptions,
+                                                        width: "20%"
                                                     },
                                                     {
                                                         type: "spacer",
@@ -299,7 +298,8 @@
                                                         type: "select",
                                                         label: "請求締め日",
                                                         required: false,
-                                                        options: closeDateOptions
+                                                        options: closeDateOptions,
+                                                        width: "20%"
                                                     },
                                                     {
                                                         type: "spacer",
@@ -315,7 +315,8 @@
                                                             { value: "0", content: "当月" },
                                                             { value: "1", content: "翌月" },
                                                             { value: "2", content: "翌々月" },
-                                                        ]
+                                                        ],
+                                                        width: "20%"
                                                     },
                                                     {
                                                         type: "spacer",
@@ -326,7 +327,8 @@
                                                         type: "select",
                                                         label: "入金予定日",
                                                         required: false,
-                                                        options: closeDateOptions
+                                                        options: closeDateOptions,
+                                                        width: "20%"
                                                     },
                                                 ]
                                             },
@@ -373,7 +375,10 @@
                                             },
                                         ]
                                     },
-
+                                    {
+                                        type: "spacer",
+                                        width: "2%"
+                                    },
                                     {
                                         type: "fieldset",
                                         name: "account2",
@@ -388,7 +393,7 @@
                                                 required: false,
                                                 labelPosition: "top",  // ラベルを左側に配置
                                                 labelWidth: "100px",    // ラベルの横幅を固定
-                                               
+
                                                 options: {
                                                     cols: [
                                                         { value: "1", text: "官庁" },
