@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block head %}
-<title>Reference list</title>
+<title>Process list</title>
 <style>
     /* 画面全体にレイアウトを広げるための設定 */
     html,
@@ -48,7 +48,7 @@
 
 {% block header %}
 <div class="my-div-style col-sm mx-auto text-center">
-    <h5>Reference list</h5>
+    <h5>Process list</h5>
 </div>
 {% endblock %}
 
@@ -142,12 +142,12 @@
 
         // 2. DRFからデータの読み込む（Django の API から取得する場合）
         const dataset = new dhx.DataCollection();
-        fetch("/reference/references/")
+        fetch("/process/processes/")
             .then(response => response.json())
             .then(data => {
-                grid.data.parse(data); // data.reference (配列部分) を渡す
+                grid.data.parse(data); // data.process (配列部分) を渡す
             })
-            .catch(err => console.error("referenceデータ取得失敗:", err));
+            .catch(err => console.error("processデータ取得失敗:", err));
 
 
         // GRID: dhx.Gridの初期化
@@ -159,9 +159,9 @@
                     hidden: false
                 },
                 {
-                    id: "detail_name",
+                    id: "process_name",
                     width: 300,
-                    header: [{ text: "明細名称　<span style='color:red'>*</span>", align: "center" }, { content: "inputFilter" }],
+                    header: [{ text: "工種名称　<span style='color:red'>*</span>", align: "center" }, { content: "inputFilter" }],
                     htmlEnable: true, // 赤くするため必要
                 },
                 {
@@ -258,7 +258,7 @@
                 // 新しい行のデータオブジェクト
                 const newRowData = {
                     id: newRowId,
-                    detail_name: "",
+                    process_name: "",
                     calcu_cls: "",
                     unit_name: "",
                     budget_price: "",
@@ -317,7 +317,7 @@
                     }, rowIndex);
                     // 3. 追加した行へフォーカス
                     if (newAboveRow) {
-                        grid.editCell(newAboveRow, "detail_name");
+                        grid.editCell(newAboveRow, "process_name");
                     }
                     break;
                 case "insertRowBelow":
@@ -326,12 +326,12 @@
                     // console.log("追加された行のID:", rowIndex);
                     // 3. 追加した行へフォーカス
                     if (newBelowRow) {
-                        grid.editCell(newBelowRow, "detail_name");
+                        grid.editCell(newBelowRow, "process_name");
                     }
                     break;
                 case "clearRow":
                     grid.data.update(rowId, {
-                        detail_name: "",
+                        process_name: "",
                         calcu_cls: "",
                         unit_name: "",
                         budget_price: "",
@@ -351,11 +351,11 @@
             // 1. 新しい行のデータを定義（空オブジェクトでも自動で一意のIDが生成されます）
             const newRowData = {};
             const newRow = grid.data.add(newRowData, 0); // 戻り値で追加された行オブジェクトが取得できます
-            // grid.selection.setCell(newRowId, "detail_name");
+            // grid.selection.setCell(newRowId, "process_name");
             //console.log("追加された行のID:", newRow);
             // 3. 追加した行へフォーカス
             if (newRow) {
-                grid.editCell(newRow, "detail_name");
+                grid.editCell(newRow, "process_name");
             }
         }
 
@@ -365,7 +365,7 @@
             // if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
 
             // 1. サーバーから最新のデータを再取得
-            fetch("/reference/references/") // 👈 初期読み込み時と同じAPIのURLを指定してください
+            fetch("/process/processes/") // 👈 初期読み込み時と同じAPIのURLを指定してください
                 .then(res => res.json())
                 .then(result => {
                     // 2. 現在のGridデータをすべてクリア
@@ -387,7 +387,7 @@
             const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
-            const requiredFields = ["detail_name", "calcu_cls", "unit_name"];
+            const requiredFields = ["process_name", "calcu_cls", "unit_name"];
 
 
             grid.data.serialize().forEach(row => {
@@ -450,7 +450,7 @@
 
             const allData = grid.data.serialize();
 
-            fetch("/reference/bulk_sync/", {
+            fetch("/process/bulk_sync/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -487,24 +487,24 @@
                         if (Array.isArray(err)) {
                             err.forEach(errorRow => {
                                 if (errorRow.id) {
-                                    grid.addCellCss(errorRow.id, "detail_name", "required-error");
-                                    if (errorRow.detail_name) {
-                                        mainMessage = Array.isArray(errorRow.detail_name) ? errorRow.detail_name[0] : errorRow.detail_name;
+                                    grid.addCellCss(errorRow.id, "process_name", "required-error");
+                                    if (errorRow.process_name) {
+                                        mainMessage = Array.isArray(errorRow.process_name) ? errorRow.process_name[0] : errorRow.process_name;
                                     }
                                 }
                             });
                             // パターンB: { "unit_name": ["..."] } のように単一オブジェクトで返る場合
                         } else if (err.unit_name) {
-                            mainMessage = Array.isArray(err.detail_name) ? err.detail_name[0] : err.detail_name;
+                            mainMessage = Array.isArray(err.process_name) ? err.process_name[0] : err.process_name;
 
                             // 重複エラーが発生したため、該当行）のセルに赤枠を付与
                             const values = [];
                             grid.data.forEach(row => {
-                                const val = String(row.detail_name || "").trim();
+                                const val = String(row.process_name || "").trim();
                                 if (val !== "") {
                                     if (values.includes(val)) {
                                         // 画面内で重複している行に赤枠を付与
-                                        grid.addCellCss(row.id, "detail_name", "required-error");
+                                        grid.addCellCss(row.id, "process_name", "required-error");
                                     }
                                     values.push(val);
                                 }
@@ -536,7 +536,7 @@
                     grid.data.remove(rowId);
                 } else {
                     // サーバーへ削除リクエスト
-                    fetch(`/reference/references/${rowId}/`, {
+                    fetch(`/process/processes/${rowId}/`, {
                         method: 'DELETE',
                         headers: {
                             'X-CSRFToken': getCookie('csrftoken')  // ここを追加

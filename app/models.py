@@ -345,12 +345,42 @@ class Unit(models.Model):
         db_table = 'unit'
 
     id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
     unit_no = models.IntegerField(null=True, blank=True, verbose_name='unit No', unique=True, default=0)
     unit_name = models.CharField(max_length=15, null=True, blank=True, verbose_name='unit name', unique=True)
-    sort_order = models.IntegerField(default=0)
+    # sort_order = models.IntegerField(default=0)
+    create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
+    update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
+    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
     def __str__(self):
         return str(self.unit_name)
+
+
+class Process(models.Model):
+    class Meta:
+        db_table = 'process'
+
+    id = models.AutoField(primary_key=True)
+    process_name = models.CharField(max_length=50, null=True, blank=True, verbose_name='工種名称')
+    calcu_cls = models.CharField(max_length=2, null=True, blank=True, verbose_name='計算区分', default='0')
+    unit_name = models.ForeignKey(Unit, blank=True, null=True, verbose_name='予算単位', related_name='+', on_delete=models.PROTECT)
+    budget_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算単価')
+    sort_order = models.IntegerField(default=0)
+
+    def get_calcu_cls_cha(self) -> str:
+        if self.calcu_cls == '0':
+            return "Items to include in The total　amount"
+        if self.calcu_cls == '1':
+            return "Aggregate within the hierarchy but do not include in The total amount"
+        if self.calcu_cls == '2':
+            return "The total amount excluding consumption tax"
+        if self.calcu_cls == '3':
+            return "Consumption tax"
+
+    def __str__(self):
+        return str(self.calcu_cls) + " " + str(self.processl_name)
 
 
 class Reference(models.Model):

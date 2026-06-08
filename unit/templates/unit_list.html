@@ -27,7 +27,7 @@
         let pagination = null;
         let dhxWindow = null;
         const dataset = new dhx.DataCollection();
-  
+
 
         // ===================================================
         // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
@@ -72,17 +72,12 @@
             ],
             autoWidth: false,
             //data: dataset, // 作成した DataCollection を直接紐付ける
-            //keyNavigation: true,
-
-            // dragMode: "both", // ドラッグ＆ドロップを有効にする
             //selection: "row",
-            //selection: "cell",
             editing: true,
             keyNavigation: true // ★必ずtrueに設定してください
         });
 
-        // ONECLICK: ワンクリックで入力ができる ---　
-        // TODO: ワンクリックにならない
+        // ONECLICK: 2.3 ワンクリックで入力ができる ---　
         grid.events.on("cellClick", function (row, column) {
             grid.editCell(row.id, column.id);
         });
@@ -133,7 +128,7 @@
         })
 
 
-        // 4.2 BUTTON_ADD_ROW: -- 新規ボタンを押した時の振る舞い ---
+        // BUTTON_ADD_ROW: 4.2  -- 新規ボタンを押した時の振る舞い ---
         function addRow() {
 
             const newRowData = {
@@ -147,10 +142,7 @@
 
 
 
-
-
-
-        // RESET: 4.4 リセット処理 ---
+        // RESET: 4.3 リセット処理 ---
         function resetGrid() {
             // 1. サーバーから最新のデータを取得
             fetch("/unit/units/")
@@ -173,15 +165,12 @@
                         });
                     });
                     dhx.message({
-                        text: "データを最新の状態に更新しました",
+                        text: "リセットしました",
                         status: "success",
                         expire: 3000
                     });
                 })
                 .catch(err => {
-                    // 【エラー発生時】
-                    console.error("データ更新に失敗しました。元のデータを維持します:", err);
-                    // 💡 ポイント2: grid.data に触れない（消さない）ことで古いデータがそのまま残る
                     // ユーザーに「更新には失敗したが、表示は古いデータのままであること」を伝える
                     if (typeof dhx !== "undefined" && dhx.message) {
                         dhx.message({
@@ -194,21 +183,18 @@
         }
 
 
-
-
-
-        //UPDATE:  4.5 保存ボタンで一括更新処理 ---
+        //UPDATE:  4.4 保存ボタンで一括更新処理 ---
         function updateAll() {
 
             const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
-            const requiredFields = ["unit_no", "unit_name"];
+            const requiredFields = ["unit_no", "unit_name"];// 必須の項目
 
 
             grid.data.serialize().forEach(row => {
 
-                // 4.5.1 実行前に前回のサーバーエラー赤枠をすべてクリアする
+                // 実行前に前回のサーバーエラー赤枠をすべてクリアする
                 requiredFields.forEach(field => {
                     grid.removeCellCss(row.id, field, "required-error");
                 });
@@ -216,7 +202,7 @@
 
 
 
-            // 4.5.3 // フロントエンドでunito_noの二重登録のチェック
+            // フロントエンドでunito_noの二重登録のチェック
             const unitNoMap = {};
             const unitNameMap = {};
             grid.data.forEach(row => {
@@ -229,6 +215,7 @@
                         hasError = true;
                     }
                 });
+
                 // すでに同じunit_noが存在する場合、両方の行に赤枠を付与
                 const unitNo = String(row.unit_no || "").trim();
                 if (unitNo !== "") {
@@ -266,7 +253,6 @@
             }
 
             // チェックが終了したら更新作業に移行する
-            // console.log("hasError", hasError)
             const allData = grid.data.serialize(); // gridの全データを取得
 
             fetch("/unit/bulk_sync/", {
@@ -289,12 +275,6 @@
                     return response.json();
                 })
                 .then(result => {
-
-                    // 1. 送信した全データをループ処理
-                    // 1. 送信した全データをループ処理
-
-
-
                     dhx.message({
                         text: "更新しました。",
                         expire: 3000,
@@ -395,87 +375,6 @@
                 }
             }
         });
-
-        // TODO:リターンキーで移動
-        // 2. エディタ内とGrid全体のEnterキーを制御するイベント
-        // // 共通の横移動処理（関数化してスッキリさせます）
-        // function moveToNextCell(grid, currentCell) {
-        //     if (!currentCell || !currentCell.row || !currentCell.column) return;
-
-        //     const currentRowId = currentCell.row.id;
-        //     const currentColumnId = currentCell.column.id;
-
-        //     // 有効な列オブジェクトを抽出
-        //     const validColumns = grid.config.columns.filter(col => col && typeof col.id === "string");
-        //     const currentColIndex = validColumns.findIndex(col => col.id === currentColumnId);
-
-        //     let nextRowId = currentRowId;
-        //     let nextColumnId = null;
-
-        //     // 1. 右隣に列がある場合は右へ移動
-        //     if (currentColIndex > -1 && currentColIndex < validColumns.length - 1) {
-        //         nextColumnId = validColumns[currentColIndex + 1].id;
-        //     }
-        //     // 2. 最後の列だった場合は、次の行の最初の列へ折り返し
-        //     else {
-        //         nextRowId = grid.data.getNextId(currentRowId);
-        //         if (nextRowId && validColumns.length > 0) {
-        //             nextColumnId = validColumns[0].id;
-        //         }
-        //     }
-
-        //     // 移動先セル情報が揃っている場合のみ実行
-        //     if (nextRowId && nextColumnId) {
-        //         // 先に選択状態（フォーカス）を切り替える
-        //         grid.selection.setCell(nextRowId, nextColumnId);
-
-        //         // 描画完了を待ってからスクロールと編集を開始
-        //         dhx.awaitRedraw().then(() => {
-        //             try {
-        //                 grid.scrollTo(nextRowId, nextColumnId);
-        //                 grid.editCell(nextRowId, nextColumnId);
-        //             } catch (err) {
-        //                 console.warn("DHTMLX key navigation adjusted:", err);
-        //             }
-        //         });
-        //     }
-        // }
-
-        // // 【対策①】文字入力中ではない（セルを選択しているだけの状態）でのEnter対応
-        // grid.events.on("beforeKeyDown", function (e) {
-        //     if (e.key === "Enter") {
-        //         const cell = grid.selection.getCell();
-        //         if (!cell) return;
-
-        //         // 編集中の場合は確定して終了（これにより対策②が発火します）
-        //         if (grid.getEditState()) {
-        //             grid.editEnd();
-        //         } else {
-        //             // 編集モードではない場合は、その場で次のセルへ移動
-        //             moveToNextCell(grid, cell);
-        //         }
-
-        //         e.preventDefault();
-        //         e.stopPropagation();
-        //         return false;
-        //     }
-        // });
-
-        // // 【対策②：最重要】type: "number" などでイベントが遮断された場合の対応
-        // // セルの編集が確定（Enterやタブ、フォーカスアウトなど）した直後に動作します
-        // grid.events.on("afterEditEnd", function (value, cell, toSave) {
-        //     // 編集が確定したセル（現在地）の情報を元に、非同期で次のセルへ移動させる
-        //     // (DHTMLX内部のDOMクローズ処理の競合を防ぐためsetTimeoutを使用)
-        //     setTimeout(() => {
-        //         moveToNextCell(grid, cell);
-        //     }, 50);
-        // });
-
-
-
-
-
-
 
     </script>
 </body>

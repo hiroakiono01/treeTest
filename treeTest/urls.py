@@ -31,7 +31,7 @@ urlpatterns = [
     # re_path(r'', include('unit.urls')),
     path('unit/', include('unit.urls')),
     path('api/', include('api.urls')),
-    path('reference/', include('reference.urls')),
+    path('process/', include('process.urls')),
     path('task/', include('task.urls')),
     # path('unit_list/', RedirectView.as_view(url='/static/API_list.html')),
 ]

@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'api',
     'unit',
-    'reference',
+    'process',
     'task',
     'django_bootstrap5',
     'django_filters',

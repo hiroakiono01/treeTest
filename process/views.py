@@ -5,23 +5,23 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from api.serializers import ReferenceSerializer
-from app.models import Reference
+from api.serializers import ProcessSerializer
+from app.models import Process
 
 
-def reference_list_call(request):
-    return render(request, 'reference_list.html')
+def process_list_call(request):
+    return render(request, 'process_list.html')
 
 
 @api_view(['GET'])
-def reference_list(request):
+def process_list(request):
     if request.method == 'GET':
-        references = Reference.objects.order_by("sort_order").all()
-        serializer = ReferenceSerializer(references, many=True)
+        processes = Process.objects.order_by("sort_order").all()
+        serializer = ProcessSerializer(processes, many=True)
         return Response(serializer.data)
 
     # elif request.method == "POST":
-    #     serializer = ReferenceSerializer(data=request.data)
+    #     serializer = ProcessSerializer(data=request.data)
     #     if serializer.is_valid():
     #         serializer.save()
     #         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -30,21 +30,21 @@ def reference_list(request):
 
 
 @api_view(["DELETE"])
-def reference_detail(request, pk):
+def process_detail(request, pk):
     """
-    Retrieve, update or delete a code reference.
+    Retrieve, update or delete a code process.
     """
     try:
-        instance = Reference.objects.get(pk=pk)
-    except Reference.DoesNotExist:
+        instance = Process.objects.get(pk=pk)
+    except Process.DoesNotExist:
         return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
 
     # if request.method == "GET":
-    #     serializer = ReferenceSerializer(reference)
+    #     serializer = ProcessSerializer(process)
     #     return Response(serializer.data)
     #
     # elif request.method == "PUT":
-    #     serializer = ReferenceSerializer(reference, data=request.data)
+    #     serializer = ProcessSerializer(process, data=request.data)
     #     if serializer.is_valid():
     #         serializer.save()
     #         return Response(serializer.data)
@@ -60,7 +60,7 @@ def reference_detail(request, pk):
 
 
 @api_view(['POST'])
-def bulk_sync_references(request):
+def bulk_sync_processs(request):
     data_list = request.data
     response_data = []
 
@@ -77,22 +77,22 @@ def bulk_sync_references(request):
                     save_data.pop('id', None)
 
                     # 2. シリアライザに余計なフィールドを渡さない（エラー防止）
-                    serializer = ReferenceSerializer(data=save_data)
+                    serializer = ProcessSerializer(data=save_data)
                     instance_exists = False
                 else:
                     # 💡 既存データの更新
-                    instance = Reference.objects.filter(id=raw_id).first()
+                    instance = Process.objects.filter(id=raw_id).first()
                     if not instance:
                         raise ValueError({'error': f'{index + 1}件目のデータ（ID: {raw_id}）がデータベースに存在しません。'})
 
-                    serializer = ReferenceSerializer(instance, data=save_data, partial=True)
+                    serializer = ProcessSerializer(instance, data=save_data, partial=True)
 
                     instance_exists = True
 
                 if serializer.is_valid():
                     saved_instance = serializer.save()
                     # 保存後のオブジェクトから、正式に出力用データを生成
-                    result_item = ReferenceSerializer(saved_instance).data
+                    result_item = ProcessSerializer(saved_instance).data
                     # マッピングの記録（後続の子要素のため）
                     if not instance_exists:
                         result_item['client_id'] = raw_id
@@ -115,7 +115,7 @@ def bulk_sync_references(request):
         return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
 
 # @api_view(['POST'])
-# def bulk_sync_references(request):
+# def bulk_sync_processs(request):
 #     data_list = request.data
 #     response_data = []
 #     id_map = {}
@@ -134,15 +134,15 @@ def bulk_sync_references(request):
 #         instance = None
 #         if not is_temp_id:
 #             # 既存データをDBから探す（エラーにならないように filter().first() を使用）
-#             instance = Reference.objects.filter(id=temp_id).first()
+#             instance = Process.objects.filter(id=temp_id).first()
 #
 #         if instance:
 #             # 【更新】DBに存在する場合
-#             serializer = ReferenceSerializer(instance, data=item, partial=True)
+#             serializer = ProcessSerializer(instance, data=item, partial=True)
 #         else:
 #             # 【新規】DBに存在しない、または一時IDの場合
 #             item.pop('id', None)  # IDを削除して新規作成として扱う
-#             serializer = ReferenceSerializer(data=item)
+#             serializer = ProcessSerializer(data=item)
 #
 #         if serializer.is_valid():
 #             saved_instance = serializer.save()

@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from app.models import Client, Task, Estimate, Unit, Reference, Customer
+from app.models import Client, Task, Estimate, Unit, Process, Customer
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -27,15 +27,15 @@ class UnitSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ReferenceSerializer(serializers.ModelSerializer):
+class ProcessSerializer(serializers.ModelSerializer):
     unit_name_display = serializers.ReadOnlyField(source='unit_name.unit_name')
-    detail_name = serializers.CharField(required=True)
+    process_name = serializers.CharField(required=True)
     calcu_cls = serializers.CharField(required=True)
 
     class Meta:
-        model = Reference
+        model = Process
         fields = ('id',
-                  'detail_name',
+                  'process_name',
                   'calcu_cls',
                   'unit_name',
                   'unit_name_display',
