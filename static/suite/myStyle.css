@@ -147,9 +147,6 @@
     /* 好みの大きさに数値を調整してください */
 }
 
-.my-layout {
-    margin-top: 6rem;
-}
 
 /* 赤いトースト用のカスタムCSS */
 .my-toast-danger {
@@ -213,4 +210,10 @@
 .dropzone.dragover{
     border-color:#000;
     color:#000;
+}
+
+
+/* 💡 独自のヘッダー用クラス（デフォルトスタイルを上書きリセット） */
+.my-layout-header {
+    background-color: #e7eff6 !important; /* 💡 必要に応じて背景色を調整してください */
 }

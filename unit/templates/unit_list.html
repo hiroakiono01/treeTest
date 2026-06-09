@@ -6,15 +6,16 @@
 {% endblock %}
 
 {% block header %}
-<div class="my-div-style col-sm mx-auto text-center">
-    <h5>Unit List</h5>
-</div>
+<!-- 💡 row クラスを追加し、d-flex と align-items-center で縦中央を揃えます -->
+<!--<div class="my-div-style col-sm mx-auto text-center">-->
+<!--    <h5 class="m-0 fw-bold"></h5>-->
+<!--</div>-->
 {% endblock %}
 
 {% block contents %}
 
 <body>
-    <div id="layout-main-container"></div>
+    <div id="layout-main-container" style="margin-top: 6rem;"></div>
     <script>
         // ===================================================
         //  1. VARIABLES （変数の宣言とデータの準備）
@@ -102,13 +103,44 @@
 
 
         // CONNECT: 3.1 DRFからデータの読み込み
-
-        fetch("/unit/units/")
-            .then(response => response.json())
+        fetch("/api/get_current_client/")
+            .then(res => res.json())
             .then(data => {
-                grid.data.parse(data); // data.units (配列部分) を渡す
+                client_id = data['current-client'].client_id;
+                client_no = data['current-client'].client_no;
+                client_name = data['current-client'].client_name;
+
+
+                   // 💡 今回追加した「ヘッダー」の要素に文字をセット
+                const headerNoElem = document.getElementById("header_client_no");
+                const headerNameElem = document.getElementById("header_client_name");
+                const headerReportTitleElem = document.getElementById("header_report_title");
+                if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
+                if (headerNameElem) headerNameElem.textContent = client_name || '';
+                if (headerReportTitleElem) headerReportTitleElem.textContent = "単位マスタ一覧表";
+                
+
+                // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
+                if (client_id && form) {
+                    form.setValue({ client: String(client_id) });
+                }
+
+                // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
+                if (client_id && grid) {
+                    fetch(`/unit/units/`)
+                        .then(response => response.json())
+                        .then(data => { grid.data.parse(data); })
+                        .catch(err => console.error("顧客データ取得失敗:", err));
+                }
             })
-            .catch(err => console.error("unitデータ取得失敗:", err));
+            .catch(err => console.error("current clientデータ取得失敗:", err));
+
+        // fetch("/unit/units/")
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         grid.data.parse(data); // data.units (配列部分) を渡す
+        //     })
+        //     .catch(err => console.error("unitデータ取得失敗:", err));
 
         // ===================================================
         // 4. USER EVENTS （ボタン操作・イベントリスナー）
