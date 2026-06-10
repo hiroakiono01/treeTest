@@ -60,7 +60,7 @@ def process_detail(request, pk):
 
 
 @api_view(['POST'])
-def bulk_sync_processs(request):
+def bulk_sync_processes(request):
     data_list = request.data
     response_data = []
 

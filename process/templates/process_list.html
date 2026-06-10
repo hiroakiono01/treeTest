@@ -494,7 +494,7 @@
                                 }
                             });
                             // パターンB: { "unit_name": ["..."] } のように単一オブジェクトで返る場合
-                        } else if (err.unit_name) {
+                        } else if (err.process_name) {
                             mainMessage = Array.isArray(err.process_name) ? err.process_name[0] : err.process_name;
 
                             // 重複エラーが発生したため、該当行）のセルに赤枠を付与

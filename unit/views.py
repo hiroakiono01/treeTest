@@ -15,9 +15,9 @@ def unit_list_call(request):
 
 
 @api_view(['GET'])
-def unit_list(request):
+def unit_list(request, client_id):
     if request.method == 'GET':
-        units = Unit.objects.order_by("unit_no").exclude(unit_name="").exclude(unit_name__isnull=True).all()
+        units = Unit.objects.order_by("unit_no").exclude(unit_name="").exclude(unit_name__isnull=True).filter(client_id=client_id).all()
         serializer = UnitSerializer(units, many=True)
         return Response(serializer.data)
 

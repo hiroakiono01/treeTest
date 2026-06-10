@@ -22,6 +22,7 @@
         // ===================================================
 
         const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+        let client_id = "";
         let grid = null;
         let form = null;
         let toolbar = null;
@@ -58,6 +59,7 @@
                     keyNavigation: true,
                     editable: true
                 },
+                { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: false },
                 {
                     id: "unit_name",
                     width: 200,
@@ -111,14 +113,14 @@
                 client_name = data['current-client'].client_name;
 
 
-                   // 💡 今回追加した「ヘッダー」の要素に文字をセット
+                // 💡 今回追加した「ヘッダー」の要素に文字をセット
                 const headerNoElem = document.getElementById("header_client_no");
                 const headerNameElem = document.getElementById("header_client_name");
                 const headerReportTitleElem = document.getElementById("header_report_title");
                 if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
                 if (headerNameElem) headerNameElem.textContent = client_name || '';
                 if (headerReportTitleElem) headerReportTitleElem.textContent = "単位マスタ一覧表";
-                
+
 
                 // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
                 if (client_id && form) {
@@ -127,7 +129,7 @@
 
                 // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
                 if (client_id && grid) {
-                    fetch(`/unit/units/`)
+                    fetch(`/unit/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => { grid.data.parse(data); })
                         .catch(err => console.error("顧客データ取得失敗:", err));
@@ -164,6 +166,7 @@
         function addRow() {
 
             const newRowData = {
+                client: client_id // client列にclient_idをセット
             };
             const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
             // 追加した行へフォーカス
@@ -177,7 +180,7 @@
         // RESET: 4.3 リセット処理 ---
         function resetGrid() {
             // 1. サーバーから最新のデータを取得
-            fetch("/unit/units/")
+            fetch(`/unit/lists/${client_id}/`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error(`サーバーレスポンス異常: ${res.status}`);
@@ -313,7 +316,7 @@
                         css: "dhx_widget--bg_success",
                     });
                     // グリッドを強制的に再描画する
-                    fetch("/unit/units/")
+                    fetch(`/unit/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => {
                             grid.data.parse(data); // data.units (配列部分) を渡す
@@ -355,35 +358,29 @@
                             // 例: alert(mainMessage); や UIライブラリの通知関数を呼ぶ
                         }
                     }
-                }
-                )
+                })
         };
-
-
 
         // DELETE: 4.6 削除ボタンの即時実行
         grid.events.on("cellClick", (row, col) => {
             if (col.id === "delete") {
                 if (confirm("削除しますか？")) {
+                    // 何も入力されていない行を削除する
                     if (String(row.id).startsWith('u')) {
                         grid.data.remove(row.id);
-                    } else {
-                        // サーバーへ削除リクエスト
-                        fetch(`/unit/units/${row.id}/`, {
+                    } else
+                    // データベースのレコードを削除するためサーバーへ削除リクエスト
+                    {
+                        grid.data.remove(row.id);
+                        fetch(`/unit/detail/${row.id}/`, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRFToken': getCookie('csrftoken')  // ここを追加
                             },
                             // body: JSON.stringify(sendingData)
+
                         })
-                            .then(res => {
-                                if (!res.ok) {
-                                    return res.json().then(err => { throw err; });
-                                }
-                                return res.json();
-                            })
                             .then(result => {
-                                grid.data.remove(row.id);
                                 dhx.message({
                                     text: "削除しました",
                                     css: "dhx_widget--bg_success",
@@ -391,18 +388,14 @@
                                 });
                             })
                             .catch(err => {
-                                const errorMsg = err.detail || err.message || "削除に失敗しました";
-                                if (typeof grid.editEnd === "function") {
-                                    grid.editEnd();
-                                }
+                                let errorMsg = "削除に失敗しました";
                                 dhx.message({
                                     text: errorMsg,
                                     css: "dhx_message--error",  // 赤いトースト
                                     icon: "dxi dxi-delete-forever",
                                     expire: 6000
                                 });
-
-                            });
+                            })
                     }
                 }
             }
