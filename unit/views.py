@@ -42,6 +42,7 @@ def unit_detail(request, pk):
 def bulk_sync_units(request):
     data_list = request.data
     response_data = []
+    username = request.user.username
 
     try:
         with transaction.atomic():
@@ -70,7 +71,10 @@ def bulk_sync_units(request):
 
                 if serializer.is_valid():
                     # データベースに保存を実行（新規登録の場合は、ここで自動的に数値IDが採番されます）
-                    saved_instance = serializer.save()
+                    if instance_exists:
+                        saved_instance = serializer.save(update_user=username)
+                    else:
+                        saved_instance = serializer.save(create_user=username)
 
                     # 保存後のオブジェクトから、正式に出力用データを生成
                     result_item = UnitSerializer(saved_instance).data

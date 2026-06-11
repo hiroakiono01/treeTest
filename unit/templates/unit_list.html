@@ -59,7 +59,7 @@
                     keyNavigation: true,
                     editable: true
                 },
-                { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: false },
+                { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: true },
                 {
                     id: "unit_name",
                     width: 200,
@@ -70,6 +70,17 @@
                     htmlEnable: true,
                     keyNavigation: true,
                     editable: true
+                },
+                {
+                    id: "use_flg",
+                    width: 100,
+                    header: [{ text: "利用区分", align: "center" }, {content: "selectFilter"}],
+                    editorType: "select", // セレクトボックス形式
+                    options: [
+                        { id: 0, value: "利用する" },
+                        { id: 9, value: "利用しない" }
+
+                    ],
                 },
                 { id: "delete", header: [{ text: "削除", align: "center", rowspan: 2 }], align: "center", width: 80, htmlEnable: true, template: () => "<button class='dxi dxi-delete' >削除</button>" }
             ],

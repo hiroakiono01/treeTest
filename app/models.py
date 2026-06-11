@@ -50,8 +50,8 @@ payday = [
 
 ]
 useFlgData = [
-    ('0', '利用中'),
-    ('9', '停止')
+    ('0', '使用する'),
+    ('9', '使用しない')
 ]
 useFlgSelect = [
     ('', '--------'),
@@ -347,14 +347,16 @@ class Unit(models.Model):
     id = models.AutoField(primary_key=True)
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
     unit_no = models.IntegerField(null=True, blank=True, verbose_name='unit No', default=0)
-    unit_name = models.CharField(max_length=15, null=True, blank=True, verbose_name='unit name', unique=True)
+    unit_name = models.CharField(max_length=15, null=True, blank=True, verbose_name='unit name')
+    use_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='利用状況', choices=useFlgData, default="0")
+
     create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
     update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
     created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
     def __str__(self):
-        return str(self.unit_name)
+        return str(self.unit_name) + str(self.updated_at)
 
 
 class Process(models.Model):
