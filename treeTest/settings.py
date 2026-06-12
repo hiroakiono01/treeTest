@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'estimate',
     'rest_framework',
     'api',
+    'user',
     'unit',
     'process',
     'task',

@@ -65,6 +65,10 @@
                         <a class="nav-link{% block active_customer %}{% endblock %}"
                            href="{% url 'customer:customer-list' %}">customer</a>
                     </li>
+                                        <li class="nav-item">
+                        <a class="nav-link{% block active_user %}{% endblock %}"
+                           href="{% url 'user:user-list' %}">利用者マスタ</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link{% block active_unite %}{% endblock %}"
                            href="{% url 'unit:unit-list' %}">単位マスタ</a>

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block head %}
-<title>Unit list</title>
+<title>User list</title>
 
 
 {% endblock %}
@@ -53,17 +53,15 @@
             columns: [
                 { id: "id", header: [{ text: "ID" }], hidden: true },
                 {
-                    id: "unit_no", width: 200,
+                    id: "user_no", width: 200,
                     header: [{ text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
                     type: "number",
                     keyNavigation: true,
-                    required: true, // 独自フラグとして利用
-                    maxLength: 2,
                     editable: true
                 },
                 { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: true },
                 {
-                    id: "unit_name",
+                    id: "user_name",
                     width: 200,
                     header: [
                         { text: "単位 <span style='color:red'>*</span>", align: "center" },
@@ -71,7 +69,6 @@
                     ],
                     htmlEnable: true,
                     keyNavigation: true,
-                    maxLength: 5,
                     editable: true
                 },
                 {
@@ -139,7 +136,7 @@
                 const headerReportTitleElem = document.getElementById("header_report_title");
                 if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
                 if (headerNameElem) headerNameElem.textContent = client_name || '';
-                if (headerReportTitleElem) headerReportTitleElem.textContent = "単位マスタ保守";
+                if (headerReportTitleElem) headerReportTitleElem.textContent = "単位マスタ一覧表";
 
 
                 // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
@@ -149,7 +146,7 @@
 
                 // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
                 if (client_id && grid) {
-                    fetch(`/unit/lists/${client_id}/`)
+                    fetch(`/user/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => { grid.data.parse(data); })
                         .catch(err => console.error("顧客データ取得失敗:", err));
@@ -157,12 +154,12 @@
             })
             .catch(err => console.error("current clientデータ取得失敗:", err));
 
-        // fetch("/unit/units/")
+        // fetch("/user/users/")
         //     .then(response => response.json())
         //     .then(data => {
-        //         grid.data.parse(data); // data.units (配列部分) を渡す
+        //         grid.data.parse(data); // data.users (配列部分) を渡す
         //     })
-        //     .catch(err => console.error("unitデータ取得失敗:", err));
+        //     .catch(err => console.error("userデータ取得失敗:", err));
 
         // ===================================================
         // 4. USER EVENTS （ボタン操作・イベントリスナー）
@@ -191,7 +188,7 @@
             const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
             // 追加した行へフォーカス
             if (newRow) {
-                grid.editCell(newRow, "unit_no");
+                grid.editCell(newRow, "user_no");
             }
         }
 
@@ -200,7 +197,7 @@
         // RESET: 4.3 リセット処理 ---
         function resetGrid() {
             // 1. サーバーから最新のデータを取得
-            fetch(`/unit/lists/${client_id}/`)
+            fetch(`/user/lists/${client_id}/`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error(`サーバーレスポンス異常: ${res.status}`);
@@ -213,7 +210,7 @@
                     // 3. 新しいデータをGridに反映
                     grid.data.parse(result);
                     // 実行前の赤枠をすべてクリアする
-                    const requiredFields = ["unit_no", "unit_name"];
+                    const requiredFields = ["user_no", "user_name"];
                     grid.data.forEach(row => {
                         requiredFields.forEach(field => {
                             grid.removeCellCss(row.id, field, "required-error");
@@ -244,19 +241,7 @@
             const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
-            const requiredFields = ["unit_no", "unit_name"];// 必須の項目
-
-            const unitNoMap = {};
-            const unitNameMap = {};
-
-            // columns定義から各フィールドのmaxLengthをマッピングする
-            const maxLengthMap = {};
-            grid.config.columns.forEach(col => {
-                if (col.maxLength) {
-                    maxLengthMap[col.id] = col.maxLength;
-                }
-            });
-
+            const requiredFields = ["user_no", "user_name"];// 必須の項目
 
 
             grid.data.serialize().forEach(row => {
@@ -269,11 +254,9 @@
 
 
 
-            // フロントエンドでunito_noの二重登録のチェック
-            //const unitNoMap = {};
-            //const unitNameMap = {};
-
-
+            // フロントエンドでusero_noの二重登録のチェック
+            const userNoMap = {};
+            const userNameMap = {};
             grid.data.forEach(row => {
                 // フロントエンドの必須入力チェック
                 requiredFields.forEach(field => {
@@ -285,42 +268,29 @@
                     }
                 });
 
+                // すでに同じuser_noが存在する場合、両方の行に赤枠を付与
+                const userNo = String(row.user_no || "").trim();
+                if (userNo !== "") {
+                    if (userNoMap[userNo]) {
 
-                // 文字数（有効桁数）チェック
-                requiredFields.forEach(field => {
-                    const value = String(row[field] || "").trim();
-                    const maxLen = maxLengthMap[field];
-                    if (value !== "" && maxLen && value.length > maxLen) {
-                        grid.addCellCss(row.id, field, "required-error");
-                        mainMessage = "最大文字数を超えています。";
-                        hasError = true;
-                    }
-                });
-                
-                // すでに同じunit_noが存在する場合、両方の行に赤枠を付与
-                const unitNo = String(row.unit_no || "").trim();
-                if (unitNo !== "") {
-                    if (unitNoMap[unitNo]) {
-                        grid.addCellCss(row.id, "unit_no", "required-error");
-                        grid.addCellCss(unitNoMap[unitNo], "unit_no", "required-error");
+                        grid.addCellCss(row.id, "user_no", "required-error");
+                        grid.addCellCss(userNoMap[userNo], "user_no", "required-error");
                         mainMessage = "番号が重複しています。";
                         hasError = true;
                     } else {
-                        unitNoMap[unitNo] = row.id; // 行IDを記憶
+                        userNoMap[userNo] = row.id; // 行IDを記憶
                     }
                 }
-
-
-                // すでに同じunit_Nameが存在する場合、両方の行に赤枠を付与
-                const unitName = String(row.unit_name || "").trim();
-                if (unitName !== "") {
-                    if (unitNameMap[unitName]) {
-                        grid.addCellCss(row.id, "unit_name", "required-error");
-                        grid.addCellCss(unitNameMap[unitName], "unit_name", "required-error");
+                // すでに同じuser_Nameが存在する場合、両方の行に赤枠を付与
+                const userName = String(row.user_name || "").trim();
+                if (userName !== "") {
+                    if (userNameMap[userName]) {
+                        grid.addCellCss(row.id, "user_name", "required-error");
+                        grid.addCellCss(userNameMap[userName], "user_name", "required-error");
                         mainMessage = "名称が重複しています。";
                         hasError = true;
                     } else {
-                        unitNameMap[unitName] = row.id; // 行IDを記憶
+                        userNameMap[userName] = row.id; // 行IDを記憶
                     }
                 }
             });
@@ -337,7 +307,7 @@
             // チェックが終了したら更新作業に移行する
             const allData = grid.data.serialize(); // gridの全データを取得
 
-            fetch("/unit/bulk_sync/", {
+            fetch("/user/bulk_sync/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -363,12 +333,12 @@
                         css: "dhx_widget--bg_success",
                     });
                     // グリッドを強制的に再描画する
-                    fetch(`/unit/lists/${client_id}/`)
+                    fetch(`/user/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => {
-                            grid.data.parse(data); // data.units (配列部分) を渡す
+                            grid.data.parse(data); // data.users (配列部分) を渡す
                         })
-                        .catch(err => console.error("unitデータ取得失敗:", err));
+                        .catch(err => console.error("userデータ取得失敗:", err));
 
                 })
                 .catch(err => {
@@ -385,16 +355,16 @@
                             if (rowErrors[row.id]) {
                                 const errorFields = rowErrors[row.id];
 
-                                // 1. unit_name の重複エラーがある場合
-                                if (errorFields.unit_name) {
-                                    grid.addCellCss(row.id, "unit_name", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_name;
+                                // 1. user_name の重複エラーがある場合
+                                if (errorFields.user_name) {
+                                    grid.addCellCss(row.id, "user_name", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.user_name;
                                 }
 
-                                // 2. unit_no の重複エラーがある場合
-                                if (errorFields.unit_no) {
-                                    grid.addCellCss(row.id, "unit_no", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_no;
+                                // 2. user_no の重複エラーがある場合
+                                if (errorFields.user_no) {
+                                    grid.addCellCss(row.id, "user_no", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.user_no;
                                 }
                             }
                         });
@@ -419,7 +389,7 @@
                     // データベースのレコードを削除するためサーバーへ削除リクエスト
                     {
                         grid.data.remove(row.id);
-                        fetch(`/unit/detail/${row.id}/`, {
+                        fetch(`/user/detail/${row.id}/`, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRFToken': getCookie('csrftoken')  // ここを追加
