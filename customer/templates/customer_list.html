@@ -12,6 +12,7 @@
 {% block contents %}
 
 <body>
+
     <div id="layout-main-container" style="--layout-max-width: 1500px;">
         <script>
 
@@ -117,8 +118,15 @@
                 autoWidth: true,
                 data: dataset // 修正された DataCollection を紐付け
             });
+
+
+                 // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+            enableGridEnterNavigation(grid);
+
             // 💡 修正した「grid_cell」にGridをアタッチ
             layout.getCell("grid_cell").attach(grid);
+
+
 
             // --- ページネーション ---
             pagination = new dhx.Pagination(null, {
@@ -455,6 +463,8 @@
                     },
                 ]
             });
+            // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+            enableFormEnterNavigation(form);
             dhxWindow.attach(form);
             // =======================================================
             //  3. DATA LOADING （データ通信・サーバーとのやり取り）
@@ -643,6 +653,8 @@
             // ===================================================
             // loadInitialData();
         </script>
+
+    </div>
 </body>
 
 {% endblock %}

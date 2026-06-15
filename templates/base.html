@@ -35,6 +35,10 @@
     <script src="{% static 'suite/suite.js' %}"></script>
     <!-- 共通ユーティリティ -->
     <script src="{% static 'js/utils.js' %}"></script>
+    <!-- Grid ReturnKey -->
+    <script src="{% static 'js/dhx-grid-enter-nav.js' %}"></script>
+    <!--Form returnKey -->
+    <script src="{% static 'js/dhx-form-enter-nav.js' %}"></script>
     <!-- 共通のレイアウト設定ファイルを先に読み込む -->
     <script src="{% static 'js/layout-config.js' %}"></script>
     <!-- 共通CSSもここで読み込んでおく -->
@@ -65,7 +69,7 @@
                         <a class="nav-link{% block active_customer %}{% endblock %}"
                            href="{% url 'customer:customer-list' %}">customer</a>
                     </li>
-                                        <li class="nav-item">
+                    <li class="nav-item">
                         <a class="nav-link{% block active_user %}{% endblock %}"
                            href="{% url 'user:user-list' %}">利用者マスタ</a>
                     </li>

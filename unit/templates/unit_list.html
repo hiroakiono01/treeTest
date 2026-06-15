@@ -80,17 +80,12 @@
                     header: [{ text: "利用区分", align: "center" }, { content: "selectFilter" }],
                     editorType: "select", // セレクトボックス形式
                     options: [
-                        { id: 0, value: "利用する" },
-                        { id: 9, value: "利用しない" }
-
+                        { id: "0", value: "利用する" },
+                        { id: "9", value: "利用しない" }
                     ],
-                    template: function (cellValue, row, col) {
-                        // options配列から、セル値(id)と一致するものを探す
-                        const option = col.options.find(opt => opt.id == cellValue);
-                        // 一致するものがあればそのvalue(文字列)を返し、無ければ生データを返す
-                        return option ? option.value : cellValue;
-                    }
                 },
+
+
                 { id: "delete", header: [{ text: "削除", align: "center", rowspan: 2 }], align: "center", width: 80, htmlEnable: true, template: () => "<button class='dxi dxi-delete' >削除</button>" }
             ],
             autoWidth: false,
@@ -99,6 +94,13 @@
             editing: true,
             keyNavigation: true // ★必ずtrueに設定してください
         });
+
+        // 【追加】初期表示時に「利用区分：0（利用する）」でフィルタリングを実行
+        // 【修正版】ヘッダーフィルター要素を取得して値をセットする
+        const useFlgFilter = grid.getHeaderFilter("use_flg");
+        if (useFlgFilter) {
+            useFlgFilter.setValue("0");
+        }
 
         // ONECLICK: 2.3 ワンクリックで入力ができる ---　
         grid.events.on("cellClick", function (row, column) {
@@ -296,7 +298,7 @@
                         hasError = true;
                     }
                 });
-                
+
                 // すでに同じunit_noが存在する場合、両方の行に赤枠を付与
                 const unitNo = String(row.unit_no || "").trim();
                 if (unitNo !== "") {

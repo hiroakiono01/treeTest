@@ -1,16 +1,8 @@
 {% extends 'base.html' %}
 {% block head %}
-<title>User list</title>
-
-
+<title>利用者保守</title>
 {% endblock %}
 
-{% block header %}
-<!-- 💡 row クラスを追加し、d-flex と align-items-center で縦中央を揃えます -->
-<!--<div class="my-div-style col-sm mx-auto text-center">-->
-<!--    <h5 class="m-0 fw-bold"></h5>-->
-<!--</div>-->
-{% endblock %}
 
 {% block contents %}
 
@@ -57,6 +49,7 @@
                     header: [{ text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
                     type: "number",
                     keyNavigation: true,
+                    maxLength: 8,
                     editable: true
                 },
                 { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: true },
@@ -64,11 +57,24 @@
                     id: "user_name",
                     width: 200,
                     header: [
-                        { text: "単位 <span style='color:red'>*</span>", align: "center" },
+                        { text: "利用者 <span style='color:red'>*</span>", align: "center" },
                         { content: "inputFilter" }
                     ],
                     htmlEnable: true,
                     keyNavigation: true,
+                    maxLength: 30,
+                    editable: true
+                },
+                {
+                    id: "user_short_name",
+                    width: 100,
+                    header: [
+                        { text: "短縮名称 <span style='color:red'>*</span>", align: "center" },
+                        { content: "inputFilter" }
+                    ],
+                    htmlEnable: true,
+                    keyNavigation: true,
+                    maxLength: 5,
                     editable: true
                 },
                 {
@@ -241,7 +247,7 @@
             const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
-            const requiredFields = ["user_no", "user_name"];// 必須の項目
+            const requiredFields = ["user_no", "user_name", "user_short_name"];// 必須の項目
 
 
             grid.data.serialize().forEach(row => {

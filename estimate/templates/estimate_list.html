@@ -184,9 +184,22 @@
                 },
                 {
                     id: "estimate_year",
+                    header: [
+                        { text: "年度" },
+                        {
+                            content: "selectFilter",
+                            // 💡 フィルターの選択肢を降順にする設定
+                            filterConfig: {
+                                sort: (a, b) => {
+                                    if (a < b) return 1;   // aが小さければ、bを前にする
+                                    if (a > b) return -1;  // aが大きければ、aを前にする
+                                    return 0;              // 同じならそのまま
+                                }
+                            }
+                        }
+                    ],
                     width: 100,
-                    header: [{ text: "受注年度", align: "center" }, { content: "selectFilter" }],
-                    align: "center",
+                    // editorType: "input"
                 },
                 {
                     id: "estimate_no",
@@ -220,6 +233,7 @@
             //rootParent: null
             //data: dataset, // 作成した DataCollection を直接紐付ける
         });
+
 
         // 💡 修正した「grid_cell」にGridをアタッチ
         layout.getCell("grid_cell").attach(grid);
