@@ -1,15 +1,7 @@
 {% extends 'base.html' %}
+
 {% block head %}
-<title>Unit list</title>
-
-
-{% endblock %}
-
-{% block header %}
-<!-- 💡 row クラスを追加し、d-flex と align-items-center で縦中央を揃えます -->
-<!--<div class="my-div-style col-sm mx-auto text-center">-->
-<!--    <h5 class="m-0 fw-bold"></h5>-->
-<!--</div>-->
+<title>単位マスタ保守</title>
 {% endblock %}
 
 {% block contents %}
@@ -18,7 +10,7 @@
     <div id="layout-main-container" style="margin-top: 6rem;"></div>
     <script>
         // ===================================================
-        //  1. VARIABLES （変数の宣言とデータの準備）
+        // 1. VARIABLES  (変数の宣言とデータの準備）
         // ===================================================
 
         const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
@@ -35,9 +27,7 @@
         // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
         // ===================================================
 
-
-
-        // TOOLBAR 2.1 ツールバーの作成
+        // TOOLBAR: 2.1 ツールバーの作成
         toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
@@ -46,9 +36,7 @@
             { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
         ]);
 
-
-
-        // GRID 2.2 dhx.Gridの作成
+        // GRID: 2.2 dhx.Gridの作成
         grid = new dhx.Grid(null, {
             columns: [
                 { id: "id", header: [{ text: "ID" }], hidden: true },
@@ -102,7 +90,7 @@
             useFlgFilter.setValue("0");
         }
 
-        // ONECLICK: 2.3 ワンクリックで入力ができる ---　
+        // ワンクリックで入力ができる ---　
         grid.events.on("cellClick", function (row, column) {
             grid.editCell(row.id, column.id);
         });
@@ -158,13 +146,6 @@
                 }
             })
             .catch(err => console.error("current clientデータ取得失敗:", err));
-
-        // fetch("/unit/units/")
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         grid.data.parse(data); // data.units (配列部分) を渡す
-        //     })
-        //     .catch(err => console.error("unitデータ取得失敗:", err));
 
         // ===================================================
         // 4. USER EVENTS （ボタン操作・イベントリスナー）
@@ -240,7 +221,7 @@
         }
 
 
-        //UPDATE:  4.4 保存ボタンで一括更新処理 ---
+        // UPDATE:  4.4 保存ボタンで一括更新処理 ---
         function updateAll() {
 
             const rowsToRemove = [];
@@ -410,7 +391,7 @@
                 })
         };
 
-        // DELETE: 4.6 削除ボタンの即時実行
+        // DELETE: 4.5 削除ボタンの即時実行
         grid.events.on("cellClick", (row, col) => {
             if (col.id === "delete") {
                 if (confirm("削除しますか？")) {
