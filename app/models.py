@@ -216,12 +216,12 @@ class User(models.Model):
 
     id = models.AutoField(primary_key=True)
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
-    user_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='担当者番号', unique=True)
+    user_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='担当者番号')
     user_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='担当者名称')
     user_short_name = models.CharField(max_length=5, null=True, blank=True, verbose_name='担当者略称')
     use_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='利用状況', choices=useFlgData, default="0")
-    salesman_flg = models.CharField(max_length=1, verbose_name='営業職')
-    manager_flg = models.CharField(max_length=1, verbose_name='現場管理職')
+    salesman_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='営業職')
+    manager_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='現場管理職')
 
     create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
     update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')

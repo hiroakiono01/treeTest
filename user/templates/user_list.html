@@ -47,7 +47,7 @@
                 {
                     id: "user_no", width: 200,
                     header: [{ text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
-                    type: "number",
+                    // type: "number",
                     keyNavigation: true,
                     maxLength: 8,
                     editable: true
@@ -83,16 +83,10 @@
                     header: [{ text: "利用区分", align: "center" }, { content: "selectFilter" }],
                     editorType: "select", // セレクトボックス形式
                     options: [
-                        { id: 0, value: "利用する" },
-                        { id: 9, value: "利用しない" }
+                        { id: "0", value: "利用する" },
+                        { id: "9", value: "利用しない" }
 
                     ],
-                    template: function (cellValue, row, col) {
-                        // options配列から、セル値(id)と一致するものを探す
-                        const option = col.options.find(opt => opt.id == cellValue);
-                        // 一致するものがあればそのvalue(文字列)を返し、無ければ生データを返す
-                        return option ? option.value : cellValue;
-                    }
                 },
                 { id: "delete", header: [{ text: "削除", align: "center", rowspan: 2 }], align: "center", width: 80, htmlEnable: true, template: () => "<button class='dxi dxi-delete' >削除</button>" }
             ],
@@ -249,6 +243,12 @@
             let mainMessage = "";
             const requiredFields = ["user_no", "user_name", "user_short_name"];// 必須の項目
 
+            const maxLengthMap = {};
+            grid.config.columns.forEach(col => {
+                if (col.maxLength) {
+                    maxLengthMap[col.id] = col.maxLength;
+                }
+            });
 
             grid.data.serialize().forEach(row => {
 
@@ -264,6 +264,35 @@
             const userNoMap = {};
             const userNameMap = {};
             grid.data.forEach(row => {
+
+                // 文字数（有効桁数）チェック
+                requiredFields.forEach(field => {
+                    const value = String(row[field] || "").trim();
+                    const maxLen = maxLengthMap[field];
+                    if (value !== "" && maxLen && value.length > maxLen) {
+                        grid.addCellCss(row.id, field, "required-error");
+                        mainMessage = "最大文字数を超えています。";
+                        hasError = true;
+                    }
+                });
+
+                // === 【追加】user_no の数字チェック & 8桁0埋め処理 ===
+                let userNoRaw = String(row.user_no || "").trim();
+                if (userNoRaw !== "") {
+                    // 数字以外が含まれているかチェック
+                    if (!/^\d+$/.test(userNoRaw)) {
+                        grid.addCellCss(row.id, "user_no", "required-error");
+                        mainMessage = "担当者番号は数字のみで入力してください。";
+                        hasError = true;
+                    } else {
+                        // 数字のみなら8桁に0埋めしてグリッドのデータを更新
+                        const paddedNo = userNoRaw.padStart(8, "0");
+                        if (row.user_no !== paddedNo) {
+                            grid.data.update(row.id, { user_no: paddedNo });
+                            row.user_no = paddedNo; // ループ内の以降の重複チェック用にも値を同期
+                        }
+                    }
+                }
                 // フロントエンドの必須入力チェック
                 requiredFields.forEach(field => {
                     const value = row[field];
