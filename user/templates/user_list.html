@@ -252,6 +252,8 @@
 
             grid.data.serialize().forEach(row => {
 
+
+
                 // 実行前に前回のサーバーエラー赤枠をすべてクリアする
                 requiredFields.forEach(field => {
                     grid.removeCellCss(row.id, field, "required-error");

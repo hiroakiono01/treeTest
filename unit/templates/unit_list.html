@@ -78,10 +78,13 @@
             ],
             autoWidth: false,
             //data: dataset, // 作成した DataCollection を直接紐付ける
-            //selection: "row",
+            selection: "cell",
             editing: true,
             keyNavigation: true // ★必ずtrueに設定してください
         });
+
+                                 // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+         enableGridEnterNavigation(grid);
 
         // 【追加】初期表示時に「利用区分：0（利用する）」でフィルタリングを実行
         // 【修正版】ヘッダーフィルター要素を取得して値をセットする
@@ -94,6 +97,7 @@
         grid.events.on("cellClick", function (row, column) {
             grid.editCell(row.id, column.id);
         });
+
 
         // レイアウトの「grid_cell」にGridをアタッチ
         layout.getCell("grid_cell").attach(grid);
@@ -224,6 +228,9 @@
         // UPDATE:  4.4 保存ボタンで一括更新処理 ---
         function updateAll() {
 
+
+            //  const allData = grid.data.findAll(() => true);
+
             const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
@@ -318,7 +325,8 @@
             }
 
             // チェックが終了したら更新作業に移行する
-            const allData = grid.data.serialize(); // gridの全データを取得
+            grid.editEnd();
+            const allData = grid.data.findAll(() => true);  // gridの全データを取得
 
             fetch("/unit/bulk_sync/", {
                 method: "POST",
