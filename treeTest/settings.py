@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'api',
     'user',
     'unit',
+    'construction',
     'process',
     'task',
     'django_bootstrap5',

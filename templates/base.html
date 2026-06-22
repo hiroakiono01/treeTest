@@ -55,7 +55,7 @@
                     aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarResponsive">
+            <div class="collapse navbar-collapse align-items-center" id="navbarResponsive">
                 <ul class="navbar-nav mr-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
@@ -64,18 +64,6 @@
                     <li class="nav-item">
                         <a class="nav-link{% block active_client %}{% endblock %}"
                            href="{% url 'client:client-list' %}">client</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link{% block active_customer %}{% endblock %}"
-                           href="{% url 'customer:customer-list' %}">customer</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link{% block active_user %}{% endblock %}"
-                           href="{% url 'user:user-list' %}">利用者マスタ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link{% block active_unite %}{% endblock %}"
-                           href="{% url 'unit:unit-list' %}">単位マスタ</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link{% block active_process %}{% endblock %}"
@@ -88,6 +76,31 @@
                     <li class="nav-item">
                         <a class="nav-link {% block active_metadataImport_list %}{% endblock %}"
                            href="{% url 'customer:customer-import' %}">得意先マスタインポート</a>
+                    </li>
+                    <li class="nav-item d-flex align-items-center">
+                        <!-- Example single danger button -->
+                        <div class="btn-group">
+                            <button type="button" class="btn btn  mx-1 btn-secondary dropdown-toggle"
+                                    data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                マスターメンテ
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="＃">部門マスタ</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'user:user-list' %}">担当者マスタ</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'construction:construction-list' %}">工事区分マスタ</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'unit:unit-list' %}">単位マスタ</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'customer:customer-list' %}">得意先マスタ</a>
+                                <div class="dropdown-divider"></div>
+                                <!--                                <a class="dropdown-item" href="#">協力会社一覧</a>-->
+                                <!--                                <div class="dropdown-divider"></div>-->
+
+                            </div>
+                        </div>
                     </li>
                     {% endif %}
                 </ul>

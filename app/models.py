@@ -210,6 +210,21 @@ class CurrentClient(models.Model):
         return self.customUser.username + '  :' + self.client.client_name
 
 
+class Construction(models.Model):
+    class Meta:
+        db_table = 'construction'
+
+    id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
+    construction_no = models.CharField(max_length=2, null=True, blank=True, verbose_name='工事区分番号')
+    construction_name = models.CharField(max_length=10, null=True, blank=True, verbose_name='工事区分名称')
+
+    create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
+    update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
+    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
+
+
 class User(models.Model):
     class Meta:
         db_table = 'user'

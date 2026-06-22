@@ -7,7 +7,7 @@
 function enableFormEnterNavigation(form) {
     // Form全体のキーダウンイベントを監視
     // ※Suite 9の引数仕様: event(ネイティブイベント), name(コントロール名), id(要素内ID)
-    form.events.on("keydown", function(event, name) {
+    form.events.on("keydown", function (event, name) {
 
         // Enterキー（KeyCode 13）以外、または装飾キー（Ctrl/Alt/Meta）は無視
         if (event.key !== "Enter" || event.ctrlKey || event.altKey || event.metaKey) {
@@ -28,7 +28,7 @@ function enableFormEnterNavigation(form) {
 
         // フォーム内の「フォーカスを当てたいコントロール」のname属性リストを動的に作成
         const focusableNames = [];
-        form.forEach(function(item) {
+        form.forEach(function (item) {
             const type = item.config.type;
             const isHidden = item.config.hidden;
             const isDisabled = item.config.disabled;

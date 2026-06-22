@@ -83,8 +83,8 @@
             keyNavigation: true // ★必ずtrueに設定してください
         });
 
-                                 // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
-         enableGridEnterNavigation(grid);
+        // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+        enableGridEnterNavigation(grid);
 
         // 【追加】初期表示時に「利用区分：0（利用する）」でフィルタリングを実行
         // 【修正版】ヘッダーフィルター要素を取得して値をセットする
@@ -229,15 +229,11 @@
         function updateAll() {
 
 
-            //  const allData = grid.data.findAll(() => true);
-
             const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
             const requiredFields = ["unit_no", "unit_name"];// 必須の項目
 
-            const unitNoMap = {};
-            const unitNameMap = {};
 
             // columns定義から各フィールドのmaxLengthをマッピングする
             const maxLengthMap = {};
@@ -247,11 +243,8 @@
                 }
             });
 
-
-
+            // 実行前に前回のサーバーエラー赤枠をすべてクリアする
             grid.data.serialize().forEach(row => {
-
-                // 実行前に前回のサーバーエラー赤枠をすべてクリアする
                 requiredFields.forEach(field => {
                     grid.removeCellCss(row.id, field, "required-error");
                 });
@@ -260,9 +253,8 @@
 
 
             // フロントエンドでunito_noの二重登録のチェック
-            //const unitNoMap = {};
-            //const unitNameMap = {};
-
+            const unitNoMap = {};
+            const unitNameMap = {};
 
             grid.data.forEach(row => {
                 // フロントエンドの必須入力チェック
@@ -282,7 +274,12 @@
                     const maxLen = maxLengthMap[field];
                     if (value !== "" && maxLen && value.length > maxLen) {
                         grid.addCellCss(row.id, field, "required-error");
-                        mainMessage = "最大文字数を超えています。";
+
+                        // ★ 列のIDからヘッダー設定を取得し、テキストを取り出す
+                        const column = grid.getColumn(field);
+                        let columnName = (column && column.header && column.header[0]) ? column.header[0].text : field;
+                        columnName = columnName.replace(/<[^>]*>/g, '').replace(/\*/g, '').trim();
+                        mainMessage = `「${columnName}」が最大文字数 ${maxLen}文字を超えています。`;
                         hasError = true;
                     }
                 });
@@ -325,7 +322,7 @@
             }
 
             // チェックが終了したら更新作業に移行する
-            grid.editEnd();
+            grid.editEnd(); // selectFilterで隠れた行を内部で確定させるため必要
             const allData = grid.data.findAll(() => true);  // gridの全データを取得
 
             fetch("/unit/bulk_sync/", {
