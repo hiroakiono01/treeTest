@@ -76,7 +76,9 @@
 
         // ワンクリックで入力ができる ---　
         grid.events.on("cellClick", function (row, column) {
-            grid.editCell(row.id, column.id);
+            setTimeout(()=> {
+                grid.editCell(row.id, column.id);
+            }, 50);
         });
 
 
@@ -168,7 +170,7 @@
         // RESET: 4.3 リセット処理 ---
         function resetGrid() {
             // 1. サーバーから最新のデータを取得
-            fetch(`construction/lists/${client_id}/`)
+            fetch(`/construction/lists/${client_id}/`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error(`サーバーレスポンス異常: ${res.status}`);

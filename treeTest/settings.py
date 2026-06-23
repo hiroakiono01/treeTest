@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'api',
     'user',
+    'aggregation',
+    'segment',
     'unit',
     'construction',
     'process',

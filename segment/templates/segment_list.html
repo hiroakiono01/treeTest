@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
-
 {% block head %}
-<title>単位マスタ保守</title>
+<title>部門マスタ保守</title>
 {% endblock %}
+
 
 {% block contents %}
 
@@ -10,7 +10,7 @@
     <div id="layout-main-container" style="margin-top: 6rem;"></div>
     <script>
         // ===================================================
-        // 1. VARIABLES  (変数の宣言とデータの準備）
+        //  1. VARIABLES （変数の宣言とデータの準備）
         // ===================================================
 
         const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
@@ -27,7 +27,9 @@
         // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
         // ===================================================
 
-        // TOOLBAR: 2.1 ツールバーの作成
+
+
+        // TOOLBAR 2.1 ツールバーの作成
         toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
@@ -36,32 +38,32 @@
             { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
         ]);
 
-        // GRID: 2.2 dhx.Gridの作成
+        // GRID 2.2 dhx.Gridの作成
         grid = new dhx.Grid(null, {
             columns: [
                 { id: "id", header: [{ text: "ID" }], hidden: true },
                 {
-                    id: "unit_no", width: 200,
-                    header: [{ text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
-                    type: "number",
+                    id: "segment_no", width: 200,
+                    header: [{ text: "部門番号 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
+                    // type: "number",
                     keyNavigation: true,
-                    required: true, // 独自フラグとして利用
-                    maxLength: 2,
+                    maxLength: 8,
                     editable: true
                 },
                 { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: true },
                 {
-                    id: "unit_name",
+                    id: "segment_name",
                     width: 200,
                     header: [
-                        { text: "単位 <span style='color:red'>*</span>", align: "center" },
+                        { text: "部門名称 <span style='color:red'>*</span>", align: "center" },
                         { content: "inputFilter" }
                     ],
                     htmlEnable: true,
                     keyNavigation: true,
-                    maxLength: 5,
+                    maxLength: 30,
                     editable: true
                 },
+
                 {
                     id: "use_flg",
                     width: 100,
@@ -70,10 +72,9 @@
                     options: [
                         { id: "0", value: "利用する" },
                         { id: "9", value: "利用しない" }
+
                     ],
                 },
-
-
                 { id: "delete", header: [{ text: "削除", align: "center", rowspan: 2 }], align: "center", width: 80, htmlEnable: true, template: () => "<button class='dxi dxi-delete' >削除</button>" }
             ],
             autoWidth: false,
@@ -86,20 +87,12 @@
         // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
         enableGridEnterNavigation(grid);
 
-        // 【追加】初期表示時に「利用区分：0（利用する）」でフィルタリングを実行
-        // 【修正版】ヘッダーフィルター要素を取得して値をセットする
-        const useFlgFilter = grid.getHeaderFilter("use_flg");
-        if (useFlgFilter) {
-            useFlgFilter.setValue("0");
-        }
-
-        // ワンクリックで入力ができる ---　
+        // ONECLICK: 2.3 ワンクリックで入力ができる ---　
         grid.events.on("cellClick", function (row, column) {
             setTimeout(()=> {
                 grid.editCell(row.id, column.id);
             }, 50);
         });
-
 
         // レイアウトの「grid_cell」にGridをアタッチ
         layout.getCell("grid_cell").attach(grid);
@@ -113,6 +106,7 @@
         });
         //「pagination_cell」にPaginationをアタッチ
         layout.getCell("pagination_cell").attach(pagination);
+
 
 
         // ===================================================
@@ -135,7 +129,7 @@
                 const headerReportTitleElem = document.getElementById("header_report_title");
                 if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
                 if (headerNameElem) headerNameElem.textContent = client_name || '';
-                if (headerReportTitleElem) headerReportTitleElem.textContent = "単位マスタ保守";
+                if (headerReportTitleElem) headerReportTitleElem.textContent = "部門マスタ保守";
 
 
                 // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
@@ -145,16 +139,17 @@
 
                 // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
                 if (client_id && grid) {
-                    fetch(`/unit/lists/${client_id}/`)
+                    fetch(`/segment/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => { grid.data.parse(data); })
-                        .catch(err => console.error("顧客データ取得失敗:", err));
+                        .catch(err => console.error("部門データ取得失敗:", err));
                 }
             })
             .catch(err => console.error("current clientデータ取得失敗:", err));
 
+
         // ===================================================
-        // 4. USER EVENTS （ボタン操作・イベントリスナー）
+        // 4. EVENTS （ボタン操作・イベントリスナー）
         // ===================================================
 
         // 4.1 toolbar
@@ -177,10 +172,11 @@
             const newRowData = {
                 client: client_id // client列にclient_idをセット
             };
+
             const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
             // 追加した行へフォーカス
             if (newRow) {
-                grid.editCell(newRow, "unit_no");
+                grid.editCell(newRow, "segment_no");
             }
         }
 
@@ -189,7 +185,7 @@
         // RESET: 4.3 リセット処理 ---
         function resetGrid() {
             // 1. サーバーから最新のデータを取得
-            fetch(`/unit/lists/${client_id}/`)
+            fetch(`/segment/lists/${client_id}/`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error(`サーバーレスポンス異常: ${res.status}`);
@@ -202,7 +198,7 @@
                     // 3. 新しいデータをGridに反映
                     grid.data.parse(result);
                     // 実行前の赤枠をすべてクリアする
-                    const requiredFields = ["unit_no", "unit_name"];
+                    const requiredFields = ["segment_no", "segment_name"];
                     grid.data.forEach(row => {
                         requiredFields.forEach(field => {
                             grid.removeCellCss(row.id, field, "required-error");
@@ -227,15 +223,13 @@
         }
 
 
-        // UPDATE:  4.4 保存ボタンで一括更新処理 ---
+        //UPDATE:  4.4 保存ボタンで一括更新処理 ---
         function updateAll() {
-
 
             const rowsToRemove = [];
             let hasError = false;
             let mainMessage = "";
-            const requiredFields = ["unit_no", "unit_name"];// 必須の項目
-
+            const requiredFields = ["segment_no", "segment_name"];// 必須の項目
 
             // columns定義から各フィールドのmaxLengthをマッピングする
             const maxLengthMap = {};
@@ -253,22 +247,10 @@
             });
 
 
-
-            // フロントエンドでunito_noの二重登録のチェック
-            const unitNoMap = {};
-            const unitNameMap = {};
-
+            // フロントエンドでsegmento_noの二重登録のチェック
+            const segmentNoMap = {};
+            const segmentNameMap = {};
             grid.data.forEach(row => {
-                // フロントエンドの必須入力チェック
-                requiredFields.forEach(field => {
-                    const value = row[field];
-                    if (value === null || value === undefined || String(value).trim() === "") {
-                        grid.addCellCss(row.id, field, "required-error");
-                        mainMessage = "必須項目を入力してください。";
-                        hasError = true;
-                    }
-                });
-
 
                 // 文字数（有効桁数）チェック
                 requiredFields.forEach(field => {
@@ -286,30 +268,57 @@
                     }
                 });
 
-                // すでに同じunit_noが存在する場合、両方の行に赤枠を付与
-                const unitNo = String(row.unit_no || "").trim();
-                if (unitNo !== "") {
-                    if (unitNoMap[unitNo]) {
-                        grid.addCellCss(row.id, "unit_no", "required-error");
-                        grid.addCellCss(unitNoMap[unitNo], "unit_no", "required-error");
-                        mainMessage = "番号が重複しています。";
+                // === 【追加】segment_no の数字チェック & 8桁0埋め処理 ===
+                let segmentNoRaw = String(row.segment_no || "").trim();
+                if (segmentNoRaw !== "") {
+                    // 数字以外が含まれているかチェック
+                    if (!/^\d+$/.test(segmentNoRaw)) {
+                        grid.addCellCss(row.id, "segment_no", "required-error");
+                        mainMessage = "担当者番号は数字のみで入力してください。";
                         hasError = true;
                     } else {
-                        unitNoMap[unitNo] = row.id; // 行IDを記憶
+                        // 数字のみなら8桁に0埋めしてグリッドのデータを更新
+                        const paddedNo = segmentNoRaw.padStart(8, "0");
+                        if (row.segment_no !== paddedNo) {
+                            grid.data.update(row.id, { segment_no: paddedNo });
+                            row.segment_no = paddedNo; // ループ内の以降の重複チェック用にも値を同期
+                        }
                     }
                 }
 
+                // フロントエンドの必須入力チェック
+                requiredFields.forEach(field => {
+                    const value = row[field];
+                    if (value === null || value === undefined || String(value).trim() === "") {
+                        grid.addCellCss(row.id, field, "required-error");
+                        mainMessage = "必須項目を入力してください。";
+                        hasError = true;
+                    }
+                });
 
-                // すでに同じunit_Nameが存在する場合、両方の行に赤枠を付与
-                const unitName = String(row.unit_name || "").trim();
-                if (unitName !== "") {
-                    if (unitNameMap[unitName]) {
-                        grid.addCellCss(row.id, "unit_name", "required-error");
-                        grid.addCellCss(unitNameMap[unitName], "unit_name", "required-error");
+                // すでに同じsegment_noが存在する場合、両方の行に赤枠を付与
+                const segmentNo = String(row.segment_no || "").trim();
+                if (segmentNo !== "") {
+                    if (segmentNoMap[segmentNo]) {
+
+                        grid.addCellCss(row.id, "segment_no", "required-error");
+                        grid.addCellCss(segmentNoMap[segmentNo], "segment_no", "required-error");
+                        mainMessage = "番号が重複しています。";
+                        hasError = true;
+                    } else {
+                        segmentNoMap[segmentNo] = row.id; // 行IDを記憶
+                    }
+                }
+                // すでに同じsegment_Nameが存在する場合、両方の行に赤枠を付与
+                const segmentName = String(row.segment_name || "").trim();
+                if (segmentName !== "") {
+                    if (segmentNameMap[segmentName]) {
+                        grid.addCellCss(row.id, "segment_name", "required-error");
+                        grid.addCellCss(segmentNameMap[segmentName], "segment_name", "required-error");
                         mainMessage = "名称が重複しています。";
                         hasError = true;
                     } else {
-                        unitNameMap[unitName] = row.id; // 行IDを記憶
+                        segmentNameMap[segmentName] = row.id; // 行IDを記憶
                     }
                 }
             });
@@ -327,7 +336,7 @@
             grid.editEnd(); // selectFilterで隠れた行を内部で確定させるため必要
             const allData = grid.data.findAll(() => true);  // gridの全データを取得
 
-            fetch("/unit/bulk_sync/", {
+            fetch("/segment/bulk_sync/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -353,12 +362,12 @@
                         css: "dhx_widget--bg_success",
                     });
                     // グリッドを強制的に再描画する
-                    fetch(`/unit/lists/${client_id}/`)
+                    fetch(`/segment/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => {
-                            grid.data.parse(data); // data.units (配列部分) を渡す
+                            grid.data.parse(data); // data.segments (配列部分) を渡す
                         })
-                        .catch(err => console.error("unitデータ取得失敗:", err));
+                        .catch(err => console.error("segmentデータ取得失敗:", err));
 
                 })
                 .catch(err => {
@@ -375,16 +384,16 @@
                             if (rowErrors[row.id]) {
                                 const errorFields = rowErrors[row.id];
 
-                                // 1. unit_name の重複エラーがある場合
-                                if (errorFields.unit_name) {
-                                    grid.addCellCss(row.id, "unit_name", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_name;
+                                // 1. segment_name の重複エラーがある場合
+                                if (errorFields.segment_name) {
+                                    grid.addCellCss(row.id, "segment_name", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.segment_name;
                                 }
 
-                                // 2. unit_no の重複エラーがある場合
-                                if (errorFields.unit_no) {
-                                    grid.addCellCss(row.id, "unit_no", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_no;
+                                // 2. segment_no の重複エラーがある場合
+                                if (errorFields.segment_no) {
+                                    grid.addCellCss(row.id, "segment_no", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.segment_no;
                                 }
                             }
                         });
@@ -398,7 +407,7 @@
                 })
         };
 
-        // DELETE: 4.5 削除ボタンの即時実行
+        // DELETE: 4.6 削除ボタンの即時実行
         grid.events.on("cellClick", (row, col) => {
             if (col.id === "delete") {
                 if (confirm("削除しますか？")) {
@@ -409,7 +418,7 @@
                     // データベースのレコードを削除するためサーバーへ削除リクエスト
                     {
                         grid.data.remove(row.id);
-                        fetch(`/unit/detail/${row.id}/`, {
+                        fetch(`/segment/detail/${row.id}/`, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRFToken': getCookie('csrftoken')  // ここを追加

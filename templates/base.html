@@ -66,6 +66,10 @@
                            href="{% url 'client:client-list' %}">client</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link{% block active_aggregation %}{% endblock %}"
+                           href="{% url 'aggregation:aggregation-list' %}">集計区分</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link{% block active_process %}{% endblock %}"
                            href="{% url 'process:process-list' %}">process</a>
                     </li>
@@ -86,7 +90,7 @@
                                 マスターメンテ
                             </button>
                             <div class="dropdown-menu">
-                                <a class="dropdown-item" href="＃">部門マスタ</a>
+                                <a class="dropdown-item" href="{% url 'segment:segment-list' %}">部門マスタ</a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{% url 'user:user-list' %}">担当者マスタ</a>
                                 <div class="dropdown-divider"></div>

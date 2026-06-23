@@ -210,6 +210,25 @@ class CurrentClient(models.Model):
         return self.customUser.username + '  :' + self.client.client_name
 
 
+1
+
+
+class Segment(models.Model):
+    class Meta:
+        db_table = 'segment'
+
+    id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
+    segment_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='部門コード')
+    segment_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='部門名称')
+    use_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='利用状況', choices=useFlgData, default="0")
+
+    create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
+    update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
+    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
+
+
 class Construction(models.Model):
     class Meta:
         db_table = 'construction'
@@ -401,11 +420,28 @@ class Process(models.Model):
         return str(self.calcu_cls) + " " + str(self.processl_name)
 
 
+class Aggregation(models.Model):
+    class Meta:
+        db_table = 'aggregation'
+
+    id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
+    aggregation_no = models.CharField(max_length=2, null=True, blank=True, verbose_name='集計区分番号')
+    aggregation_name = models.CharField(max_length=40, null=True, blank=True, verbose_name='集計区分名称')
+    calcu_cls = models.CharField(max_length=2, null=True, blank=True, verbose_name='計算区分', default='0')
+
+    create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
+    update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
+    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
+
+
 class Reference(models.Model):
     class Meta:
         db_table = 'reference'
 
     id = models.AutoField(primary_key=True)
+
     detail_name = models.CharField(max_length=50, null=True, blank=True, verbose_name='明細名称')
     calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分', default='0')
     unit_name = models.ForeignKey(Unit, blank=True, null=True, verbose_name='予算単位', related_name='+', on_delete=models.PROTECT)
@@ -451,9 +487,43 @@ class Estimate(models.Model):
         db_table = 'estimate'
 
     id = models.AutoField(primary_key=True)
-    estimate_year = models.CharField(max_length=4, null=True, blank=True, verbose_name='estimate year')
-    estimate_no = models.CharField(max_length=15, null=True, blank=True, verbose_name='estimate no')
-    estimate_name = models.CharField(max_length=60, null=True, blank=True, verbose_name='estimate name')
+    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
+    estimate_year = models.CharField(max_length=15, null=True, blank=True, verbose_name='受注年度')
+    estimate_date = models.CharField(max_length=10, null=True, blank=True, verbose_name='見積年月日')
+    estimate_print_date = models.CharField(max_length=10, null=True, blank=True, verbose_name='見積書作成日')
+    estimate_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='見積書番号')
+    estimate_branch_no = models.CharField(max_length=3, null=True, blank=True, verbose_name='見積書枝番号')
+    orderer_name1 = models.CharField(max_length=60, null=True, blank=True, verbose_name='発注者名上段')
+    orderer_name2 = models.CharField(max_length=60, null=True, blank=True, verbose_name='発注者名下段')
+    orderer_representative = models.CharField(max_length=30, null=True, blank=True, verbose_name='発注者代表者')
+    orderer_person = models.CharField(max_length=30, null=True, blank=True, verbose_name='発注担当者')
+    estimate_amount = models.IntegerField(null=True, blank=True, verbose_name='税抜見積金額')
+    estimate_tax_amount = models.IntegerField(null=True, blank=True, verbose_name='消費税額')
+    consumption_cls = models.CharField(max_length=1, null=True, blank=True, verbose_name='消費税区分')
+    estimate_name = models.CharField(max_length=200, null=True, blank=True, verbose_name='工事名称')
+    estimate_branch_name = models.CharField(max_length=200, null=True, blank=True, verbose_name='工事枝番名称')
+    contract_zip_code = models.CharField(max_length=8, null=True, blank=True, verbose_name='現場郵便番号')
+    contract_address1 = models.CharField(max_length=60, null=True, blank=True, verbose_name='現場住所１')
+    contract_address2 = models.CharField(max_length=60, null=True, blank=True, verbose_name='現場住所２')
+    estimate_limit_date = models.CharField(max_length=10, null=True, blank=True, verbose_name='見積有効期限')
+    payment_term = models.CharField(max_length=30, null=True, blank=True, verbose_name='支払条件')
+    estimate_start_date = models.CharField(max_length=10, null=True, blank=True, verbose_name='工事開始予定日')
+    estimate_end_date = models.CharField(max_length=10, null=True, blank=True, verbose_name='工事完成予定日')
+    delivery_location = models.CharField(max_length=60, null=True, blank=True, verbose_name='受渡場所')
+    summary = models.CharField(max_length=256, null=True, blank=True, verbose_name='備考')
+    estimate_budget = models.IntegerField(null=True, blank=True, verbose_name='実行予算')
+    estimate_profit = models.IntegerField(null=True, blank=True, verbose_name='工事利益')
+    consumption_rate = models.CharField(max_length=5, null=True, blank=True, verbose_name='消費税率')
+    estimate_cls = models.CharField(max_length=1, null=True, blank=True, verbose_name='請負形態区分')
+    estimate_status = models.CharField(max_length=1, null=True, blank=True, verbose_name='受注状態区分')
+    segment = models.ForeignKey(Segment, null=True, blank=True, verbose_name='部門', on_delete=models.PROTECT)
+    estimate_person = models.ForeignKey(User, null=True, blank=True, verbose_name='見積担当者', on_delete=models.PROTECT)
+    customer = models.ForeignKey(Customer, null=True, blank=True, verbose_name='得意先', on_delete=models.PROTECT)
+
+    create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
+    update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
+    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
     def __str__(self):
         return str(self.estimate_name)

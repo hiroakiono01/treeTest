@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from app.models import Client, Task, Estimate, Unit, Process, Customer, User, Construction
+from app.models import Client, Task, Estimate, Unit, Process, Customer, User, Construction, Segment, Aggregation
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -10,6 +10,22 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
+        fields = '__all__'
+
+
+class SegmentSerializer(serializers.ModelSerializer):
+    client_id = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = Segment
+        fields = '__all__'
+
+
+class AggregationSerializer(serializers.ModelSerializer):
+    client_id = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = Aggregation
         fields = '__all__'
 
 

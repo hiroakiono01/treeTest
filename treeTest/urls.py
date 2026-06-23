@@ -26,7 +26,9 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('client/', include('client.urls')),
     path('customer/', include('customer.urls')),
+    path('segment/', include('segment.urls')),
     path('user/', include('user.urls')),
+    path('aggregation/', include('aggregation.urls')),
     path('construction/', include('construction.urls')),
     path('estimate/', include('estimate.urls')),
     # path('api/', include('unit.urls')),  # api call
