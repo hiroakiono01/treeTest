@@ -42,9 +42,9 @@
     <!-- 共通のレイアウト設定ファイルを先に読み込む -->
     <script src="{% static 'js/layout-config.js' %}"></script>
     <!-- 日本の祝日判定ライブラリ (GitHub公式配信のCDN) -->
-<!--    <script src="https://jsdelivr.net"></script>-->
+    <!--    <script src="https://jsdelivr.net"></script>-->
     <!-- 日本の休日に対応したカレンダー -->
-<!--    <script src="{% static 'js/calendar-jp.js' %}"></script>-->
+    <!--    <script src="{% static 'js/calendar-jp.js' %}"></script>-->
 
     <!-- 共通CSSもここで読み込んでおく -->
     <link rel="stylesheet" href="{% static 'suite/layout-common.css' %}">
@@ -80,7 +80,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link{% block active_estimate %}{% endblock %}"
-                           href="{% url 'estimate:estimate_list' %}">estimate</a>
+                           href="{% url 'estimate:estimate_list' %}">見積一覧表</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% block active_metadataImport_list %}{% endblock %}"
@@ -95,6 +95,8 @@
                                 マスターメンテ
                             </button>
                             <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{% url 'fiscalyear:fiscalyear-list' %}">事業年度マスタ</a>
+                                <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{% url 'segment:segment-list' %}">部門マスタ</a>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item" href="{% url 'user:user-list' %}">担当者マスタ</a>

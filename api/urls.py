@@ -22,6 +22,7 @@ urlpatterns = [
     # path('estimate-options/', views.get_estimate_options, ),
     path('get_estimate_name/', views.get_estimate_name, ),
     path('get_current_client/', views.get_current_client),
+    path('fiscalyears/', views.get_fiscalyears, name='get_fiscalyears'),
 
     # path('', views.ReferenceList.as_view(), name='reference_list'),  # 一覧
     # path('add/', views.ReferenceAdd.as_view(), name='reference_add'),  # 登録

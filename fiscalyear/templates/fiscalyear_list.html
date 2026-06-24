@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block head %}
-<title>単位マスタ保守</title>
+<title>事業年度マスタ保守</title>
 {% endblock %}
 
 {% block contents %}
@@ -41,35 +41,35 @@
             columns: [
                 { id: "id", header: [{ text: "ID" }], hidden: true },
                 {
-                    id: "unit_no", width: 200,
-                    header: [{ text: "表示順 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
+                    id: "fiscalyear_no", width: 200,
+                    header: [{ text: "事業年度番号 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
                     type: "number",
                     keyNavigation: true,
                     required: true, // 独自フラグとして利用
-                    maxLength: 2,
+                    maxLength: 4,
                     editable: true
                 },
                 { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: true },
                 {
-                    id: "unit_name",
+                    id: "fiscalyear_name",
                     width: 200,
                     header: [
-                        { text: "単位 <span style='color:red'>*</span>", align: "center" },
+                        { text: "事業年度名称 <span style='color:red'>*</span>", align: "center" },
                         { content: "inputFilter" }
                     ],
                     htmlEnable: true,
                     keyNavigation: true,
-                    maxLength: 5,
+                    maxLength: 30,
                     editable: true
                 },
                 {
-                    id: "use_flg",
+                    id: "current_flg",
                     width: 100,
-                    header: [{ text: "利用区分", align: "center" }, { content: "selectFilter" }],
+                    header: [{ text: "当年度", align: "center" }, { content: "selectFilter" }],
                     editorType: "select", // セレクトボックス形式
                     options: [
-                        { id: "0", value: "利用する" },
-                        { id: "9", value: "利用しない" }
+                        { id: "1", value: "当年度" },
+                        { id: "0", value: "その他年度" }
                     ],
                 },
 
@@ -86,16 +86,10 @@
         // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
         enableGridEnterNavigation(grid);
 
-        // 【追加】初期表示時に「利用区分：0（利用する）」でフィルタリングを実行
-        // 【修正版】ヘッダーフィルター要素を取得して値をセットする
-        const useFlgFilter = grid.getHeaderFilter("use_flg");
-        if (useFlgFilter) {
-            useFlgFilter.setValue("0");
-        }
 
         // ワンクリックで入力ができる ---　
         grid.events.on("cellClick", function (row, column) {
-            setTimeout(()=> {
+            setTimeout(() => {
                 grid.editCell(row.id, column.id);
             }, 50);
         });
@@ -135,7 +129,7 @@
                 const headerReportTitleElem = document.getElementById("header_report_title");
                 if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
                 if (headerNameElem) headerNameElem.textContent = client_name || '';
-                if (headerReportTitleElem) headerReportTitleElem.textContent = "単位マスタ保守";
+                if (headerReportTitleElem) headerReportTitleElem.textContent = "年度マスタ保守";
 
 
                 // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
@@ -145,7 +139,7 @@
 
                 // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
                 if (client_id && grid) {
-                    fetch(`/unit/lists/${client_id}/`)
+                    fetch(`/fiscalyear/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => { grid.data.parse(data); })
                         .catch(err => console.error("顧客データ取得失敗:", err));
@@ -154,7 +148,7 @@
             .catch(err => console.error("current clientデータ取得失敗:", err));
 
         // ===================================================
-        // 4. EVENTS （ボタン操作・イベントリスナー）
+        // 4. USER EVENTS （ボタン操作・イベントリスナー）
         // ===================================================
 
         // 4.1 toolbar
@@ -171,6 +165,8 @@
         })
 
 
+
+
         // BUTTON_ADD_ROW: 4.2  -- 新規ボタンを押した時の振る舞い ---
         function addRow() {
 
@@ -180,7 +176,7 @@
             const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
             // 追加した行へフォーカス
             if (newRow) {
-                grid.editCell(newRow, "unit_no");
+                grid.editCell(newRow, "fiscalyear_no");
             }
         }
 
@@ -189,7 +185,7 @@
         // RESET: 4.3 リセット処理 ---
         function resetGrid() {
             // 1. サーバーから最新のデータを取得
-            fetch(`/unit/lists/${client_id}/`)
+            fetch(`/fiscalyear/lists/${client_id}/`)
                 .then(res => {
                     if (!res.ok) {
                         throw new Error(`サーバーレスポンス異常: ${res.status}`);
@@ -202,7 +198,7 @@
                     // 3. 新しいデータをGridに反映
                     grid.data.parse(result);
                     // 実行前の赤枠をすべてクリアする
-                    const requiredFields = ["unit_no", "unit_name"];
+                    const requiredFields = ["fiscalyear_no", "fiscalyear_name"];
                     grid.data.forEach(row => {
                         requiredFields.forEach(field => {
                             grid.removeCellCss(row.id, field, "required-error");
@@ -233,8 +229,9 @@
 
             const rowsToRemove = [];
             let hasError = false;
-            let mainMessage = "";
-            const requiredFields = ["unit_no", "unit_name"];// 必須の項目
+            let mainMessage = 0;
+            let total = 0;
+            const requiredFields = ["fiscalyear_no", "fiscalyear_name"];// 必須の項目
 
 
             // columns定義から各フィールドのmaxLengthをマッピングする
@@ -254,11 +251,17 @@
 
 
 
-            // フロントエンドでunito_noの二重登録のチェック
-            const unitNoMap = {};
-            const unitNameMap = {};
+            // フロントエンドでfiscalyearo_noの二重登録のチェック
+            const fiscalyearNoMap = {};
+            const fiscalyearNameMap = {};
 
             grid.data.forEach(row => {
+                // 当年度の計算
+                const fieldValue = row["current_flg"];
+                // 値が存在すれば数値化、なければ 0
+                total += fieldValue ? Number(fieldValue) : 0;
+
+
                 // フロントエンドの必須入力チェック
                 requiredFields.forEach(field => {
                     const value = row[field];
@@ -286,33 +289,46 @@
                     }
                 });
 
-                // すでに同じunit_noが存在する場合、両方の行に赤枠を付与
-                const unitNo = String(row.unit_no || "").trim();
-                if (unitNo !== "") {
-                    if (unitNoMap[unitNo]) {
-                        grid.addCellCss(row.id, "unit_no", "required-error");
-                        grid.addCellCss(unitNoMap[unitNo], "unit_no", "required-error");
+                // すでに同じfiscalyear_noが存在する場合、両方の行に赤枠を付与
+                const fiscalyearNo = String(row.fiscalyear_no || "").trim();
+                if (fiscalyearNo !== "") {
+                    if (fiscalyearNoMap[fiscalyearNo]) {
+                        grid.addCellCss(row.id, "fiscalyear_no", "required-error");
+                        grid.addCellCss(fiscalyearNoMap[fiscalyearNo], "fiscalyear_no", "required-error");
                         mainMessage = "番号が重複しています。";
                         hasError = true;
                     } else {
-                        unitNoMap[unitNo] = row.id; // 行IDを記憶
+                        fiscalyearNoMap[fiscalyearNo] = row.id; // 行IDを記憶
                     }
                 }
 
 
-                // すでに同じunit_Nameが存在する場合、両方の行に赤枠を付与
-                const unitName = String(row.unit_name || "").trim();
-                if (unitName !== "") {
-                    if (unitNameMap[unitName]) {
-                        grid.addCellCss(row.id, "unit_name", "required-error");
-                        grid.addCellCss(unitNameMap[unitName], "unit_name", "required-error");
+                // すでに同じfiscalyear_Nameが存在する場合、両方の行に赤枠を付与
+                const fiscalyearName = String(row.fiscalyear_name || "").trim();
+                if (fiscalyearName !== "") {
+                    if (fiscalyearNameMap[fiscalyearName]) {
+                        grid.addCellCss(row.id, "fiscalyear_name", "required-error");
+                        grid.addCellCss(fiscalyearNameMap[fiscalyearName], "fiscalyear_name", "required-error");
                         mainMessage = "名称が重複しています。";
                         hasError = true;
                     } else {
-                        unitNameMap[unitName] = row.id; // 行IDを記憶
+                        fiscalyearNameMap[fiscalyearName] = row.id; // 行IDを記憶
                     }
                 }
             });
+  
+            // 「当年度(1)」が1つだけ選ばれているかチェック
+            if (total !== 1) {
+                if (total === 0) {
+                    mainMessage = "「当年度」が選択されていません。1つだけ選択してください。";
+                    hasError = true;
+                } else {
+                    mainMessage = "「当年度」は1つしか選択できません。";
+                    hasError = true;
+                }
+
+            }
+
             // エラーを表示する
             if (hasError) {
                 dhx.message({
@@ -327,7 +343,7 @@
             grid.editEnd(); // selectFilterで隠れた行を内部で確定させるため必要
             const allData = grid.data.findAll(() => true);  // gridの全データを取得
 
-            fetch("/unit/bulk_sync/", {
+            fetch("/fiscalyear/bulk_sync/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -353,12 +369,12 @@
                         css: "dhx_widget--bg_success",
                     });
                     // グリッドを強制的に再描画する
-                    fetch(`/unit/lists/${client_id}/`)
+                    fetch(`/fiscalyear/lists/${client_id}/`)
                         .then(response => response.json())
                         .then(data => {
-                            grid.data.parse(data); // data.units (配列部分) を渡す
+                            grid.data.parse(data); // data.fiscalyears (配列部分) を渡す
                         })
-                        .catch(err => console.error("unitデータ取得失敗:", err));
+                        .catch(err => console.error("fiscalyearデータ取得失敗:", err));
 
                 })
                 .catch(err => {
@@ -375,16 +391,16 @@
                             if (rowErrors[row.id]) {
                                 const errorFields = rowErrors[row.id];
 
-                                // 1. unit_name の重複エラーがある場合
-                                if (errorFields.unit_name) {
-                                    grid.addCellCss(row.id, "unit_name", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_name;
+                                // 1. fiscalyear_name の重複エラーがある場合
+                                if (errorFields.fiscalyear_name) {
+                                    grid.addCellCss(row.id, "fiscalyear_name", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.fiscalyear_name;
                                 }
 
-                                // 2. unit_no の重複エラーがある場合
-                                if (errorFields.unit_no) {
-                                    grid.addCellCss(row.id, "unit_no", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.unit_no;
+                                // 2. fiscalyear_no の重複エラーがある場合
+                                if (errorFields.fiscalyear_no) {
+                                    grid.addCellCss(row.id, "fiscalyear_no", "required-error");
+                                    if (!firstErrorMessage) firstErrorMessage = errorFields.fiscalyear_no;
                                 }
                             }
                         });
@@ -409,7 +425,7 @@
                     // データベースのレコードを削除するためサーバーへ削除リクエスト
                     {
                         grid.data.remove(row.id);
-                        fetch(`/unit/detail/${row.id}/`, {
+                        fetch(`/fiscalyear/detail/${row.id}/`, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRFToken': getCookie('csrftoken')  // ここを追加

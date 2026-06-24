@@ -25,6 +25,7 @@ urlpatterns = [
     path('', include('app.urls')),
     path('accounts/', include('allauth.urls')),
     path('client/', include('client.urls')),
+    path('fiscalyear/', include('fiscalyear.urls')),
     path('customer/', include('customer.urls')),
     path('segment/', include('segment.urls')),
     path('user/', include('user.urls')),

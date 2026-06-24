@@ -210,7 +210,23 @@ class CurrentClient(models.Model):
         return self.customUser.username + '  :' + self.client.client_name
 
 
-1
+class Fiscalyear(models.Model):
+    class Meta:
+        db_table = 'fiscalyear'
+
+    id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
+    fiscalyear_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='部門コード')
+    fiscalyear_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='部門名称')
+    current_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='当年度フラグ', default="0")
+
+    create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
+    update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
+    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
+
+    def __str__(self):
+        return str(self.fiscalyear_name)
 
 
 class Segment(models.Model):
@@ -488,6 +504,7 @@ class Estimate(models.Model):
 
     id = models.AutoField(primary_key=True)
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
+    fiscalyear = models.ForeignKey(Fiscalyear, null=True, blank=True, verbose_name='受注年度', on_delete=models.PROTECT)
     estimate_year = models.CharField(max_length=15, null=True, blank=True, verbose_name='受注年度')
     estimate_date = models.CharField(max_length=10, null=True, blank=True, verbose_name='見積年月日')
     estimate_print_date = models.CharField(max_length=10, null=True, blank=True, verbose_name='見積書作成日')

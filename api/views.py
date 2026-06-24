@@ -4,7 +4,7 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 
-from app.models import Estimate, CurrentClient, Client
+from app.models import Estimate, CurrentClient, Client, Fiscalyear
 
 
 def index(request):
@@ -68,6 +68,21 @@ def get_estimate_name(request):
 
     return JsonResponse({'estimate_name': ''}, status=404)
 
+
+def get_fiscalyears(request):
+    # データベースから全年度を取得
+    years = Fiscalyear.objects.all().order_by('-id')  # 必要に応じてソート
+
+    # DHTMLXのComboが要求する形式 [ {"value": "X", "content": "Y"}, ... ] に整形
+    data = [
+        {
+            "value": str(year.id),
+            "content": str(year.name)  # 画面に表示したい名称のフィールド（例: 2026年度）
+        }
+        for year in years
+    ]
+
+    return JsonResponse(data, safe=False)
 # views.py
 
 

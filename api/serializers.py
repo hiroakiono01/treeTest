@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from app.models import Client, Task, Estimate, Unit, Process, Customer, User, Construction, Segment, Aggregation
+from app.models import Client, Task, Estimate, Unit, Process, Customer, User, Construction, Segment, Aggregation, Fiscalyear
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -10,6 +10,14 @@ class ClientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Client
+        fields = '__all__'
+
+
+class FiscalyearSerializer(serializers.ModelSerializer):
+    client_id = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = Fiscalyear
         fields = '__all__'
 
 

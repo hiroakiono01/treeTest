@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block head %}
 <title>見積一覧</title>
-% endblock %
+{% endblock %}
 
 {% block contents %}
 
@@ -30,11 +30,7 @@
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
         ]);
-        toolbar.events.on("click", function (id) {
-            if (id === "add") {
-                addRow(); // 関数を呼ぶ
-            }
-        })
+
 
 
 
@@ -81,8 +77,8 @@
                     cols: [
 
                         {
-                            name: "estimate_year",
-                            type: "input",
+                            name: "fiscalyear",
+                            type: "combo",
                             label: "受注年度",
                             required: true,
                             width: 100,
@@ -353,7 +349,8 @@
                 }
             ]
         });
-
+        // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+        enableFormEnterNavigation(form);
         //setupJapaneseCalendar(form, "estimate_date"); // 日本のカレンダー
         dhxWindow.attach(form);
 
@@ -437,16 +434,18 @@
         layout.getCell("pagination_cell").attach(pagination);
 
         //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
-       
-       
+
+
         // ===================================================
         // 3. DATA LOADING （データ通信・サーバーとのやり取り）
         // ===================================================
 
+        // 2. コンボボックスのインスタンスを取得して、DjangoのURLから動的ロード
+        const fiscalYearCombo = form.getItem("fiscalyear");
+        fiscalYearCombo.data.load("/api/fiscalyears/");
 
         // CONNECT: 3.1 DRFからデータの読み込み
         // 4.1 main dataの取得
-        const dataset = new dhx.TreeCollection();
         fetch(`/estimate/estimates/`)
             .then(response => response.json())
             .then(data => {
@@ -467,6 +466,13 @@
         // ===================================================
         // 4. EVENTS （ボタン操作・イベントリスナー）
         // ===================================================
+
+        // 4.1 toolbar
+        toolbar.events.on("click", function (id) {
+            if (id === "add") {
+                addRow(); // 関数を呼ぶ
+            }
+        })
 
         // 6. --- イベントの処理 ---
         // 6.1 新規作成のウインドウを表示する

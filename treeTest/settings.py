@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'app',
     'client',
+    'fiscalyear',
     'customer',
     'estimate',
     'rest_framework',

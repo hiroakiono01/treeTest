@@ -1,6 +1,7 @@
 from django.contrib import admin
 from app.models import Client
 from app.models import User
+from app.models import Fiscalyear
 from app.models import Segment
 from app.models import Process
 from app.models import Customer
@@ -13,6 +14,7 @@ from app.models import CurrentClient
 
 admin.site.register(Client)
 admin.site.register(User)
+admin.site.register(Fiscalyear)
 admin.site.register(Segment)
 admin.site.register(Process)
 admin.site.register(Customer)
