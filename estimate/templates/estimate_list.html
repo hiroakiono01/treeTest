@@ -1,104 +1,32 @@
 {% extends 'base.html' %}
 {% block head %}
-<title>Estimate list</title>
-<style>
-    /* 画面全体にレイアウトを広げるための設定 */
-    html,
-    body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
-
-    /* 💡 全体の中央寄せと最大幅の制限は、最外枠のコンテナに対して行う */
-    #layout-main-container {
-        width: 100%;
-        max-width: 1000px;
-        height: 100vh;
-        margin: 0 auto;
-        box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
-        /* 浮き出し効果 */
-    }
-
-    /* 必要に応じて各セルの背景色などを指定 */
-    .layout-header {
-        background-color: #879eba;
-    }
-
-    .layout-content {
-        background-color: #ffffff;
-    }
-
-    .layout-footer {
-        background-color: #1a1a1a;
-        /* 💡 深みのある黒を指定 */
-        color: #ffffff;
-        /* 💡 文字色を白に指定 */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        letter-spacing: 0.5px;
-        /* 必要に応じて文字間隔を調整 */
-    }
-</style>
-{% endblock %}
-
-{% block header %}
-<div class="my-div-style col-sm mx-auto text-center">
-    <h5>Estimate list</h5>
-</div>
-{% endblock %}
+<title>見積一覧</title>
+% endblock %
 
 {% block contents %}
 
 <body>
-    <div id="layout-main-container"></div>
+    <div id="layout-main-container" style="margin-top: 6rem;"></div>
 
     <script>
-        // 1. レイアウトの定義 (Suite 9 準拠)
-        // 第一引数には、HTML上のコンテナ要素のIDを指定します。
-        const layout = new dhx.Layout("layout-main-container", {
-            type: "line",
-            rows: [
-                {
-                    id: "toolbar_container", // Menuを配置するヘッダーセル
-                    height: "60px",
-                    css: "layout-header"
-                },
-                {
-                    // 💡 構文エラーを修正：rows直下にはオブジェクトを配置し、その中にcolsを定義します
-                    id: "main_content_row",
-                    cols: [
-                        {
-                            // 💡 変更点：メインセルの中に、さらにrowsを定義して上下に分割する
-                            id: "grid_and_page_container",
-                            rows: [
-                                {
-                                    id: "grid_cell" // 上側：Grid用のセル（高さは自動で引き伸ばされる）
-                                },
-                                {
-                                    id: "pagination_cell", // 下側：Pagination用のセル
-                                    height: "60px" // Paginationが収まる高さを指定
-                                }
-                            ],
-                            css: "layout-content"
-                        }
-                    ]
-                },
-                {
-                    id: "footer_cell",  // フッターセル
-                    html: "Copyright &copy; kag holdings inc 2025",
-                    height: "30px",
-                    css: "layout-footer"
-                }
-            ]
-        });
+        // ===================================================
+        //  1. VARIABLES （変数の宣言とデータの準備）
+        // ===================================================
+        const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+        let client_id = "";
+        let grid = null;
+        let form = null;
+        let toolbar = null;
+        let pagination = null;
+        let dhxWindow = null;
+        const dataset = new dhx.DataCollection();
 
-        // 1. --- ツールバーの処理 ---
-        const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
+        // ===================================================
+        // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
+        // ===================================================
+
+        // TOOLBAR 2.1 ツールバーの作成
+        toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
         toolbar.data.add([
             { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
         ]);
@@ -109,36 +37,312 @@
         })
 
 
+
+        // 1. 日本語のロケールデータを定義
+        const localeJa = {
+            monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+            months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+            daysShort: ["日", "月", "火", "水", "木", "金", "土"],
+            days: ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
+        };
+
+        // 2. フォーム初期化前にロケールを適用
+        dhx.i18n.setLocale("calendar", localeJa);
+
         //  2. --- モーダルウインドウの準備 ---
-        const dhxWindow = new dhx.Window({
+        dhxWindow = new dhx.Window({
             width: 1200,
-            height: 800,
+            height: 1200,
             title: "新規",
             modal: true
         });
 
         // 3. --- フォームの準備 ---
-        const form = new dhx.Form(null, {
+        form = new dhx.Form(null, {
+            css: "dhx_widget--bordered",
             rows: [
-                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
+
                 {
-                    name: "estimate_year",
                     type: "input",
-                    label: "受注年度",
+                    name: "id",
+                    hidden: true
+                    // 見えないが値は保持される
+                },
+                {
+                    name: "client",
+                    type: "input",
+                    label: "事業者",
                     required: true,
-                    css: "my-custom-required" // 任意のクラス名を追加
+                    hidden: true
                 },
+                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
+
                 {
-                    name: "estimate_no",
-                    type: "input",
-                    label: "受注番号",
-                    required: true
+                    cols: [
+
+                        {
+                            name: "estimate_year",
+                            type: "input",
+                            label: "受注年度",
+                            required: true,
+                            width: 100,
+                            css: "my-custom-required" // 任意のクラス名を追加
+                        },
+                        {
+                            type: "spacer",
+                            width: 20 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "estimate_no",
+                            type: "input",
+                            label: "見積番号",
+                            required: true,
+                            width: 200,
+                            css: "my-custom-required" // 任意のクラス名を追加
+                        },
+                        {
+                            type: "spacer",
+                            width: 20 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "estimate_branch_no",
+                            type: "input",
+                            label: "見積枝番号",
+                            width: 80,
+                        },
+                        {
+                            type: "spacer",
+                            width: 40 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "estimate_date",
+                            type: "datepicker",
+                            label: "見積年月日",
+                            dateFormat: "%Y年%m月%d日",
+                            required: true,
+                            width: 180,
+                            css: "my-custom-required" // 任意のクラス名を追加
+
+                        },
+                        {
+                            type: "spacer",
+                            width: 20 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "estimate_print_date",
+                            type: "datepicker",
+                            dateFormat: "%Y年%m月%d日",
+                            label: "見積書作成日",
+                            width: 180
+
+                        },
+                    ]
+
                 },
+
                 {
                     name: "estimate_name",
                     type: "input",
                     label: "工事名称",
-                    required: true
+                    required: true,
+                    css: "my-custom-required" // 任意のクラス名を追加
+
+                },
+                {
+                    name: "estimate_branch_name",
+                    type: "input",
+                    label: "工事枝番名称",
+
+                },
+                {
+                    cols: [
+                        {
+                            name: "ordere_name1",
+                            type: "input",
+                            label: "発注者名 上段",
+                            required: true,
+                            css: "my-custom-required" // 任意のクラス名を追加
+
+                        },
+                        {
+                            type: "spacer",
+                            width: 20 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "ordere_name2",
+                            type: "input",
+                            label: "発注者名 下段",
+                        },
+                    ]
+                },
+                {
+                    cols: [
+                        {
+                            name: "orderer_representative",
+                            type: "input",
+                            label: "発注代表者",
+                        },
+                        {
+                            type: "spacer",
+                            width: 20 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "orderer_person",
+                            type: "input",
+                            label: "発注担当者",
+                        }
+
+                    ]
+                },
+                {
+                    cols: [
+                        {
+                            name: "contract_zip_code",
+                            type: "input",
+                            label: "郵便番号",
+                            width: "10%"
+                        },
+                        {
+                            type: "spacer",
+                            width: 20 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "contract_address1",
+                            type: "input",
+                            label: "現場住所１",
+                            width: "45%"
+                        },
+                        {
+                            type: "spacer",
+                            width: 20 // 横に20pxの間隔を開ける
+                        },
+                        {
+                            name: "contract_address2",
+                            type: "input",
+                            label: "現場住所２",
+                        },
+                    ]
+                },
+                {
+                    rows: [
+                        {
+                            alingn: "between",
+                            cols: [
+                                {
+                                    type: "fieldset",
+                                    name: "estimate_info",
+                                    label: "工事利益情報",
+                                    labelAlignment: "center",
+                                    width: "30%",
+                                    rows: [
+                                        {
+                                            name: "estimate_amount",
+                                            type: "input",
+                                            label: "見積金額(税抜)",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "estimate_budget",
+                                            type: "input",
+                                            label: "実行予算額",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "estimate_income",
+                                            type: "text",
+                                            label: "粗利益",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "estimate_tax_amount",
+                                            type: "input",
+                                            label: "消費税額",
+                                            width: "100%"
+                                        },
+
+
+                                        {
+                                            name: "consumption_rate",
+                                            type: "input",
+                                            label: "消費税率",
+                                            width: "100%"
+                                        },
+
+                                        {
+                                            name: "consumption_cls",
+                                            type: "radioGroup",
+                                            label: "消費税区分",
+                                            required: true,
+                                            labelPosition: "top",  // ラベルを左側に配置
+                                            labelWidth: "100px",    // ラベルの横幅を固定
+                                            css: "custom-radio-align",
+                                            options: {
+                                                cols: [
+                                                    { value: "1", text: "内税" },
+                                                    { value: "2", text: "外税" },
+                                                    { value: "3", text: "非課税" },
+                                                ]
+                                            },
+                                            width: "100%"
+                                        },
+
+
+
+                                    ]
+                                },
+                                {
+                                    type: "fieldset",
+                                    name: "athore",
+                                    label: "その他条件",
+                                    labelAlignment: "center",
+                                    width: "30%",
+                                    rows: [
+                                        {
+
+                                            name: "estimate_limit_date",
+                                            type: "input",
+                                            label: "見積有効期限",
+                                            width: "100%"
+                                        },
+
+                                        {
+                                            name: "payment_term",
+                                            type: "input",
+                                            label: "支払条件",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "estimate_start_date",
+                                            type: "input",
+                                            label: "工事開始予定日",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "estimate_end_date",
+                                            type: "input",
+                                            label: "工事完成予定日",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "delivery_location",
+                                            type: "input",
+                                            label: "受渡場所",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "summary",
+                                            type: "input",
+                                            label: "備考",
+                                            width: "100%"
+                                        },
+                                    ]
+                                }
+
+                            ]
+
+                        }
+
+                    ]
                 },
                 {
                     type: "button",
@@ -149,29 +353,13 @@
                 }
             ]
         });
+
+        //setupJapaneseCalendar(form, "estimate_date"); // 日本のカレンダー
         dhxWindow.attach(form);
 
-        // 4. --- DRFからデータの読み込み ---
-        // 4.1 main dataの取得
-        const dataset = new dhx.TreeCollection();
-        fetch(`/estimate/estimates/`)
-            .then(response => response.json())
-            .then(data => {
-                grid.data.parse(data); // 配列部分を渡す
-                // const years = [];
-                // grid.data.forEach(row => {
-                //     if (row.estimate_year) years.push(Number(row.estimate_year));
-                // });
-
-                // if (years.length > 0) {
-                //     const maxYear = Math.max(...years);
-                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
-                // }
-            })
-            .catch(err => console.error("estimateデータ取得失敗:", err));
 
         // 5. Gridの初期化
-        const grid = new dhx.Grid("grid_container", {
+        grid = new dhx.Grid("grid_container", {
             columns: [
                 { id: "id", header: [{ text: "ID" }], hidden: true, isTreeColum: true },
                 {
@@ -239,7 +427,7 @@
         layout.getCell("grid_cell").attach(grid);
 
         // --- ページネーション ---
-        const pagination = new dhx.Pagination(null, {
+        pagination = new dhx.Pagination(null, {
             css: "dhx_widget--bordered dhx_widget--no-border_top",
             data: grid.data,
             pageSize: 50
@@ -249,7 +437,36 @@
         layout.getCell("pagination_cell").attach(pagination);
 
         //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
+       
+       
+        // ===================================================
+        // 3. DATA LOADING （データ通信・サーバーとのやり取り）
+        // ===================================================
 
+
+        // CONNECT: 3.1 DRFからデータの読み込み
+        // 4.1 main dataの取得
+        const dataset = new dhx.TreeCollection();
+        fetch(`/estimate/estimates/`)
+            .then(response => response.json())
+            .then(data => {
+                grid.data.parse(data); // 配列部分を渡す
+                // const years = [];
+                // grid.data.forEach(row => {
+                //     if (row.estimate_year) years.push(Number(row.estimate_year));
+                // });
+
+                // if (years.length > 0) {
+                //     const maxYear = Math.max(...years);
+                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
+                // }
+            })
+            .catch(err => console.error("estimateデータ取得失敗:", err));
+
+
+        // ===================================================
+        // 4. EVENTS （ボタン操作・イベントリスナー）
+        // ===================================================
 
         // 6. --- イベントの処理 ---
         // 6.1 新規作成のウインドウを表示する

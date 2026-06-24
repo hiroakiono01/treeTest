@@ -217,3 +217,22 @@
 .my-layout-header {
     background-color: #e7eff6 !important; /* 💡 必要に応じて背景色を調整してください */
 }
+
+/* 土曜日のスタイル（青色） */
+.cal-saturday {
+    color: #1890ff !important; /* スタイリッシュな青 */
+    font-weight: 500;
+}
+
+/* 日曜日・祝日のスタイル（赤色） */
+.cal-sunday-holiday {
+    color: #ff4d4f !important; /* 鮮やかな赤 */
+    font-weight: 500;
+}
+
+/* 補足: 選択中やホバー時の背景色と文字のコントラストを保ちたい場合 */
+.dhx_calendar-day--selected .cal-saturday,
+.dhx_calendar-day--selected .cal-sunday-holiday {
+    color: #ffffff !important; /* 選択されている日は文字を白にする */
+}
+
