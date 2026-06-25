@@ -1,19 +1,13 @@
 {% extends 'base.html' %}
 {% block head %}
-<title>得意先　一覧表</title>
+<title>得意先一覧表</title>
 {% endblock %}
 
-{% block header %}
-<div class="my-div-style col-sm mx-auto text-center">
-    <h5>得意先一覧表</h5>
-</div>
-{% endblock %}
 
 {% block contents %}
-
 <body>
 
-    <div id="layout-main-container" style="--layout-max-width: 1500px;">
+    <div id="layout-main-container" style="margin-top: 6rem; --layout-max-width: 1500px;" >
         <script>
 
             // ===================================================
@@ -497,7 +491,7 @@
 
             //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
             // =======================================================
-            //  4. USER EVENTS （ボタン操作・関数）
+            //  4. EVENTS （ボタン操作・関数）
             // =======================================================
 
             // 6. --- イベントの処理 ---
@@ -554,7 +548,7 @@
 
 
                 // 💡 6.3.3. 新規と更新で「URL」と「HTTPメソッド」を正しく切り替える
-                const url = isNew ? `/customer/list/${client_id}/` : `/customer/customers/${formData.id}/`;
+                const url = isNew ? `/customer/lists/${client_id}/` : `/customer/detail/${formData.id}/`;
                 const method = isNew ? "POST" : "PUT"; // 新規時はPOST、更新時はPUT
 
 
@@ -615,7 +609,7 @@
                 if (col.id === "delete") {
                     if (confirm("選択した行を削除してもよろしいですか？")) {
                         // 6.4.1. サーバー側のデータを削除
-                        fetch(`/customer/customers/${row.id}/`, {
+                        fetch(`/customer/detail/${row.id}/`, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策

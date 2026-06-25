@@ -440,28 +440,42 @@
         // 3. DATA LOADING （データ通信・サーバーとのやり取り）
         // ===================================================
 
-        // 2. コンボボックスのインスタンスを取得して、DjangoのURLから動的ロード
-        const fiscalYearCombo = form.getItem("fiscalyear");
-        fiscalYearCombo.data.load("/api/fiscalyears/");
-
         // CONNECT: 3.1 DRFからデータの読み込み
-        // 4.1 main dataの取得
-        fetch(`/estimate/estimates/`)
-            .then(response => response.json())
+        fetch("/api/get_current_client/")
+            .then(res => res.json())
             .then(data => {
-                grid.data.parse(data); // 配列部分を渡す
-                // const years = [];
-                // grid.data.forEach(row => {
-                //     if (row.estimate_year) years.push(Number(row.estimate_year));
-                // });
+                client_id = data['current-client'].client_id;
+                client_no = data['current-client'].client_no;
+                client_name = data['current-client'].client_name;
 
-                // if (years.length > 0) {
-                //     const maxYear = Math.max(...years);
-                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
-                // }
+
+                // 💡 今回追加した「ヘッダー」の要素に文字をセット
+                const headerNoElem = document.getElementById("header_client_no");
+                const headerNameElem = document.getElementById("header_client_name");
+                const headerReportTitleElem = document.getElementById("header_report_title");
+                if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
+                if (headerNameElem) headerNameElem.textContent = client_name || '';
+                if (headerReportTitleElem) headerReportTitleElem.textContent = "部門マスタ保守";
+
+
+                // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
+                if (client_id && form) {
+                    form.setValue({ client: String(client_id) });
+                }
+
+                // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
+                if (client_id && grid) {
+                    fetch(`/estimate/lists/${client_id}/`)
+                        .then(response => response.json())
+                        .then(data => { grid.data.parse(data); })
+                        .catch(err => console.error("部門データ取得失敗:", err));
+                }
             })
             .catch(err => console.error("estimateデータ取得失敗:", err));
 
+        // 2. コンボボックスのインスタンスを取得して、DjangoのURLから動的ロード
+        const fiscalYearCombo = form.getItem("fiscalyear");
+        fiscalYearCombo.data.load("/api/fiscalyears/");
 
         // ===================================================
         // 4. EVENTS （ボタン操作・イベントリスナー）
@@ -485,6 +499,7 @@
             dhxWindow.paint();
             dhxWindow.show();
         }
+
         // 6.2 グリッド内の「編集」ボタンクリック時
         grid.events.on("cellClick", (row, col) => {
             if (col.id === "action") {
@@ -542,7 +557,7 @@
             const isNew = !formData.id || formData.id === "";
 
             // 6.3.3. 新規(POST)か更新(PUT)の判定
-            const url = isNew ? "/estimate/estimates/" : `/estimate/estimates/${formData.id}/`;
+            const url = isNew ? `/estimate/lists/${client_id}/` : `/estimate/estimates/${formData.id}/`;
             const method = isNew ? "POST" : "PUT";
 
             // 6.3.4. 通信開始
