@@ -69,15 +69,16 @@ def get_estimate_name(request):
     return JsonResponse({'estimate_name': ''}, status=404)
 
 
-def get_fiscalyears(request):
+def get_fiscalyears(request, client_id):
+
     # データベースから全年度を取得
-    years = Fiscalyear.objects.all().order_by('-id')  # 必要に応じてソート
+    years = Fiscalyear.objects.all().filter(client_id=client_id).order_by('-id')  # 必要に応じてソート
 
     # DHTMLXのComboが要求する形式 [ {"value": "X", "content": "Y"}, ... ] に整形
     data = [
         {
-            "value": str(year.id),
-            "content": str(year.name)  # 画面に表示したい名称のフィールド（例: 2026年度）
+            "id": str(year.id),
+            "value": str(year.fiscalyear_name)  # 画面に表示したい名称のフィールド（例: 2026年度）
         }
         for year in years
     ]

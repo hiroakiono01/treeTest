@@ -187,18 +187,18 @@
     align-items: bottom !important;
 }
 
-/* 「○ボタン」と「利用中/停止の文言」の縦位置を真ん中に合わせる */
-.custom-radio-align .dhx_radiobutton {
+/* 「○ボタン」と「利用中/停止の文言」の縦位置を真ん中に合わせる*/
+.custom-radio-align .dhx_radiobutton__label {
     display: inline-flex !important;
-    align-items: bottom !important;
+    align-items: center !important;
 }
 
-/* 文字の高さ（ベースライン）のズレを補正する微調整 */
+/* 文字の高さ（ベースライン）のズレを補正する微調整
 .custom-radio-align .dhx_radiobutton__label {
     line-height: 1 !important;
-    margin-top: 8px; /* 環境によって文字が上にズレる場合はここで微調整 */
+    margin-top: 40px; /* 環境によって文字が上にズレる場合はここで微調整 */
 }
-
+*/
 .dropzone{
     width:400px;
     height:250px;

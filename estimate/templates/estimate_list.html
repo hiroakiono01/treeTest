@@ -72,7 +72,6 @@
                     hidden: true
                 },
                 { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
-
                 {
                     cols: [
 
@@ -81,34 +80,28 @@
                             type: "combo",
                             label: "受注年度",
                             required: true,
-                            width: 100,
+                            labelPosition: "left",
+                            labelWidth: "130px",
+                            width: 320,
                             css: "my-custom-required" // 任意のクラス名を追加
-                        },
-                        {
-                            type: "spacer",
-                            width: 20 // 横に20pxの間隔を開ける
                         },
                         {
                             name: "estimate_no",
                             type: "input",
                             label: "見積番号",
                             required: true,
-                            width: 200,
+                            labelPosition: "left",
+                            labelWidth: "130px",
+                            width: 300,
                             css: "my-custom-required" // 任意のクラス名を追加
-                        },
-                        {
-                            type: "spacer",
-                            width: 20 // 横に20pxの間隔を開ける
                         },
                         {
                             name: "estimate_branch_no",
                             type: "input",
                             label: "見積枝番号",
-                            width: 80,
-                        },
-                        {
-                            type: "spacer",
-                            width: 40 // 横に20pxの間隔を開ける
+                            labelPosition: "left",
+                            labelWidth: "130px",
+                            width: 220,
                         },
                         {
                             name: "estimate_date",
@@ -116,22 +109,24 @@
                             label: "見積年月日",
                             dateFormat: "%Y年%m月%d日",
                             required: true,
-                            width: 180,
+                            labelPosition: "left",
+                            labelWidth: "130px",
+                            width: 300,
                             css: "my-custom-required" // 任意のクラス名を追加
 
-                        },
-                        {
-                            type: "spacer",
-                            width: 20 // 横に20pxの間隔を開ける
                         },
                         {
                             name: "estimate_print_date",
                             type: "datepicker",
                             dateFormat: "%Y年%m月%d日",
                             label: "見積書作成日",
-                            width: 180
+                            labelPosition: "left",
+                            labelWidth: "130px",
+                            width: 300
 
                         },
+
+
                     ]
 
                 },
@@ -141,12 +136,16 @@
                     type: "input",
                     label: "工事名称",
                     required: true,
+                    labelPosition: "left",
+                    labelWidth: "130px",
                     css: "my-custom-required" // 任意のクラス名を追加
 
                 },
                 {
                     name: "estimate_branch_name",
                     type: "input",
+                    labelPosition: "left",
+                    labelWidth: "130px",
                     label: "工事枝番名称",
 
                 },
@@ -157,6 +156,8 @@
                             type: "input",
                             label: "発注者名 上段",
                             required: true,
+                            labelPosition: "left",
+                            labelWidth: "130px",
                             css: "my-custom-required" // 任意のクラス名を追加
 
                         },
@@ -167,6 +168,8 @@
                         {
                             name: "ordere_name2",
                             type: "input",
+                            labelPosition: "left",
+                            labelWidth: "130px",
                             label: "発注者名 下段",
                         },
                     ]
@@ -176,6 +179,8 @@
                         {
                             name: "orderer_representative",
                             type: "input",
+                            labelPosition: "left",
+                            labelWidth: "130px",
                             label: "発注代表者",
                         },
                         {
@@ -185,37 +190,38 @@
                         {
                             name: "orderer_person",
                             type: "input",
+                            labelPosition: "left",
+                            labelWidth: "130px",
                             label: "発注担当者",
                         }
 
                     ]
                 },
+
+
+                {
+                    name: "contract_zip_code",
+                    type: "input",
+                    label: "郵便番号",
+                    labelPosition: "left",
+                    labelWidth: "130px",
+                    width: 250
+                },
                 {
                     cols: [
-                        {
-                            name: "contract_zip_code",
-                            type: "input",
-                            label: "郵便番号",
-                            width: "10%"
-                        },
-                        {
-                            type: "spacer",
-                            width: 20 // 横に20pxの間隔を開ける
-                        },
                         {
                             name: "contract_address1",
                             type: "input",
                             label: "現場住所１",
-                            width: "45%"
-                        },
-                        {
-                            type: "spacer",
-                            width: 20 // 横に20pxの間隔を開ける
+                            labelPosition: "left",
+                            labelWidth: "130px",
                         },
                         {
                             name: "contract_address2",
                             type: "input",
                             label: "現場住所２",
+                            labelPosition: "left",
+                            labelWidth: "130px",
                         },
                     ]
                 },
@@ -229,38 +235,153 @@
                                     name: "estimate_info",
                                     label: "工事利益情報",
                                     labelAlignment: "center",
-                                    width: "30%",
+                                    width: "39%",
                                     rows: [
                                         {
-                                            name: "estimate_amount",
-                                            type: "input",
-                                            label: "見積金額(税抜)",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "estimate_budget",
-                                            type: "input",
-                                            label: "実行予算額",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "estimate_income",
-                                            type: "text",
-                                            label: "粗利益",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "estimate_tax_amount",
-                                            type: "input",
-                                            label: "消費税額",
-                                            width: "100%"
-                                        },
+                                            rows: [
+                                                {
+                                                    name: "estimate_amount",
+                                                    type: "input",
+                                                    label: "見積金額(税抜)",
+                                                    labelPosition: "left",
+                                                    required: true,
+                                                    labelWidth: "120px",
+                                                    css: "my-custom-required", // 任意のクラス名を追加
+                                                    width: "100%"
+                                                },
+                                                {
+                                                    name: "estimate_budget",
+                                                    type: "input",
+                                                    label: "実行予算額",
+                                                    labelPosition: "left",
+                                                    labelWidth: "120px",
+                                                    width: "100%"
+                                                },
+                                                {
+                                                    name: "estimate_income",
+                                                    type: "text",
+                                                    label: "粗利益",
+                                                    labelPosition: "left",
+                                                    labelWidth: "120px",
+                                                    width: "100%"
+                                                },
+                                                {
+                                                    name: "estimate_tax_amount",
+                                                    type: "input",
+                                                    label: "消費税額",
+                                                    labelPosition: "left",
+                                                    labelWidth: "120px",
+                                                    width: "100%"
+                                                },
 
 
+
+                                            ]
+                                        },
+                                    ]
+                                },
+
+                                {
+                                    type: "spacer",
+                                    width: "2%" // 横に20pxの間隔を開ける
+                                },
+
+                                {
+                                    type: "fieldset",
+                                    name: "athore",
+                                    label: "その他条件",
+                                    labelAlignment: "center",
+                                    width: "39%",
+                                    rows: [
                                         {
-                                            name: "consumption_rate",
+
+                                            name: "estimate_limit_date",
+                                            type: "datepicker",
+                                            dateFormat: "%Y年%m月%d日",
+                                            label: "見積有効期限",
+                                            labelPosition: "left",
+                                            labelWidth: "130px",
+                                            width: 300,
+                                        },
+
+                                        {
+                                            name: "payment_term",
                                             type: "input",
-                                            label: "消費税率",
+                                            label: "支払条件",
+                                            labelPosition: "left",
+                                            labelWidth: "130px",
+                                            width: "100%"
+                                        },
+                                        {
+                                            cols: [
+                                                {
+                                                    name: "estimate_start_date",
+                                                    type: "datepicker",
+                                                    label: "工事開始予定日",
+                                                    dateFormat: "%Y年%m月%d日",
+                                                    labelPosition: "left",
+                                                    labelWidth: "130px",
+                                                    width: 300,
+                                                },
+                                                {
+                                                    name: "estimate_end_date",
+                                                    type: "datepicker",
+                                                    dateFormat: "%Y年%m月%d日",
+                                                    label: "工事完成予定日",
+                                                    labelPosition: "left",
+                                                    labelWidth: "130px",
+                                                    width: 300,
+                                                },
+
+                                            ]
+                                        },
+
+                                        {
+                                            name: "delivery_location",
+                                            type: "input",
+                                            label: "受渡場所",
+                                            labelPosition: "left",
+                                            labelWidth: "130px",
+                                            width: "100%"
+                                        },
+                                        {
+                                            name: "summary",
+                                            type: "input",
+                                            label: "備考",
+                                            labelPosition: "left",
+                                            labelWidth: "130px",
+                                            width: "100%"
+                                        },
+                                    ]
+                                },
+                                {
+                                    type: "spacer",
+                                    width: "2%" // 横に20pxの間隔を開ける
+                                },
+                                {
+                                    type: "fieldset",
+                                    name: "athore3",
+                                    label: "その他条件",
+                                    labelAlignment: "center",
+                                    width: "27%",
+                                    rows: [
+                                        {
+                                            name: "estimate_status",
+                                            type: "radioGroup",
+                                            label: "受注状態区分",
+                                            required: true,
+                                            labelPosition: "top",  // ラベルを左側に配置
+                                            labelWidth: "120px",    // ラベルの横幅を固定
+                                            // css: "custom-radio-align",
+                                            options: {
+                                                cols: [
+                                                    { value: "1", text: "見積" },
+                                                    { value: "2", text: "受注" },
+                                                    { value: "3", text: "留保" },
+                                                    { value: "4", text: "失受" },
+                                                ]
+                                            },
+                                            css: "my-custom-required", // 任意のクラス名を追加
                                             width: "100%"
                                         },
 
@@ -270,8 +391,8 @@
                                             label: "消費税区分",
                                             required: true,
                                             labelPosition: "top",  // ラベルを左側に配置
-                                            labelWidth: "100px",    // ラベルの横幅を固定
-                                            css: "custom-radio-align",
+                                            labelWidth: "120px",    // ラベルの横幅を固定
+                                            // css: "custom-radio-align",
                                             options: {
                                                 cols: [
                                                     { value: "1", text: "内税" },
@@ -279,61 +400,14 @@
                                                     { value: "3", text: "非課税" },
                                                 ]
                                             },
+                                            css: "my-custom-required", // 任意のクラス名を追加
                                             width: "100%"
                                         },
 
 
-
                                     ]
+
                                 },
-                                {
-                                    type: "fieldset",
-                                    name: "athore",
-                                    label: "その他条件",
-                                    labelAlignment: "center",
-                                    width: "30%",
-                                    rows: [
-                                        {
-
-                                            name: "estimate_limit_date",
-                                            type: "input",
-                                            label: "見積有効期限",
-                                            width: "100%"
-                                        },
-
-                                        {
-                                            name: "payment_term",
-                                            type: "input",
-                                            label: "支払条件",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "estimate_start_date",
-                                            type: "input",
-                                            label: "工事開始予定日",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "estimate_end_date",
-                                            type: "input",
-                                            label: "工事完成予定日",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "delivery_location",
-                                            type: "input",
-                                            label: "受渡場所",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "summary",
-                                            type: "input",
-                                            label: "備考",
-                                            width: "100%"
-                                        },
-                                    ]
-                                }
-
                             ]
 
                         }
@@ -341,12 +415,16 @@
                     ]
                 },
                 {
-                    type: "button",
-                    name: "save",
-                    text: "保存",
-                    view: "flat",
-                    color: "primary"
-                }
+                    cols: [
+                        {
+                            type: "button",
+                            name: "save",
+                            text: "保存",
+                            view: "flat",
+                            color: "primary"
+                        }
+                    ]
+                },
             ]
         });
         // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
@@ -455,14 +533,18 @@
                 const headerReportTitleElem = document.getElementById("header_report_title");
                 if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
                 if (headerNameElem) headerNameElem.textContent = client_name || '';
-                if (headerReportTitleElem) headerReportTitleElem.textContent = "部門マスタ保守";
+                if (headerReportTitleElem) headerReportTitleElem.textContent = "見積一覧表";
 
 
                 // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
                 if (client_id && form) {
                     form.setValue({ client: String(client_id) });
                 }
-
+                // 2. コンボボックスのインスタンスを取得して、DjangoのURLから動的ロード
+                // 1. フォームからコンボボックスのコンポーネント（Widget）を取得
+                const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
+                // 2. Comboが内部で持っている data（DataCollection）を使ってAPIからロード
+                fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
                 // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
                 if (client_id && grid) {
                     fetch(`/estimate/lists/${client_id}/`)
@@ -470,12 +552,12 @@
                         .then(data => { grid.data.parse(data); })
                         .catch(err => console.error("部門データ取得失敗:", err));
                 }
+
+
             })
             .catch(err => console.error("estimateデータ取得失敗:", err));
 
-        // 2. コンボボックスのインスタンスを取得して、DjangoのURLから動的ロード
-        const fiscalYearCombo = form.getItem("fiscalyear");
-        fiscalYearCombo.data.load("/api/fiscalyears/");
+
 
         // ===================================================
         // 4. EVENTS （ボタン操作・イベントリスナー）

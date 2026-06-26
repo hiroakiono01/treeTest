@@ -327,6 +327,7 @@ class Customer(models.Model):
     payment_limit_date = models.CharField(max_length=2, null=True, blank=True, verbose_name='請求書提出期限')
     customer_bank = models.CharField(max_length=20, null=True, blank=True, verbose_name='銀行コード')
     customer_branch = models.CharField(max_length=20, null=True, blank=True, verbose_name='支店コード')
+    customer_deposit_cls = models.CharField(max_length=1, null=True, blank=True, verbose_name='預金種目')
     customer_bank_number = models.CharField(max_length=20, null=True, blank=True, verbose_name='口座番号')
     customer_bank_holder = models.CharField(max_length=20, null=True, blank=True, verbose_name='名義人名')
     client_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name=' 顧客区分')

@@ -5,9 +5,10 @@
 
 
 {% block contents %}
+
 <body>
 
-    <div id="layout-main-container" style="margin-top: 6rem; --layout-max-width: 1500px;" >
+    <div id="layout-main-container" style="margin-top: 6rem; --layout-max-width: 1500px;">
         <script>
 
             // ===================================================
@@ -38,7 +39,7 @@
             // ===================================================
 
             // DATA: Grid用のデータコレクションを初期化
-            dataset = new dhx.DataCollection();
+            // dataset = new dhx.DataCollection();
 
             // TOOLBAR: ツールバーの処理 ---
             toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
@@ -69,10 +70,10 @@
                     { id: "action", width: 80, header: [{ text: "修正", align: "center" }], align: "center", htmlEnable: true, template: () => "<button class='dxi dxi-pencil'>修正</button>" },
                     { id: "customer_no", width: 100, header: [{ text: "管理番号", align: "center" }, { content: "inputFilter" }], align: "center" },
                     { id: "customer_name", width: 300, header: [{ text: "得意先名称", align: "center" }, { content: "inputFilter" }], align: "left" },
-                    { id: "customer_phone_no", width: 100, header: [{ text: "電話番号", align: "center" }], align: "center" },
-                    { id: "customer_fax_no", width: 100, header: [{ text: "FAX", align: "center" }], align: "center" },
+                    { id: "customer_phone_no", width: 120, header: [{ text: "電話番号", align: "center" }], align: "center" },
+                    { id: "customer_fax_no", width: 120, header: [{ text: "FAX", align: "center" }], align: "center" },
                     { id: "customer_person", width: 200, header: [{ text: "得意先担当者名", align: "center" }, { content: "inputFilter" }], align: "left" },
-                    { id: "customer_personal_phone", width: 100, header: [{ text: "携帯番号", align: "center" }], align: "center" },
+                    { id: "customer_personal_phone", width: 120, header: [{ text: "携帯番号", align: "center" }], align: "center" },
                     {
                         id: "group_cls",
                         editorType: "select",
@@ -82,6 +83,7 @@
                             { id: "1", value: "官庁" },
                             { id: "2", value: "民間" }
                         ],
+                        align: "center",
                         width: 100
                     },
                     {
@@ -93,6 +95,7 @@
                             { id: "0", value: "利用中" },
                             { id: "9", value: "停止" }
                         ],
+                        align: "center",
                         width: 100
                     },
                     {
@@ -104,6 +107,7 @@
                             { id: "0", value: "既契約先" },
                             { id: "1", value: "未契約先" }
                         ],
+                        align: "center",
                         width: 100
                     },
 
@@ -114,7 +118,7 @@
             });
 
 
-                 // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+            // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
             enableGridEnterNavigation(grid);
 
             // 💡 修正した「grid_cell」にGridをアタッチ
@@ -351,7 +355,29 @@
                                                         type: "input",
                                                         label: "支店コード",
                                                         required: false,
-                                                    }
+                                                    },
+                                                    {
+                                                        type: "spacer",
+                                                        width: 25 // 横に20pxの間隔を開ける
+                                                    },
+                                                    {
+                                                        name: "customer_deposit_cls",
+                                                        type: "radioGroup",
+                                                        label: "預金種目",
+                                                        required: false,
+                                                        labelPosition: "top",  // ラベルを左側に配置
+                                                        labelWidth: "30px",    // ラベルの横幅を固定
+
+                                                        options: {
+                                                            cols: [
+                                                                { value: "1", text: "普通" },
+                                                                { value: "2", text: "当座" }
+                                                            ],
+
+
+                                                        },
+                                                        //width: "40%"
+                                                    },
                                                 ]
                                             },
                                             {
@@ -464,13 +490,22 @@
             //  3. DATA LOADING （データ通信・サーバーとのやり取り）
             // =======================================================
 
-            // CONNECT: DRFからデータの読み込み
-            // 1. client一覧を取得してGridのプルダウンに反映 ---
-
+            // CONNECT: 3.1 DRFからデータの読み込み
             fetch("/api/get_current_client/")
                 .then(res => res.json())
                 .then(data => {
                     client_id = data['current-client'].client_id;
+                    client_no = data['current-client'].client_no;
+                    client_name = data['current-client'].client_name;
+
+                    // 💡 今回追加した「ヘッダー」の要素に文字をセット
+                    const headerNoElem = document.getElementById("header_client_no");
+                    const headerNameElem = document.getElementById("header_client_name");
+                    const headerReportTitleElem = document.getElementById("header_report_title");
+                    if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
+                    if (headerNameElem) headerNameElem.textContent = client_name || '';
+                    if (headerReportTitleElem) headerReportTitleElem.textContent = "得意先マスタ保守";
+
 
                     // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
                     if (client_id && form) {
@@ -479,7 +514,7 @@
 
                     // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
                     if (client_id && grid) {
-                        fetch(`/customer/list/${client_id}/`)
+                        fetch(`/customer/lists/${client_id}/`)
                             .then(response => response.json())
                             .then(data => { grid.data.parse(data); })
                             .catch(err => console.error("顧客データ取得失敗:", err));
@@ -582,7 +617,7 @@
 
                         // 💡 グリッドの再読み込み（async/awaitでスッキリ並列・直列処理）
                         grid.data.removeAll();
-                        return fetch(`/customer/list/${client_id}/`);
+                        return fetch(`/customer/lists/${client_id}/`);
                     })
 
                     .then(res => res && res.json())

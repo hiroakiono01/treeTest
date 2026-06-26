@@ -14,9 +14,9 @@ def estimate_list_call(request):
 
 
 @api_view(['GET', 'POST'])
-def estimate_list(request):
+def estimate_list(request, client_id):
     if request.method == 'GET':
-        estimates = Estimate.objects.order_by('estimate_year', 'estimate_no').reverse()
+        estimates = Estimate.objects.order_by('estimate_year', 'estimate_no').filter(client_id=client_id).reverse()
         serializer = EstimateSerializer(estimates, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
