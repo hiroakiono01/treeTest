@@ -23,6 +23,9 @@ urlpatterns = [
     path('get_estimate_name/', views.get_estimate_name, ),
     path('get_current_client/', views.get_current_client),
     path('fiscalyears/<int:client_id>/', views.get_fiscalyears, name='get_fiscalyears'),
+    path('customers/<int:client_id>/', views.get_customers, name='get_customers'),
+    path('segments/<int:client_id>/', views.get_segments, name='get_segments'),
+    path('constructions/<int:client_id>/', views.get_constructions, name='get_constructions'),
 
     # path('', views.ReferenceList.as_view(), name='reference_list'),  # 一覧
     # path('add/', views.ReferenceAdd.as_view(), name='reference_add'),  # 登録

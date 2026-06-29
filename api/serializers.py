@@ -91,7 +91,7 @@ class EstimateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Estimate
-        fields = ('id', 'estimate_year', 'estimate_no', 'estimate_name',)
+        fields = '__all__'
         extra_kwargs = {
             'estimate_no': {
                 'error_messages': {

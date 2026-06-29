@@ -4,7 +4,7 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 
-from app.models import Estimate, CurrentClient, Client, Fiscalyear
+from app.models import Estimate, CurrentClient, Client, Fiscalyear, Customer, Segment, Construction
 
 
 def index(request):
@@ -70,7 +70,6 @@ def get_estimate_name(request):
 
 
 def get_fiscalyears(request, client_id):
-
     # データベースから全年度を取得
     years = Fiscalyear.objects.all().filter(client_id=client_id).order_by('-id')  # 必要に応じてソート
 
@@ -84,8 +83,42 @@ def get_fiscalyears(request, client_id):
     ]
 
     return JsonResponse(data, safe=False)
-# views.py
 
+
+def get_customers(request, client_id):
+    customers = Customer.objects.all().filter(client_id=client_id).order_by('customer_no')  # 必要に応じてソート
+    data = [
+        {
+            "id": str(customer.id),
+            "value": str(customer.customer_name)
+        }
+        for customer in customers
+    ]
+    return JsonResponse(data, safe=False)
+
+
+def get_segments(request, client_id):
+    segments = Segment.objects.all().filter(client_id=client_id).order_by('segment_no')  # 必要に応じてソート
+    data = [
+        {
+            "id": str(segment.id),
+            "value": str(segment.segment_name)
+        }
+        for segment in segments
+    ]
+    return JsonResponse(data, safe=False)
+
+
+def get_constructions(request, client_id):
+    constructions = Construction.objects.all().filter(client_id=client_id).order_by('construction_no')  # 必要に応じてソート
+    data = [
+        {
+            "id": str(construction.id),
+            "value": str(construction.construction_name)
+        }
+        for construction in constructions
+    ]
+    return JsonResponse(data, safe=False)
 
 # def reference_page(request):
 #     # DHTMLX Gridのoptions形式に合わせてリネームして取得
