@@ -22,9 +22,11 @@
             let pagination = null;    // 【修正】タイポを修正 (paginnation -> pagination)
             let dhxWindow = null;  // 【修正】モーダルウインドウ用変数を別途定義
 
+
             // layoutの準備
             const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
-
+            layout.getCell("sidebar_container").hide();
+            
             // 1〜30日、末日 の選択肢を自動生成する例
             const closeDateOptions = [
                 { value: "", content: "" }

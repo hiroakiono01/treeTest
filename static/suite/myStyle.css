@@ -236,3 +236,16 @@
     color: #ffffff !important; /* 選択されている日は文字を白にする */
 }
 
+/* サイドバーの左側に実線（ボーダー）を引く */
+.sidebar-border-left {
+    border-left: 1px solid #89939d !important; /* #dee2e6は薄いグレーです。好みの色に調整してください */
+}
+
+
+/* リセットボタンの背景色と文字色を自由に指定 */
+.my-reset-btn .dhx_button {
+    background-color: #f59209f9 !important; /* 👈 好きな背景色（例: オレンジ） */
+    border-color: #f59209f9 !important;
+    color: #ffffff !important; 
+    margin-bottom: 10pt ;           /* 👈 文字の色（白） */
+}

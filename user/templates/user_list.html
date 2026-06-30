@@ -14,6 +14,7 @@
         // ===================================================
 
         const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+        layout.getCell("sidebar_container").hide();
         let client_id = "";
         let grid = null;
         let form = null;
@@ -100,7 +101,7 @@
 
         // ONECLICK: 2.3 ワンクリックで入力ができる ---　
         grid.events.on("cellClick", function (row, column) {
-            setTimeout(()=> {
+            setTimeout(() => {
                 grid.editCell(row.id, column.id);
             }, 50);
         });

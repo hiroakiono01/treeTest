@@ -4,7 +4,7 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 
-from app.models import Estimate, CurrentClient, Client, Fiscalyear, Customer, Segment, Construction
+from app.models import Estimate, CurrentClient, Client, Fiscalyear, Customer, Segment, Construction, User
 
 
 def index(request):
@@ -77,7 +77,8 @@ def get_fiscalyears(request, client_id):
     data = [
         {
             "id": str(year.id),
-            "value": str(year.fiscalyear_name)  # 画面に表示したい名称のフィールド（例: 2026年度）
+            "value": str(year.fiscalyear_name),  # 画面に表示したい名称のフィールド（例: 2026年度）
+            "fiscalyear": str(year.fiscalyear_name)
         }
         for year in years
     ]
@@ -85,8 +86,26 @@ def get_fiscalyears(request, client_id):
     return JsonResponse(data, safe=False)
 
 
-def get_customers(request, client_id):
-    customers = Customer.objects.all().filter(client_id=client_id).order_by('customer_no')  # 必要に応じてソート
+def get_users(request, client_id, use_flg):
+    if use_flg == "0":
+        users = User.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('user_no')  # 必要に応じてソート
+    else:
+        users = User.objects.all().filter(client_id=client_id).order_by('user_no')  # 必要に応じてソート
+    data = [
+        {
+            "id": str(user.id),
+            "value": str(user.user_name)
+        }
+        for user in users
+    ]
+    return JsonResponse(data, safe=False)
+
+
+def get_customers(request, client_id, use_flg):
+    if use_flg == "0":
+        customers = Customer.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('customer_no')  # 必要に応じてソート
+    else:
+        customers = Customer.objects.all().filter(client_id=client_id).order_by('customer_no')  # 必要に応じてソート
     data = [
         {
             "id": str(customer.id),
@@ -97,8 +116,12 @@ def get_customers(request, client_id):
     return JsonResponse(data, safe=False)
 
 
-def get_segments(request, client_id):
-    segments = Segment.objects.all().filter(client_id=client_id).order_by('segment_no')  # 必要に応じてソート
+def get_segments(request, client_id, use_flg):
+    if use_flg == "0":
+        segments = Segment.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('segment_no')  # 必要に応じてソート
+    else:
+        segments = Segment.objects.all().filter(client_id=client_id).order_by('segment_no')  # 必要に応じてソート
+
     data = [
         {
             "id": str(segment.id),

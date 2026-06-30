@@ -88,10 +88,24 @@ class EstimateSerializer(serializers.ModelSerializer):
     estimate_year = serializers.CharField(required=True)
     estimate_no = serializers.CharField(required=True)
     estimate_name = serializers.CharField(required=True)
+    fiscalyear_display = serializers.ReadOnlyField(source='fiscalyear.fiscalyear_name')
+    customer_name_display = serializers.ReadOnlyField(source='customer.customer_name')
 
     class Meta:
         model = Estimate
-        fields = '__all__'
+        fields = ('id', 'client', 'fiscalyear', 'fiscalyear_display',
+                  'estimate_year', 'estimate_date', 'estimate_print_date',
+                  'estimate_no', 'estimate_branch_no', 'orderer_name1',
+                  'orderer_name2', 'orderer_representative', 'orderer_person',
+                  'estimate_amount', 'estimate_tax_amount', 'consumption_cls',
+                  'estimate_name', 'estimate_branch_name', 'contract_zip_code',
+                  'contract_address1', 'contract_address2', 'estimate_limit_date',
+                  'payment_term', 'estimate_start_date', 'estimate_end_date',
+                  'delivery_location', 'summary', 'estimate_budget',
+                  'estimate_profit', 'consumption_rate', 'markup_rate',
+                  'estimate_cls', 'construction', 'estimate_status',
+                  'segment', 'estimate_person', 'customer', 'customer_name_display'
+                  )
         extra_kwargs = {
             'estimate_no': {
                 'error_messages': {

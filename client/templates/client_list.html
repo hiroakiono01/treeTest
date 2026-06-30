@@ -16,6 +16,7 @@
     <script>
         // layoutの準備
         const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+        layout.getCell("sidebar_container").hide();
 
         // TOOLBAR: ツールバーの処理 ---
         const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });

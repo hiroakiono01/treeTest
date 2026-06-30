@@ -6,7 +6,7 @@ window.MySharedLayoutConfig = {
             id: "my_header_container",
             height: "40px",
             css: "my-layout-header",
-    html: `
+            html: `
         <div style="display: flex; width: 100%; height: 100%; align-items: center;">
                         <div class="header-left" style="flex: 1; width: 33.33%; text-align: left; margin-left: 10px;">
                 <span id="header_client_no"></span>
@@ -28,6 +28,18 @@ window.MySharedLayoutConfig = {
         {
             id: "main_content_row",
             cols: [
+                {
+                    id: "sidebar_container",
+                    rows: [
+                        { id: "sidebar_cell" }
+                    ],
+                    header: "検索",
+                    align: "center",
+                    collapsable: true,
+                    width: "400px",
+                    css: "sidebar-border-left" // ★ここに作成したCSSクラスを指定します
+
+                },
                 {
                     id: "grid_and_page_container",
                     rows: [

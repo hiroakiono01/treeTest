@@ -14,6 +14,7 @@
         // ===================================================
 
         const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+        layout.getCell("sidebar_container").hide();
         let client_id = "";
         let grid = null;
         let form = null;
@@ -316,7 +317,7 @@
                     }
                 }
             });
-  
+
             // 「当年度(1)」が1つだけ選ばれているかチェック
             if (total !== 1) {
                 if (total === 0) {

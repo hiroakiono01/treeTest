@@ -216,8 +216,8 @@ class Fiscalyear(models.Model):
 
     id = models.AutoField(primary_key=True)
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
-    fiscalyear_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='部門コード')
-    fiscalyear_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='部門名称')
+    fiscalyear_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='年度コード')
+    fiscalyear_name = models.CharField(max_length=30, null=True, blank=True, verbose_name='　年度名称')
     current_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='当年度フラグ', default="0")
 
     create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
@@ -244,6 +244,9 @@ class Segment(models.Model):
     created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
+    def __str__(self):
+        return self.segment_name
+
 
 class Construction(models.Model):
     class Meta:
@@ -258,6 +261,9 @@ class Construction(models.Model):
     update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
     created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
+
+    def __str__(self):
+        return self.construction_name
 
 
 class User(models.Model):
