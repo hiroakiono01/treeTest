@@ -21,6 +21,7 @@
         let dhxWindow = null;
         const dataset = new dhx.DataCollection();
         let sidebarForm = null;
+        const sql = null;
 
         // ===================================================
         // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
@@ -519,7 +520,7 @@
                             customFilter: (value, match) => value.length === match.length
                         }
                     ],
-                    // options: []ß
+                    width:150
                     // editorType: "input"
                 },
                 {
@@ -534,8 +535,9 @@
                 },
                 {
                     id: "estimate_branch_name",
-                    header: [{ text: "見積枝番", align: "center", rowspan: 2 }],
-                    hidden: false
+                    header: [{ text: "枝番", align: "center", rowspan: 2 }],
+                    hidden: false,
+                    width: 70
                 },
                 {
                     id: "estimate_date",
@@ -575,7 +577,7 @@
                     template: () => "<button class='dxi dxi-delete' >削除</button>"
                 }
             ],
-            autoWidth: true,
+            autoWidth: false,
             //rootParent: null
             // data: dataset, // 作成した DataCollection を直接紐付ける
         });
@@ -665,7 +667,11 @@
             ]
         });
         // 💡 修正した「grid_cell」にGridをアタッチ
+
         layout.getCell("sidebar_cell").attach(sidebarForm);
+        layout.getCell("sidebar_container").collapse();
+        // layout.getCell("sidebar_cell").collapse();
+
         // Layoutの "sidebar" というIDのセルにFormをアタッチ
         //const searchForm = layout.getCell("sidebar_container").attach(new dhx.Form(null, formConfig));
 
@@ -783,7 +789,7 @@
 
                 // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
                 if (client_id && grid) {
-                    fetch(`/estimate/lists/${client_id}/`)
+                    fetch(`/estimate/lists/${client_id}/${sql}/`)
                         .then(response => response.json())
                         .then(data => { grid.data.parse(data); })
                         .catch(err => console.error("部門データ取得失敗:", err));
@@ -975,9 +981,17 @@
         // フォームのボタンクリックイベント
         sidebarForm.events.on("click", function (name) {
             if (name === "search_btn") {
-                const formData = sidebarForm.getValue();
-                console.log("検索条件:", formData);
-                // ここでGridのフィルタリングや再読込ロジックを呼び出す
+                sql = sidebarForm.getValue();
+
+
+                fetch(`/estimate/lists/${client_id}/${sql}/`)
+                    .then(response => response.json())
+                    .then(result => {
+                        grid.data.removeAll();
+                        grid.data.parse(result);
+                    })
+                    .catch(err => console.error("データ取得失敗:", err));
+                console.log("検索条件:", sql);
             }
         });
 

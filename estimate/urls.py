@@ -7,7 +7,7 @@ app_name = 'estimate'
 
 urlpatterns = [
     path('', views.estimate_list_call, name='estimate-list'),  # 一覧
-    path('lists/<int:client_id>/', views.estimate_list),  # 登録
+    path('lists/<int:client_id>/<str:sql>/', views.estimate_list),  # 登録
     path('estimates/<int:pk>/', views.estimate_detail),  # 修正
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
