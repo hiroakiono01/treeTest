@@ -6,1007 +6,1005 @@
 {% block contents %}
 
 <body>
-    <div id="layout-main-container" style="margin-top: 6rem; --layout-max-width: 1800px;"></div>
+<div id="layout-main-container" style="margin-top: 6rem; --layout-max-width: 1800px;"></div>
 
-    <script>
-        // ===================================================
-        //  1. VARIABLES （変数の宣言とデータの準備）
-        // ===================================================
-        const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
-        let client_id = "";
-        let grid = null;
-        let form = null;
-        let toolbar = null;
-        let pagination = null;
-        let dhxWindow = null;
-        const dataset = new dhx.DataCollection();
-        let sidebarForm = null;
-        const sql = null;
+<script>
+    // ===================================================
+    //  1. VARIABLES （変数の宣言とデータの準備）
+    // ===================================================
+    const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+    let client_id = "";
+    let grid = null;
+    let form = null;
+    let toolbar = null;
+    let pagination = null;
+    let dhxWindow = null;
+    const dataset = new dhx.DataCollection();
+    let sidebarForm = null;
+    let sql = null;
 
-        // ===================================================
-        // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
-        // ===================================================
+    // ===================================================
+    // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
+    // ===================================================
 
-        // TOOLBAR 2.1 ツールバーの作成
-        toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
-        toolbar.data.add([
-            { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
-        ]);
+    // TOOLBAR 2.1 ツールバーの作成
+    toolbar = new dhx.Toolbar("toolbar_container", {css: "dhx_toolbar--bordered"});
+    toolbar.data.add([
+        {id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true,},
+    ]);
 
-        // SIDEBAR 2.2 サイドバーの作成
-        // sidebar = new dhx.Form("sidebar_container", formConfig);
-
-
-
-        // 1. 日本語のロケールデータを定義
-        const localeJa = {
-            monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
-            months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
-            daysShort: ["日", "月", "火", "水", "木", "金", "土"],
-            days: ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
-        };
-
-        // 2. フォーム初期化前にロケールを適用
-        dhx.i18n.setLocale("calendar", localeJa);
-
-        //  2. --- モーダルウインドウの準備 ---
-        dhxWindow = new dhx.Window({
-            width: 1200,
-            height: 1200,
-            title: "新規",
-            modal: true
-        });
-
-        // 3. --- フォームの準備 ---
-        form = new dhx.Form(null, {
-            css: "dhx_widget--bordered",
-            rows: [
-                {
-                    type: "input",
-                    name: "id",
-                    hidden: true
-                    // 見えないが値は保持される
-                },
-                {
-                    name: "client",
-                    type: "input",
-                    label: "事業者",
-                    required: true,
-                    hidden: true
-                },
-                { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
-                {
-                    cols: [
-                        {
-                            name: "estimate_date",
-                            type: "datepicker",
-                            label: "見積年月日",
-                            dateFormat: "%Y年%m月%d日",
-                            required: true,
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            width: 300,
-                            css: "my-custom-required" // 任意のクラス名を追加
-
-                        },
-                        {
-                            name: "estimate_print_date",
-                            type: "datepicker",
-                            dateFormat: "%Y年%m月%d日",
-                            label: "見積書作成日",
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            width: 300
-
-                        },
-                        {
-                            name: "markup_rate",
-                            type: "input",
-                            label: "歩掛率",
-                            required: true,
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            css: "my-custom-required", // 任意のクラス名を追加
-                            width: 300
-
-                        },
-
-                    ]
-
-                },
-                {
-                    cols: [
-
-                        {
-                            name: "fiscalyear",
-                            type: "combo",
-                            label: "受注年度",
-                            required: true,
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            width: 320,
-                            css: "my-custom-required" // 任意のクラス名を追加
-                        },
-                        {
-                            name: "estimate_no",
-                            type: "input",
-                            label: "見積番号",
-                            required: true,
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            width: 300,
-                            css: "my-custom-required" // 任意のクラス名を追加
-                        },
-                        {
-                            name: "estimate_branch_no",
-                            type: "input",
-                            label: "見積枝番号",
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            width: 220,
-                        },
+    // SIDEBAR 2.2 サイドバーの作成
+    // sidebar = new dhx.Form("sidebar_container", formConfig);
 
 
+    // 1. 日本語のロケールデータを定義
+    const localeJa = {
+        monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+        months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+        daysShort: ["日", "月", "火", "水", "木", "金", "土"],
+        days: ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
+    };
+
+    // 2. フォーム初期化前にロケールを適用
+    dhx.i18n.setLocale("calendar", localeJa);
+
+    //  2. --- モーダルウインドウの準備 ---
+    dhxWindow = new dhx.Window({
+        width: 1200,
+        height: 1200,
+        title: "新規",
+        modal: true
+    });
+
+    // 3. --- フォームの準備 ---
+    form = new dhx.Form(null, {
+        css: "dhx_widget--bordered",
+        rows: [
+            {
+                type: "input",
+                name: "id",
+                hidden: true
+                // 見えないが値は保持される
+            },
+            {
+                name: "client",
+                type: "input",
+                label: "事業者",
+                required: true,
+                hidden: true
+            },
+            {type: "input", name: "id", hidden: true}, // 見えないが値は保持される
+            {
+                cols: [
+                    {
+                        name: "estimate_date",
+                        type: "datepicker",
+                        label: "見積年月日",
+                        dateFormat: "%Y年%m月%d日",
+                        required: true,
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        width: 300,
+                        css: "my-custom-required" // 任意のクラス名を追加
+
+                    },
+                    {
+                        name: "estimate_print_date",
+                        type: "datepicker",
+                        dateFormat: "%Y年%m月%d日",
+                        label: "見積書作成日",
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        width: 300
+
+                    },
+                    {
+                        name: "markup_rate",
+                        type: "input",
+                        label: "歩掛率",
+                        required: true,
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        css: "my-custom-required", // 任意のクラス名を追加
+                        width: 300
+
+                    },
+
+                ]
+
+            },
+            {
+                cols: [
+
+                    {
+                        name: "fiscalyear",
+                        type: "combo",
+                        label: "受注年度",
+                        required: true,
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        width: 320,
+                        css: "my-custom-required" // 任意のクラス名を追加
+                    },
+                    {
+                        name: "estimate_no",
+                        type: "input",
+                        label: "見積番号",
+                        required: true,
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        width: 300,
+                        css: "my-custom-required" // 任意のクラス名を追加
+                    },
+                    {
+                        name: "estimate_branch_no",
+                        type: "input",
+                        label: "見積枝番号",
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        width: 220,
+                    },
 
 
-                    ]
+                ]
 
-                },
+            },
 
-                {
-                    name: "estimate_name",
-                    type: "input",
-                    label: "工事名称",
-                    required: true,
-                    labelPosition: "left",
-                    labelWidth: "130px",
-                    css: "my-custom-required" // 任意のクラス名を追加
+            {
+                name: "estimate_name",
+                type: "input",
+                label: "工事名称",
+                required: true,
+                labelPosition: "left",
+                labelWidth: "130px",
+                css: "my-custom-required" // 任意のクラス名を追加
 
-                },
-                {
-                    name: "estimate_branch_name",
-                    type: "input",
-                    labelPosition: "left",
-                    labelWidth: "130px",
-                    label: "工事枝番名称",
+            },
+            {
+                name: "estimate_branch_name",
+                type: "input",
+                labelPosition: "left",
+                labelWidth: "130px",
+                label: "工事枝番名称",
 
-                },
-                {
-                    cols: [
-                        {
-                            name: "orderer_name1",
-                            type: "input",
-                            label: "発注者名",
-                            helpMessage: "発注者の検索",
-                            required: true,
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            css: "my-custom-required" // 任意のクラス名を追加
+            },
+            {
+                cols: [
+                    {
+                        name: "orderer_name1",
+                        type: "input",
+                        label: "発注者名",
+                        helpMessage: "発注者の検索",
+                        required: true,
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        css: "my-custom-required" // 任意のクラス名を追加
 
-                        },
-                        {
-                            type: "spacer",
-                            width: 20 // 横に20pxの間隔を開ける
-                        },
-                        {
-                            name: "orderer_name2",
-                            type: "input",
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            label: "発注者名 下段",
-                        },
-                    ]
-                },
-                {
-                    cols: [
-                        {
-                            name: "orderer_representative",
-                            type: "input",
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            label: "発注代表者",
-                        },
-                        {
-                            type: "spacer",
-                            width: 20 // 横に20pxの間隔を開ける
-                        },
-                        {
-                            name: "orderer_person",
-                            type: "input",
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            label: "発注担当者",
-                        }
+                    },
+                    {
+                        type: "spacer",
+                        width: 20 // 横に20pxの間隔を開ける
+                    },
+                    {
+                        name: "orderer_name2",
+                        type: "input",
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        label: "発注者名 下段",
+                    },
+                ]
+            },
+            {
+                cols: [
+                    {
+                        name: "orderer_representative",
+                        type: "input",
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        label: "発注代表者",
+                    },
+                    {
+                        type: "spacer",
+                        width: 20 // 横に20pxの間隔を開ける
+                    },
+                    {
+                        name: "orderer_person",
+                        type: "input",
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        label: "発注担当者",
+                    }
 
-                    ]
-                },
+                ]
+            },
 
 
-                {
-                    name: "contract_zip_code",
-                    type: "input",
-                    label: "郵便番号",
-                    labelPosition: "left",
-                    labelWidth: "130px",
-                    width: 250
-                },
-                {
-                    cols: [
-                        {
-                            name: "contract_address1",
-                            type: "input",
-                            label: "現場住所１",
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                        },
-                        {
-                            name: "contract_address2",
-                            type: "input",
-                            label: "現場住所２",
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                        },
-                    ]
-                },
-                {
-                    cols: [
-                        {
-                            name: "customer",
-                            type: "combo",
-                            helpMessage: "得意先の検索",
-                            label: "得意先",
-                            required: true,
-                            labelPosition: "left",
-                            labelWidth: "130px",
-                            css: "my-custom-required", // 任意のクラス名を追加
+            {
+                name: "contract_zip_code",
+                type: "input",
+                label: "郵便番号",
+                labelPosition: "left",
+                labelWidth: "130px",
+                width: 250
+            },
+            {
+                cols: [
+                    {
+                        name: "contract_address1",
+                        type: "input",
+                        label: "現場住所１",
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                    },
+                    {
+                        name: "contract_address2",
+                        type: "input",
+                        label: "現場住所２",
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                    },
+                ]
+            },
+            {
+                cols: [
+                    {
+                        name: "customer",
+                        type: "combo",
+                        helpMessage: "得意先の検索",
+                        label: "得意先",
+                        required: true,
+                        labelPosition: "left",
+                        labelWidth: "130px",
+                        css: "my-custom-required", // 任意のクラス名を追加
 
-                        },
-                        {
-                            name: "segment",
-                            type: "combo",
-                            label: "部門",
-                            required: false,
-                            labelPosition: "left",
-                            labelWidth: "130px"
-                        },
-                        {
-                            name: "user",
-                            type: "combo",
-                            label: "担当者",
-                            required: false,
-                            labelPosition: "left",
-                            labelWidth: "130px"
-                        },
-                    ]
-                },
-                {
-                    rows: [
-                        {
-                            alingn: "between",
-                            cols: [
-                                {
-                                    type: "fieldset",
-                                    name: "estimate_info",
-                                    label: "工事利益情報",
-                                    labelAlignment: "center",
-                                    width: "29%",
-                                    rows: [
-                                        {
-                                            rows: [
-                                                {
-                                                    name: "estimate_amount",
-                                                    type: "input",
-                                                    label: "見積金額(税抜)",
-                                                    labelPosition: "left",
-                                                    required: true,
-                                                    labelWidth: "120px",
-                                                    css: "my-custom-required", // 任意のクラス名を追加
-                                                    width: "100%"
+                    },
+                    {
+                        name: "segment",
+                        type: "combo",
+                        label: "部門",
+                        required: false,
+                        labelPosition: "left",
+                        labelWidth: "130px"
+                    },
+                    {
+                        name: "user",
+                        type: "combo",
+                        label: "担当者",
+                        required: false,
+                        labelPosition: "left",
+                        labelWidth: "130px"
+                    },
+                ]
+            },
+            {
+                rows: [
+                    {
+                        alingn: "between",
+                        cols: [
+                            {
+                                type: "fieldset",
+                                name: "estimate_info",
+                                label: "工事利益情報",
+                                labelAlignment: "center",
+                                width: "29%",
+                                rows: [
+                                    {
+                                        rows: [
+                                            {
+                                                name: "estimate_amount",
+                                                type: "input",
+                                                label: "見積金額(税抜)",
+                                                labelPosition: "left",
+                                                required: true,
+                                                labelWidth: "120px",
+                                                css: "my-custom-required", // 任意のクラス名を追加
+                                                width: "100%"
+                                            },
+                                            {
+                                                name: "estimate_budget",
+                                                type: "input",
+                                                label: "実行予算額",
+                                                labelPosition: "left",
+                                                labelWidth: "120px",
+                                                width: "100%"
+                                            },
+                                            {
+                                                name: "estimate_income",
+                                                type: "text",
+                                                label: "粗利益",
+                                                labelPosition: "left",
+                                                labelWidth: "120px",
+                                                width: "100%"
+                                            },
+                                            {
+                                                name: "estimate_income_rate",
+                                                type: "text",
+                                                label: "粗利益率",
+                                                labelPosition: "left",
+                                                labelWidth: "120px",
+                                                width: "100%"
+                                            },
+                                            {
+                                                name: "estimate_tax_amount",
+                                                type: "input",
+                                                label: "消費税額",
+                                                labelPosition: "left",
+                                                labelWidth: "120px",
+                                                width: "100%"
+                                            },
+                                            {
+                                                name: "consumption_cls",
+                                                type: "radioGroup",
+                                                label: "消費税区分",
+                                                required: true,
+                                                labelPosition: "top",  // ラベルを左側に配置
+                                                labelWidth: "120px",    // ラベルの横幅を固定
+                                                // css: "custom-radio-align",
+                                                options: {
+                                                    cols: [
+                                                        {value: "1", text: "内税"},
+                                                        {value: "2", text: "外税"},
+                                                        {value: "3", text: "非課税"},
+                                                    ]
                                                 },
-                                                {
-                                                    name: "estimate_budget",
-                                                    type: "input",
-                                                    label: "実行予算額",
-                                                    labelPosition: "left",
-                                                    labelWidth: "120px",
-                                                    width: "100%"
-                                                },
-                                                {
-                                                    name: "estimate_income",
-                                                    type: "text",
-                                                    label: "粗利益",
-                                                    labelPosition: "left",
-                                                    labelWidth: "120px",
-                                                    width: "100%"
-                                                },
-                                                {
-                                                    name: "estimate_income_rate",
-                                                    type: "text",
-                                                    label: "粗利益率",
-                                                    labelPosition: "left",
-                                                    labelWidth: "120px",
-                                                    width: "100%"
-                                                },
-                                                {
-                                                    name: "estimate_tax_amount",
-                                                    type: "input",
-                                                    label: "消費税額",
-                                                    labelPosition: "left",
-                                                    labelWidth: "120px",
-                                                    width: "100%"
-                                                },
-                                                {
-                                                    name: "consumption_cls",
-                                                    type: "radioGroup",
-                                                    label: "消費税区分",
-                                                    required: true,
-                                                    labelPosition: "top",  // ラベルを左側に配置
-                                                    labelWidth: "120px",    // ラベルの横幅を固定
-                                                    // css: "custom-radio-align",
-                                                    options: {
-                                                        cols: [
-                                                            { value: "1", text: "内税" },
-                                                            { value: "2", text: "外税" },
-                                                            { value: "3", text: "非課税" },
-                                                        ]
-                                                    },
-                                                    css: "my-custom-required", // 任意のクラス名を追加
-                                                    width: "100%"
-                                                },
+                                                css: "my-custom-required", // 任意のクラス名を追加
+                                                width: "100%"
+                                            },
 
 
+                                        ]
+                                    },
+                                ]
+                            },
 
+                            {
+                                type: "spacer",
+                                width: "2%" // 横に20pxの間隔を開ける
+                            },
+
+                            {
+                                type: "fieldset",
+                                name: "athore",
+                                label: "請負条件",
+                                labelAlignment: "center",
+                                width: "35%",
+                                rows: [
+                                    {
+
+                                        name: "estimate_limit_date",
+                                        type: "datepicker",
+                                        dateFormat: "%Y年%m月%d日",
+                                        label: "見積有効期限",
+                                        labelPosition: "left",
+                                        labelWidth: "130px",
+                                        width: 300,
+                                    },
+
+                                    {
+                                        name: "payment_term",
+                                        type: "input",
+                                        label: "支払条件",
+                                        labelPosition: "left",
+                                        labelWidth: "130px",
+                                        width: "100%"
+                                    },
+                                    {
+                                        name: "estimate_start_date",
+                                        type: "datepicker",
+                                        label: "工事開始予定日",
+                                        dateFormat: "%Y年%m月%d日",
+                                        labelPosition: "left",
+                                        labelWidth: "130px",
+                                        width: 300,
+                                    },
+                                    {
+                                        name: "estimate_end_date",
+                                        type: "datepicker",
+                                        dateFormat: "%Y年%m月%d日",
+                                        label: "工事完成予定日",
+                                        labelPosition: "left",
+                                        labelWidth: "130px",
+                                        width: 300,
+                                    },
+                                    {
+                                        name: "delivery_location",
+                                        type: "input",
+                                        label: "受渡場所",
+                                        labelPosition: "left",
+                                        labelWidth: "130px",
+                                        width: "100%"
+                                    },
+                                    {
+                                        name: "summary",
+                                        type: "textarea",
+                                        label: "備考",
+                                        labelPosition: "left",
+                                        labelWidth: "130px",
+
+                                    },
+                                ]
+                            },
+                            {
+                                type: "spacer",
+                                width: "2%" // 横に20pxの間隔を開ける
+                            },
+                            {
+                                type: "fieldset",
+                                name: "athore2",
+                                label: "その他",
+                                labelAlignment: "center",
+                                width: "30%",
+                                rows: [
+                                    {
+                                        name: "estimate_status",
+                                        type: "radioGroup",
+                                        label: "受注状態区分",
+                                        required: true,
+                                        labelPosition: "top",  // ラベルを左側に配置
+                                        labelWidth: "120px",    // ラベルの横幅を固定
+                                        // css: "custom-radio-align",
+                                        options: {
+                                            cols: [
+                                                {value: "1", text: "見積"},
+                                                {value: "2", text: "受注"},
+                                                {value: "3", text: "留保"},
+                                                {value: "4", text: "失受"},
                                             ]
                                         },
-                                    ]
-                                },
+                                        css: "my-custom-required", // 任意のクラス名を追加
+                                        width: "100%"
+                                    },
+                                    {
+                                        name: "construction",
+                                        type: "combo",
+                                        label: "請負形態",
+                                        labelPosition: "left",
+                                        labelWidth: "60px",
+                                        width: 300
 
-                                {
-                                    type: "spacer",
-                                    width: "2%" // 横に20pxの間隔を開ける
-                                },
-
-                                {
-                                    type: "fieldset",
-                                    name: "athore",
-                                    label: "請負条件",
-                                    labelAlignment: "center",
-                                    width: "35%",
-                                    rows: [
-                                        {
-
-                                            name: "estimate_limit_date",
-                                            type: "datepicker",
-                                            dateFormat: "%Y年%m月%d日",
-                                            label: "見積有効期限",
-                                            labelPosition: "left",
-                                            labelWidth: "130px",
-                                            width: 300,
-                                        },
-
-                                        {
-                                            name: "payment_term",
-                                            type: "input",
-                                            label: "支払条件",
-                                            labelPosition: "left",
-                                            labelWidth: "130px",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "estimate_start_date",
-                                            type: "datepicker",
-                                            label: "工事開始予定日",
-                                            dateFormat: "%Y年%m月%d日",
-                                            labelPosition: "left",
-                                            labelWidth: "130px",
-                                            width: 300,
-                                        },
-                                        {
-                                            name: "estimate_end_date",
-                                            type: "datepicker",
-                                            dateFormat: "%Y年%m月%d日",
-                                            label: "工事完成予定日",
-                                            labelPosition: "left",
-                                            labelWidth: "130px",
-                                            width: 300,
-                                        },
-                                        {
-                                            name: "delivery_location",
-                                            type: "input",
-                                            label: "受渡場所",
-                                            labelPosition: "left",
-                                            labelWidth: "130px",
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "summary",
-                                            type: "textarea",
-                                            label: "備考",
-                                            labelPosition: "left",
-                                            labelWidth: "130px",
-
-                                        },
-                                    ]
-                                },
-                                {
-                                    type: "spacer",
-                                    width: "2%" // 横に20pxの間隔を開ける
-                                },
-                                {
-                                    type: "fieldset",
-                                    name: "athore2",
-                                    label: "その他",
-                                    labelAlignment: "center",
-                                    width: "30%",
-                                    rows: [
-                                        {
-                                            name: "estimate_status",
-                                            type: "radioGroup",
-                                            label: "受注状態区分",
-                                            required: true,
-                                            labelPosition: "top",  // ラベルを左側に配置
-                                            labelWidth: "120px",    // ラベルの横幅を固定
-                                            // css: "custom-radio-align",
-                                            options: {
-                                                cols: [
-                                                    { value: "1", text: "見積" },
-                                                    { value: "2", text: "受注" },
-                                                    { value: "3", text: "留保" },
-                                                    { value: "4", text: "失受" },
-                                                ]
-                                            },
-                                            css: "my-custom-required", // 任意のクラス名を追加
-                                            width: "100%"
-                                        },
-                                        {
-                                            name: "construction",
-                                            type: "combo",
-                                            label: "請負形態",
-                                            labelPosition: "left",
-                                            labelWidth: "60px",
-                                            width: 300
-
-                                        },
+                                    },
 
 
+                                ]
 
-                                    ]
-
-                                },
-                            ]
-
-                        }
-
-                    ]
-                },
-                {
-                    cols: [
-                        {
-                            type: "button",
-                            name: "save",
-                            text: "保存",
-                            view: "flat",
-                            color: "primary"
-                        }
-                    ]
-                },
-            ]
-        });
-        // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
-        enableFormEnterNavigation(form);
-        //setupJapaneseCalendar(form, "estimate_date"); // 日本のカレンダー
-        dhxWindow.attach(form);
-
-
-        // 5. Gridの初期化
-        grid = new dhx.Grid("grid_container", {
-            columns: [
-                { id: "id", header: [{ text: "ID" }], hidden: true, isTreeColum: true },
-                {
-                    id: "detail",
-                    width: 100,
-                    header: [{ text: "見積明細", align: "center", rowspan: 2 }],
-                    align: "center",
-                    htmlEnable: true,
-                    template: () => "<button class='grid-btn-detail'>明細</button>"
-                },
-                {
-                    id: "fiscalyear_display",
-                    // type: "select",
-                    header: [
-                        { text: "年度", align: "center" },
-                        {
-                            content: "comboFilter",
-                            customFilter: (value, match) => value.length === match.length
-                        }
-                    ],
-                    width:150
-                    // editorType: "input"
-                },
-                {
-                    id: "estimate_no",
-                    header: [{ text: "見積番号", align: "center", rowspan: 2 }],
-                    align: "center",
-                },
-                {
-                    id: "estimate_name",
-                    header: [{ text: "見積件名", align: "center" }, { content: "inputFilter" }],
-                    width: 500
-                },
-                {
-                    id: "estimate_branch_no",
-                    header: [{ text: "枝番", align: "center", rowspan: 2 }],
-                    hidden: false,
-                    width: 60
-                },
-                {
-                    id: "estimate_date",
-                    header: [{ text: "見積年月日", align: "center", rowspan: 2 }],
-                    hidden: false,
-                    width: 150
-                },
-                {
-                    id: "estimate_print_date",
-                    header: [{ text: "見積書作成日", align: "center", rowspan: 2 }],
-                    hidden: false,
-                    width: 150
-                },
-                {
-                    id: "orderer_name1",
-                    header: [{ text: "発注者", align: "center" }, { content: "inputFilter" }],
-                    hidden: false,
-                    width: 200
-                },
-                {
-                    id: "customer_name_display",
-                    header: [{ text: "得意先", align: "center" }, { content: "comboFilter" }],
-                    hidden: false,
-                    width: 200
-                },
-
-                {
-                    id: "action",
-                    width: 70,
-                    header: [{ text: "修正", align: "center", rowspan: 2 }],
-                    align: "center",
-                    htmlEnable: true,
-                    template: () => "<button class='dxi dxi-pencil'>修正</button>"
-                },
-                {
-                    id: "delete",
-                    width: 70,
-                    header: [{ text: "削除", align: "center", rowspan: 2 }],
-                    align: "center",
-                    htmlEnable: true,
-                    template: () => "<button class='dxi dxi-delete' >削除</button>"
-                }
-            ],
-            autoWidth: false,
-            //rootParent: null
-            // data: dataset, // 作成した DataCollection を直接紐付ける
-        });
-
-
-        // 💡 修正した「grid_cell」にGridをアタッチ
-        layout.getCell("grid_cell").attach(grid);
-
-        // --- ページネーション ---
-        pagination = new dhx.Pagination(null, {
-            css: "dhx_widget--bordered dhx_widget--no-border_top",
-            data: grid.data,
-            pageSize: 50
-        });
-
-        // 💡 修正した「pagination_cell」にPaginationをアタッチ
-        layout.getCell("pagination_cell").attach(pagination);
-
-        //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
-
-        // サイドバーの設定
-        // form = new dhx.Form(null, {
-        sidebarForm = new dhx.Form(null, {
-            css: "dhx_widget--bg-white",
-            padding: "15px",
-            rows: [
-                {
-                    type: "button",
-                    name: "reset_btn",
-                    value: "リセット",
-                    submit: false, // フォーム送信を防ぐ
-                    css: "my-reset-btn" // 👈 独自のCSSクラス名を指定（colorプロパティは削除するか、無しでOK
-                },
-                {
-                    type: "combo",
-                    name: "q_customer",
-                    labelPosition: "left",
-                    labelWidth: "60px",
-                    label: "得意先",
-                },
-                {
-                    type: "combo",
-                    name: "q_segment",
-                    labelPosition: "left",
-                    labelWidth: "60px",
-                    label: "部門",
-                },
-                {
-                    type: "combo",
-                    name: "q_user",
-                    labelPosition: "left",
-                    labelWidth: "60px",
-                    label: "担当者",
-                },
-                {
-                    type: "combo",
-                    name: "q_construction",
-                    labelPosition: "left",
-                    labelWidth: "60px",
-                    label: "請負形態",
-                },
-
-                {
-                    type: "checkboxGroup",
-                    name: "status",
-                    labelPosition: "top",
-                    label: "受注状態",
-                    options: {
-                        cols: [
-                            { id: "1", type: "checkbox", text: "見積" },
-                            { id: "2", type: "checkbox", text: "受注" },
-                            { id: "3", type: "checkbox", text: "保留" },
-                            { id: "4", type: "checkbox", text: "失注" }
-
+                            },
                         ]
+
                     }
-                },
+
+                ]
+            },
+            {
+                cols: [
+                    {
+                        type: "button",
+                        name: "save",
+                        text: "保存",
+                        view: "flat",
+                        color: "primary"
+                    }
+                ]
+            },
+        ]
+    });
+    // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+    enableFormEnterNavigation(form);
+    //setupJapaneseCalendar(form, "estimate_date"); // 日本のカレンダー
+    dhxWindow.attach(form);
 
 
-                {
-                    type: "button",
-                    name: "search_btn",
-                    text: "検索実行",
-                    color: "primary",
-                    fullWidth: true
-                }
-            ]
-        });
-        // 💡 修正した「grid_cell」にGridをアタッチ
+    // 5. Gridの初期化
+    grid = new dhx.Grid("grid_container", {
+        columns: [
+            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColum: true},
+            {
+                id: "detail",
+                width: 100,
+                header: [{text: "見積明細", align: "center", rowspan: 2}],
+                align: "center",
+                htmlEnable: true,
+                template: () => "<button class='grid-btn-detail'>明細</button>"
+            },
+            {
+                id: "fiscalyear_display",
+                // type: "select",
+                header: [
+                    {text: "年度", align: "center"},
+                    {
+                        content: "comboFilter",
+                        customFilter: (value, match) => value.length === match.length
+                    }
+                ],
+                width: 150
+                // editorType: "input"
+            },
+            {
+                id: "estimate_no",
+                header: [{text: "見積番号", align: "center", rowspan: 2}],
+                align: "center",
+            },
+            {
+                id: "estimate_name",
+                header: [{text: "見積件名", align: "center"}, {content: "inputFilter"}],
+                width: 500
+            },
+            {
+                id: "estimate_branch_no",
+                header: [{text: "枝番", align: "center", rowspan: 2}],
+                hidden: false,
+                width: 60
+            },
+            {
+                id: "estimate_date",
+                header: [{text: "見積年月日", align: "center", rowspan: 2}],
+                hidden: false,
+                width: 150
+            },
+            {
+                id: "estimate_print_date",
+                header: [{text: "見積書作成日", align: "center", rowspan: 2}],
+                hidden: false,
+                width: 150
+            },
+            {
+                id: "orderer_name1",
+                header: [{text: "発注者", align: "center"}, {content: "inputFilter"}],
+                hidden: false,
+                width: 200
+            },
+            {
+                id: "customer_name_display",
+                header: [{text: "得意先", align: "center"}, {content: "comboFilter"}],
+                hidden: false,
+                width: 200
+            },
 
-        layout.getCell("sidebar_cell").attach(sidebarForm);
-        layout.getCell("sidebar_container").collapse();
-        // layout.getCell("sidebar_cell").collapse();
-
-        // Layoutの "sidebar" というIDのセルにFormをアタッチ
-        //const searchForm = layout.getCell("sidebar_container").attach(new dhx.Form(null, formConfig));
-
-        // ===================================================
-        // 3. DATA LOADING （データ通信・サーバーとのやり取り）
-        // ===================================================
-
-        // CONNECT: 3.1 DRFからデータの読み込み
-        fetch("/api/get_current_client/")
-            .then(res => res.json())
-            .then(data => {
-                client_id = data['current-client'].client_id;
-                client_no = data['current-client'].client_no;
-                client_name = data['current-client'].client_name;
-
-
-                // 💡 今回追加した「ヘッダー」の要素に文字をセット
-                const headerNoElem = document.getElementById("header_client_no");
-                const headerNameElem = document.getElementById("header_client_name");
-                const headerReportTitleElem = document.getElementById("header_report_title");
-                if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
-                if (headerNameElem) headerNameElem.textContent = client_name || '';
-                if (headerReportTitleElem) headerReportTitleElem.textContent = "見積一覧表";
-
-
-                // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
-                if (client_id && form) {
-                    form.setValue({ client: String(client_id) });
-                }
-
-                // 年度のデータセット
-                const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
-                fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
-
-                // const q_fiscalYearCombo = sidebarForm.getItem("q_fiscalyear").getWidget();
-                // q_fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
-
-                // APIからデータを取得して直接グリッドのカラムに上書きセットする
-                // fetch(`/api/fiscalyears/${client_id}/`)
-                //     .then(response => {
-                //         if (!response.ok) {
-                //             throw new Error(`HTTP error! status: ${response.status}`);
-                //         }
-                //         return response.json();
-                //     })
-                //     .then(jsonData => {
-                //         // 1. カラムの定義オブジェクトを直接取得
-                //         const columnConfig = grid.getColumn("fiscalyear");
-
-                //         if (columnConfig) {
-                //             // 2. 取得した配列データを options にそのまま代入
-                //             columnConfig.options = jsonData;
-                //             console.log("jsonData", jsonData);
-
-                //             // 3. 列の定義が更新されたことをグリッドに通知して再描画
-                //             // 新しい配列としてシャローコピーを渡して再描画を確実に実行させます
-                //             grid.setColumns([...grid.config.columns]);
-                //         }
-                //         // 2. 【重要】フィルター（comboFilter）の実体を取得してデータを直接セット
-                //         // 第1引数はカラムID、第2引数はヘッダーのインデックス（通常はフィルターがある 1 ）
-                //         const filterCombo = grid.getFilter("fiscalyear", 1);
-
-                //         if (filterCombo && filterCombo.data) {
-                //             // フィルターのComboコンポーネントのデータを一度クリアして再ロード
-                //             filterCombo.data.parse(jsonData);
-                //         }
-                //     })
-                //     .catch(error => {
-                //         console.error("年度データの取得または反映に失敗しました:", error);
-                //     });
-                // --入力系--
-                let use_flg;
-                use_flg = "0";
-                // 得意先のデータセット
-                const customerNameCombo = form.getItem("customer").getWidget();
-                customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-                // 部門のデータセット
-                const segmentNameCombo = form.getItem("segment").getWidget();
-                segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-                // 利用者のテータセット
-                const userNameCombo = form.getItem("user").getWidget();
-                userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-                // --出力系--
-                use_flg = "9";
-                // 得意先のデータセット
-                const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
-                q_customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-                // 部門のデータセット
-                const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
-                q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-                // 利用者のデータセット
-                const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
-                q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-                // --共通--
-                const constructionNameCombo = form.getItem("construction").getWidget();
-                constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
-
-                const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
-                q_constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
-                // combo の場合は getWidget() でオブジェクトを取得して parse する
-                // const comboWidget = form.getItem("q_customer").getWidget();
-                // fetch(`/api/customers/${client_id}/`)
-                //     .then(response => response.json())
-                //     .then(data => {
-                //         // comboに適合するフォーマット [{ id: "値", value: "表示名" }] に変換
-                //         const comboData = data.map(item => ({
-                //             id: item.id,
-                //             value: item.name
-                //         }));
-
-                //         // 選択肢をセット
-                //         comboWidget.data.parse(comboData);
-                //     });
-
-
-                // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
-                if (client_id && grid) {
-                    fetch(`/estimate/lists/${client_id}/${sql}/`)
-                        .then(response => response.json())
-                        .then(data => { grid.data.parse(data); })
-                        .catch(err => console.error("部門データ取得失敗:", err));
-                }
-
-
-            })
-            .catch(err => console.error("estimateデータ取得失敗:", err));
-
-
-
-        // ===================================================
-        // 4. EVENTS （ボタン操作・イベントリスナー）
-        // ===================================================
-
-        // 4.1 toolbar
-        toolbar.events.on("click", function (id) {
-            if (id === "add") {
-                addRow(); // 関数を呼ぶ
+            {
+                id: "action",
+                width: 70,
+                header: [{text: "修正", align: "center", rowspan: 2}],
+                align: "center",
+                htmlEnable: true,
+                template: () => "<button class='dxi dxi-pencil'>修正</button>"
+            },
+            {
+                id: "delete",
+                width: 70,
+                header: [{text: "削除", align: "center", rowspan: 2}],
+                align: "center",
+                htmlEnable: true,
+                template: () => "<button class='dxi dxi-delete' >削除</button>"
             }
+        ],
+        autoWidth: false,
+        //rootParent: null
+        // data: dataset, // 作成した DataCollection を直接紐付ける
+    });
+
+
+    // 💡 修正した「grid_cell」にGridをアタッチ
+    layout.getCell("grid_cell").attach(grid);
+
+    // --- ページネーション ---
+    pagination = new dhx.Pagination(null, {
+        css: "dhx_widget--bordered dhx_widget--no-border_top",
+        data: grid.data,
+        pageSize: 50
+    });
+
+    // 💡 修正した「pagination_cell」にPaginationをアタッチ
+    layout.getCell("pagination_cell").attach(pagination);
+
+    //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
+
+    // サイドバーの設定
+    // form = new dhx.Form(null, {
+    sidebarForm = new dhx.Form(null, {
+        css: "dhx_widget--bg-white",
+        padding: "15px",
+        rows: [
+            {
+                type: "button",
+                name: "reset_btn",
+                value: "リセット",
+                submit: false, // フォーム送信を防ぐ
+                css: "my-reset-btn" // 👈 独自のCSSクラス名を指定（colorプロパティは削除するか、無しでOK
+            },
+            {
+                type: "combo",
+                name: "q_customer",
+                labelPosition: "left",
+                labelWidth: "60px",
+                label: "得意先",
+            },
+            {
+                type: "combo",
+                name: "q_segment",
+                labelPosition: "left",
+                labelWidth: "60px",
+                label: "部門",
+            },
+            {
+                type: "combo",
+                name: "q_user",
+                labelPosition: "left",
+                labelWidth: "60px",
+                label: "担当者",
+            },
+            {
+                type: "combo",
+                name: "q_construction",
+                labelPosition: "left",
+                labelWidth: "60px",
+                label: "請負形態",
+            },
+
+            {
+                type: "checkboxGroup",
+                name: "status",
+                labelPosition: "top",
+                label: "受注状態",
+                options: {
+                    cols: [
+                        {id: "1", type: "checkbox", text: "見積"},
+                        {id: "2", type: "checkbox", text: "受注"},
+                        {id: "3", type: "checkbox", text: "保留"},
+                        {id: "4", type: "checkbox", text: "失注"}
+
+                    ]
+                }
+            },
+
+
+            {
+                type: "button",
+                name: "search_btn",
+                text: "検索実行",
+                color: "primary",
+                fullWidth: true
+            }
+        ]
+    });
+    // 💡 修正した「grid_cell」にGridをアタッチ
+
+    layout.getCell("sidebar_cell").attach(sidebarForm);
+    layout.getCell("sidebar_container").collapse();
+    // layout.getCell("sidebar_cell").collapse();
+
+    // Layoutの "sidebar" というIDのセルにFormをアタッチ
+    //const searchForm = layout.getCell("sidebar_container").attach(new dhx.Form(null, formConfig));
+
+    // ===================================================
+    // 3. DATA LOADING （データ通信・サーバーとのやり取り）
+    // ===================================================
+
+    // CONNECT: 3.1 DRFからデータの読み込み
+    fetch("/api/get_current_client/")
+        .then(res => res.json())
+        .then(data => {
+            client_id = data['current-client'].client_id;
+            client_no = data['current-client'].client_no;
+            client_name = data['current-client'].client_name;
+
+
+            // 💡 今回追加した「ヘッダー」の要素に文字をセット
+            const headerNoElem = document.getElementById("header_client_no");
+            const headerNameElem = document.getElementById("header_client_name");
+            const headerReportTitleElem = document.getElementById("header_report_title");
+            if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
+            if (headerNameElem) headerNameElem.textContent = client_name || '';
+            if (headerReportTitleElem) headerReportTitleElem.textContent = "見積一覧表";
+
+
+            // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
+            if (client_id && form) {
+                form.setValue({client: String(client_id)});
+            }
+
+            // 年度のデータセット
+            const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
+            fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
+
+            // const q_fiscalYearCombo = sidebarForm.getItem("q_fiscalyear").getWidget();
+            // q_fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
+
+            // APIからデータを取得して直接グリッドのカラムに上書きセットする
+            // fetch(`/api/fiscalyears/${client_id}/`)
+            //     .then(response => {
+            //         if (!response.ok) {
+            //             throw new Error(`HTTP error! status: ${response.status}`);
+            //         }
+            //         return response.json();
+            //     })
+            //     .then(jsonData => {
+            //         // 1. カラムの定義オブジェクトを直接取得
+            //         const columnConfig = grid.getColumn("fiscalyear");
+
+            //         if (columnConfig) {
+            //             // 2. 取得した配列データを options にそのまま代入
+            //             columnConfig.options = jsonData;
+            //             console.log("jsonData", jsonData);
+
+            //             // 3. 列の定義が更新されたことをグリッドに通知して再描画
+            //             // 新しい配列としてシャローコピーを渡して再描画を確実に実行させます
+            //             grid.setColumns([...grid.config.columns]);
+            //         }
+            //         // 2. 【重要】フィルター（comboFilter）の実体を取得してデータを直接セット
+            //         // 第1引数はカラムID、第2引数はヘッダーのインデックス（通常はフィルターがある 1 ）
+            //         const filterCombo = grid.getFilter("fiscalyear", 1);
+
+            //         if (filterCombo && filterCombo.data) {
+            //             // フィルターのComboコンポーネントのデータを一度クリアして再ロード
+            //             filterCombo.data.parse(jsonData);
+            //         }
+            //     })
+            //     .catch(error => {
+            //         console.error("年度データの取得または反映に失敗しました:", error);
+            //     });
+            // --入力系--
+            let use_flg;
+            use_flg = "0";
+            // 得意先のデータセット
+            const customerNameCombo = form.getItem("customer").getWidget();
+            customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
+            // 部門のデータセット
+            const segmentNameCombo = form.getItem("segment").getWidget();
+            segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
+            // 利用者のテータセット
+            const userNameCombo = form.getItem("user").getWidget();
+            userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+            // --出力系--
+            use_flg = "9";
+            // 得意先のデータセット
+            const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
+            q_customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
+            // 部門のデータセット
+            const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
+            q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
+            // 利用者のデータセット
+            const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
+            q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+            // --共通--
+            const constructionNameCombo = form.getItem("construction").getWidget();
+            constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
+
+            const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
+            q_constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
+            // combo の場合は getWidget() でオブジェクトを取得して parse する
+            // const comboWidget = form.getItem("q_customer").getWidget();
+            // fetch(`/api/customers/${client_id}/`)
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         // comboに適合するフォーマット [{ id: "値", value: "表示名" }] に変換
+            //         const comboData = data.map(item => ({
+            //             id: item.id,
+            //             value: item.name
+            //         }));
+
+            //         // 選択肢をセット
+            //         comboWidget.data.parse(comboData);
+            //     });
+
+
+            // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
+            if (client_id && grid) {
+                fetch(`/estimate/lists/${client_id}/${sql}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        grid.data.parse(data);
+                    })
+                    .catch(err => console.error("部門データ取得失敗:", err));
+            }
+
+
         })
+        .catch(err => console.error("estimateデータ取得失敗:", err));
 
-        // 6. --- イベントの処理 ---
-        // 6.1 新規作成のウインドウを表示する
-        function addRow() {
-            if (form) {
-                form.clear({});
-            }
-            dhxWindow.header.data.update("title", { value: "新規登録" });
-            dhxWindow.setPosition(100, 50);
+
+    // ===================================================
+    // 4. EVENTS （ボタン操作・イベントリスナー）
+    // ===================================================
+
+    // 4.1 toolbar
+    toolbar.events.on("click", function (id) {
+        if (id === "add") {
+            addRow(); // 関数を呼ぶ
+        }
+    })
+
+    // 6. --- イベントの処理 ---
+    // 6.1 新規作成のウインドウを表示する
+    function addRow() {
+        if (form) {
+            form.clear({});
+        }
+        dhxWindow.header.data.update("title", {value: "新規登録"});
+        dhxWindow.setPosition(100, 50);
+        dhxWindow.paint();
+        dhxWindow.show();
+    }
+
+    // 6.2 グリッド内の「編集」ボタンクリック時
+    grid.events.on("cellClick", (row, col) => {
+        if (col.id === "action") {
+            form.setValue(row); // 選択した行のデータをフォームにセット
+            dhxWindow.header.data.update("title", {value: "編集"});
             dhxWindow.paint();
             dhxWindow.show();
         }
+    });
 
-        // 6.2 グリッド内の「編集」ボタンクリック時
-        grid.events.on("cellClick", (row, col) => {
-            if (col.id === "action") {
-                form.setValue(row); // 選択した行のデータをフォームにセット
-                dhxWindow.header.data.update("title", { value: "編集" });
-                dhxWindow.paint();
-                dhxWindow.show();
-            }
-        });
-
-        // 6.3 グリッド内の「」から違うプログラムをコールする
-        grid.events.on("cellClick", (row, col, e) => {
-            if (col.id === "detail") {
-                if (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-
-                // 1. estimate_no を取得（なければ id）
-                const rawId = row.estimate_no || row.id;
-
-                // 2. 💡「001」などの文字列を数値の「1」に変換（Djangoの <int:> に合わせるため）
-                const targetId = parseInt(rawId, 10);
-
-                // 3. 💡 Djangoのルーティング構造に合わせたルート相対パスを作成
-                // ※ もし task アプリケーション内なら /task/lists/1/、直下なら /lists/1/ に調整してください
-                const targetUrl = `/task/lists/${targetId}/`;
-
-                if (window.parent && typeof window.parent.changeMainContent === "function") {
-                    window.parent.changeMainContent(targetUrl);
-                } else {
-                    window.top.location.href = targetUrl;
-                }
-            }
-        });
-
-        //　UPDATE: 6.3. 保存ボタンの処理
-        form.getItem("save").events.on("click", () => {
-
-            // 6.3.1 バリデーションを実行
-            if (!form.validate()) {
-                const info = form.getInfo();
-                const firstErrorId = Object.keys(info).find(itemId => info[itemId].error);
-                if (firstErrorId) {
-                    form.getItem(firstErrorId).setFocus();
-                }
-                return;
+    // 6.3 グリッド内の「」から違うプログラムをコールする
+    grid.events.on("cellClick", (row, col, e) => {
+        if (col.id === "detail") {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
             }
 
-            // 6.3.2. バリデーション成功後に値を取得
-            const formData = form.getValue();
-            console.log("送信データ:", formData);
+            // 1. estimate_no を取得（なければ id）
+            const rawId = row.estimate_no || row.id;
 
-            const isNew = !formData.id || formData.id === "";
+            // 2. 💡「001」などの文字列を数値の「1」に変換（Djangoの <int:> に合わせるため）
+            const targetId = parseInt(rawId, 10);
 
-            // 6.3.3. 新規(POST)か更新(PUT)の判定
-            const url = isNew ? `/estimate/lists/${client_id}/` : `/estimate/estimates/${formData.id}/`;
-            const method = isNew ? "POST" : "PUT";
+            // 3. 💡 Djangoのルーティング構造に合わせたルート相対パスを作成
+            // ※ もし task アプリケーション内なら /task/lists/1/、直下なら /lists/1/ に調整してください
+            const targetUrl = `/task/lists/${targetId}/`;
 
-            // 6.3.4. 通信開始
-            fetch(url, {
-                method: method,
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie('csrftoken')
-                },
-                body: JSON.stringify(formData)
+            if (window.parent && typeof window.parent.changeMainContent === "function") {
+                window.parent.changeMainContent(targetUrl);
+            } else {
+                window.top.location.href = targetUrl;
+            }
+        }
+    });
 
-            })
+    //　UPDATE: 6.3. 保存ボタンの処理
+    form.getItem("save").events.on("click", () => {
 
-                .then(res => {
-                    if (!res.ok) {
-                        // DRFのバリデーションエラー(400)などをキャッチ
-                        return res.json().then(err => { throw err; });
-                    }
-                    return res.json();
-                })
-                .then(result => {
-                    dhx.message({
-                        text: isNew ? "追加されました" : "更新されました",
-                        css: "dhx_widget--bg_success",
-                        expire: 3000
+        // 6.3.1 バリデーションを実行
+        if (!form.validate()) {
+            const info = form.getInfo();
+            const firstErrorId = Object.keys(info).find(itemId => info[itemId].error);
+            if (firstErrorId) {
+                form.getItem(firstErrorId).setFocus();
+            }
+            return;
+        }
+
+        // 6.3.2. バリデーション成功後に値を取得
+        const formData = form.getValue();
+        console.log("送信データ:", formData);
+
+        const isNew = !formData.id || formData.id === "";
+
+        // 6.3.3. 新規(POST)か更新(PUT)の判定
+        const url = isNew ? `/estimate/lists/${client_id}/` : `/estimate/estimates/${formData.id}/`;
+        const method = isNew ? "POST" : "PUT";
+
+        // 6.3.4. 通信開始
+        fetch(url, {
+            method: method,
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie('csrftoken')
+            },
+            body: JSON.stringify(formData)
+
+        })
+
+            .then(res => {
+                if (!res.ok) {
+                    // DRFのバリデーションエラー(400)などをキャッチ
+                    return res.json().then(err => {
+                        throw err;
                     });
-
-                    dhxWindow.hide();
-
-                    // グリッドの再読み込み
-                    grid.data.removeAll();
-                    // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
-                    return fetch(`/estimate/lists/${client_id}/`);
-                })
-                .then(res => res && res.json())
-                .then(data => {
-                    if (data) grid.data.parse(data);
-                    // grid.data.forEach(row => {
-                    //     if (row.estimate_year) years.push(Number(row.estimate_year));
-                    // });
-
-                    // if (years.length > 0) {
-                    //     const maxYear = Math.max(...years);
-                    //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
-                    // }
-                })
-                .catch(err => {
-                    console.error(err);
-                    // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
-                    let msg = "エラーが発生しました";
-                    if (typeof err === 'object') {
-                        // 最初のエラー内容を抽出して表示
-                        const firstKey = Object.keys(err)[0];
-                        msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
-                    }
-                    dhx.message({ text: msg, css: "dhx_widget--bg_danger" });
+                }
+                return res.json();
+            })
+            .then(result => {
+                dhx.message({
+                    text: isNew ? "追加されました" : "更新されました",
+                    css: "dhx_widget--bg_success",
+                    expire: 3000
                 });
-        });
 
-        // 6.4. 削除処理
-        grid.events.on("cellClick", (row, col) => {
-            if (col.id === "delete") {
-                if (confirm("選択した行を削除してもよろしいですか？")) {
-                    // 6.4.1. サーバー側のデータを削除
-                    fetch(`/estimate/estimates/${row.id}/`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
+                dhxWindow.hide();
+
+                // グリッドの再読み込み
+                grid.data.removeAll();
+                // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
+                return fetch(`/estimate/lists/${client_id}/`);
+            })
+            .then(res => res && res.json())
+            .then(data => {
+                if (data) grid.data.parse(data);
+                // grid.data.forEach(row => {
+                //     if (row.estimate_year) years.push(Number(row.estimate_year));
+                // });
+
+                // if (years.length > 0) {
+                //     const maxYear = Math.max(...years);
+                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
+                // }
+            })
+            .catch(err => {
+                console.error(err);
+                // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
+                let msg = "エラーが発生しました";
+                if (typeof err === 'object') {
+                    // 最初のエラー内容を抽出して表示
+                    const firstKey = Object.keys(err)[0];
+                    msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
+                }
+                dhx.message({text: msg, css: "dhx_widget--bg_danger"});
+            });
+    });
+
+    // 6.4. 削除処理
+    grid.events.on("cellClick", (row, col) => {
+        if (col.id === "delete") {
+            if (confirm("選択した行を削除してもよろしいですか？")) {
+                // 6.4.1. サーバー側のデータを削除
+                fetch(`/estimate/estimates/${row.id}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
+                    }
+                })
+                    .then(res => {
+                        if (res.ok) {
+                            // 6.4.2. サーバー削除成功後、フロントエンド(Grid)から削除
+                            grid.data.remove(row.id);
+                            dhx.message({
+                                text: "削除しました",
+                                css: "dhx_widget--bg_success",
+                                expire: 3000
+                            });
+                        } else {
+                            dhx.message({
+                                text: "削除に失敗しました",
+                                css: "dhx_widget--bg_danger",
+                                expire: -1
+                            });
                         }
                     })
-                        .then(res => {
-                            if (res.ok) {
-                                // 6.4.2. サーバー削除成功後、フロントエンド(Grid)から削除
-                                grid.data.remove(row.id);
-                                dhx.message({
-                                    text: "削除しました",
-                                    css: "dhx_widget--bg_success",
-                                    expire: 3000
-                                });
-                            } else {
-                                dhx.message({
-                                    text: "削除に失敗しました",
-                                    css: "dhx_widget--bg_danger",
-                                    expire: -1
-                                });
-                            }
-                        })
-                        .catch(err => {
-                            //console.error(err);
-                            dhx.message({
-                                text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
-                            });
+                    .catch(err => {
+                        //console.error(err);
+                        dhx.message({
+                            text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
                         });
-                }
+                    });
             }
-        });
+        }
+    });
 
-        // フォームのボタンクリックイベント
-        sidebarForm.events.on("click", function (name) {
-            if (name === "search_btn") {
-                sql = sidebarForm.getValue();
+    // フォームのボタンクリックイベント
+    sidebarForm.events.on("click", function (name) {
+        if (name === "search_btn") {
+            sql = sidebarForm.getValue();
+            console.log("検索条件:", sql);
 
+            fetch(`/estimate/lists/${client_id}/${sql}/`)
+                .then(response => response.json())
+                .then(result => {
+                    grid.data.removeAll();
+                    grid.data.parse(result);
+                })
+                .catch(err => console.error("データ取得失敗:", err));
 
-                fetch(`/estimate/lists/${client_id}/${sql}/`)
-                    .then(response => response.json())
-                    .then(result => {
-                        grid.data.removeAll();
-                        grid.data.parse(result);
-                    })
-                    .catch(err => console.error("データ取得失敗:", err));
-                console.log("検索条件:", sql);
-            }
-        });
+        }
+    });
 
-        // サイドバーのボタンでリセットを実行
-        sidebarForm.events.on("click", function (name) {
-            if (name === "reset_btn") {
-                sidebarForm.clear(); // すべての入力値が初期状態に戻ります
-            }
-        });
+    // サイドバーのボタンでリセットを実行
+    sidebarForm.events.on("click", function (name) {
+        if (name === "reset_btn") {
+            sidebarForm.clear(); // すべての入力値が初期状態に戻ります
+        }
+    });
 
-    </script>
+</script>
 </body>
 
 {% endblock %}
