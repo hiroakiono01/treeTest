@@ -21,7 +21,7 @@
     let dhxWindow = null;
     const dataset = new dhx.DataCollection();
     let sidebarForm = null;
-    let sql = null;
+    let sql = "null";
 
     // ===================================================
     // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
@@ -793,7 +793,7 @@
                     .then(data => {
                         grid.data.parse(data);
                     })
-                    .catch(err => console.error("部門データ取得失敗:", err));
+                    .catch(err => console.error("データ取得失敗:", err));
             }
 
 
@@ -983,9 +983,10 @@
     // フォームのボタンクリックイベント
     sidebarForm.events.on("click", function (name) {
         if (name === "search_btn") {
-            sql = sidebarForm.getValue();
-            console.log("検索条件:", sql);
+            data = sidebarForm.getValue();
 
+            const sql = JSON.stringify(data);
+            console.log("検索条件:", sql);
             fetch(`/estimate/lists/${client_id}/${sql}/`)
                 .then(response => response.json())
                 .then(result => {

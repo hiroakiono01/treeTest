@@ -18,44 +18,74 @@ def estimate_list_call(request):
 
 @api_view(['GET', 'POST'])
 def estimate_list(request, client_id, sql):
-    # 1. URLパスからオブジェクトを復元
-    decoded_sql = urllib.parse.unquote(sql)
-    search_condition = json.loads(decoded_sql)
+    try:
+        if sql == "null":
+            query = Q(client_id=client_id)
+        else:
 
+            # 1. URLパスからオブジェクトを復元
+            decoded_sql = urllib.parse.unquote(sql)
+            search_condition = json.loads(decoded_sql)
 
-# 2. 検索条件を保持するQオブジェクトを初期化
-# クライアントIDでの絞り込みは最初から固定で入れておきます
-query = Q(client_id=client_id)
+            # 2. 検索条件を保持するQオブジェクトを初期化
+            # クライアントIDでの絞り込みは最初から固定で入れておきます
+            query = Q(client_id=client_id)
 
-# 3. 各項目に値が入っているかチェックして条件を追加していく
+            # 3. 各項目に値が入っているかチェックして条件を追加していく
 
-# 顧客ID (q_customer)
-if search_condition.get('q_customer'):
-    query &= Q(customer_id=search_condition['q_customer'])
+            # 顧客ID (q_customer)
+            if search_condition.get('q_customer'):
+                query &= Q(customer_id=search_condition['q_customer'])
 
-# セグメント (q_segment)
-if search_condition.get('q_segment'):
-    query &= Q(segment=search_condition['q_segment'])
+            # # セグメント (q_segment)
+            # if search_condition.get('q_segment'):
+            #     query &= Q(segment=search_condition['q_segment'])
+            #
+            # # 担当ユーザー (q_user)
+            # if search_condition.get('q_user'):
+            #     query &= Q(user_id=search_condition['q_user'])
+            #
+            # # 工事名・内容 (q_construction)
+            # # ※ 部分一致（LIKE検索）にする場合は __contains や __icontains を使います
+            # if search_condition.get('q_construction'):
+            #     query &= Q(construction_name__icontains=search_condition['q_construction'])
+            #
+            # # 4. ステータスの処理
+            # # {"1": true, "2": false, ...} のうち、値が「true」のものだけを抽出
+            # status_obj = search_condition.get('status', {})
+            # active_statuses = [
+            #     status_id for status_id, is_active in status_obj.items() if is_active
+            # ]
 
-# 担当ユーザー (q_user)
-if search_condition.get('q_user'):
-    query &= Q(user_id=search_condition['q_user'])
+        #     # もし true になっているステータスが1つ以上あれば、IN句（__in）で絞り込む
+        # if active_statuses:
+        #     query &= Q(status__in=active_statuses)
 
-# 工事名・内容 (q_construction)
-# ※ 部分一致（LIKE検索）にする場合は __contains や __icontains を使います
-if search_condition.get('q_construction'):
-    query &= Q(construction_name__icontains=search_condition['q_construction'])
+        # 5. 組み立てた条件でデータベースを検索db = {str} 'default'（内部で安全なSQLが自動生成されます）
+        if request.method == 'GET':
+            estimates = Estimate.objects.filter(query)
+            serializer = EstimateSerializer(estimates, many=True)
+            return Response(serializer.data)
+        # デバッグ用：実際に発行される生のSQLをコンソールで確認できます
+        # print("発行されるSQL:", str(estimates.query))
 
-if request.method == 'GET':
-    estimates = Estimate.objects.order_by('estimate_year', 'estimate_no').filter(client_id=client_id).reverse()
-    serializer = EstimateSerializer(estimates, many=True)
-    return Response(serializer.data)
-elif request.method == 'POST':
-    serializer = EstimateSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status.HTTP_201_CREATED)
-    return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+        # 6. 結果をフロントに返す（シリアライズ処理など）
+        # data = list(estimates.values())  # 必要に応じて調整してください
+        # return JsonResponse({'status': 'success', 'data': data})
+
+    except (json.JSONDecodeError, TypeError, Exception) as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+    # if request.method == 'GET':
+    #     estimates = Estimate.objects.order_by('estimate_year', 'estimate_no').filter(client_id=client_id).reverse()
+    #     serializer = EstimateSerializer(estimates, many=True)
+    #     return Response(serializer.data)
+    # elif request.method == 'POST':
+    #     serializer = EstimateSerializer(data=request.data)
+    # if serializer.is_valid():
+    #     serializer.save()
+    #     return Response(serializer.data, status.HTTP_201_CREATED)
+    # return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "PUT", "PATCH", "DELETE"])
