@@ -9,19 +9,23 @@
 <div id="layout-main-container" style="margin-top: 6rem; --layout-max-width: 1800px;"></div>
 
 <script>
+
     // ===================================================
     //  1. VARIABLES （変数の宣言とデータの準備）
     // ===================================================
+    /* global dhx */ // ← これをJSファイルの1行目に追加する
+
     const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
     let client_id = "";
     let grid = null;
     let form = null;
-    let toolbar = null;
-    let pagination = null;
+    let toolbar;
+    let pagination;
     let dhxWindow = null;
     const dataset = new dhx.DataCollection();
     let sidebarForm = null;
     let sql = "null";
+    let client_markup_rate = "";
 
     // ===================================================
     // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
@@ -70,7 +74,7 @@
                 name: "client",
                 type: "input",
                 label: "事業者",
-                required: true,
+                required: false,
                 hidden: true
             },
             {type: "input", name: "id", hidden: true}, // 見えないが値は保持される
@@ -279,7 +283,7 @@
             {
                 rows: [
                     {
-                        alingn: "between",
+                        align: "between",
                         cols: [
                             {
                                 type: "fieldset",
@@ -364,7 +368,7 @@
 
                             {
                                 type: "fieldset",
-                                name: "athore",
+                                name: "another",
                                 label: "請負条件",
                                 labelAlignment: "center",
                                 width: "35%",
@@ -430,7 +434,7 @@
                             },
                             {
                                 type: "fieldset",
-                                name: "athore2",
+                                name: "another2",
                                 label: "その他",
                                 labelAlignment: "center",
                                 width: "30%",
@@ -641,7 +645,7 @@
 
             {
                 type: "checkboxGroup",
-                name: "status",
+                name: "q_estimate_status",
                 labelPosition: "top",
                 label: "受注状態",
                 options: {
@@ -683,8 +687,9 @@
         .then(res => res.json())
         .then(data => {
             client_id = data['current-client'].client_id;
-            client_no = data['current-client'].client_no;
-            client_name = data['current-client'].client_name;
+            const client_no = data['current-client'].client_no;
+            const client_name = data['current-client'].client_name;
+            client_markup_rate = data['current-client'].markup_rate;
 
 
             // 💡 今回追加した「ヘッダー」の要素に文字をセット
@@ -704,43 +709,6 @@
             // 年度のデータセット
             const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
             fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
-
-            // const q_fiscalYearCombo = sidebarForm.getItem("q_fiscalyear").getWidget();
-            // q_fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
-
-            // APIからデータを取得して直接グリッドのカラムに上書きセットする
-            // fetch(`/api/fiscalyears/${client_id}/`)
-            //     .then(response => {
-            //         if (!response.ok) {
-            //             throw new Error(`HTTP error! status: ${response.status}`);
-            //         }
-            //         return response.json();
-            //     })
-            //     .then(jsonData => {
-            //         // 1. カラムの定義オブジェクトを直接取得
-            //         const columnConfig = grid.getColumn("fiscalyear");
-
-            //         if (columnConfig) {
-            //             // 2. 取得した配列データを options にそのまま代入
-            //             columnConfig.options = jsonData;
-            //             console.log("jsonData", jsonData);
-
-            //             // 3. 列の定義が更新されたことをグリッドに通知して再描画
-            //             // 新しい配列としてシャローコピーを渡して再描画を確実に実行させます
-            //             grid.setColumns([...grid.config.columns]);
-            //         }
-            //         // 2. 【重要】フィルター（comboFilter）の実体を取得してデータを直接セット
-            //         // 第1引数はカラムID、第2引数はヘッダーのインデックス（通常はフィルターがある 1 ）
-            //         const filterCombo = grid.getFilter("fiscalyear", 1);
-
-            //         if (filterCombo && filterCombo.data) {
-            //             // フィルターのComboコンポーネントのデータを一度クリアして再ロード
-            //             filterCombo.data.parse(jsonData);
-            //         }
-            //     })
-            //     .catch(error => {
-            //         console.error("年度データの取得または反映に失敗しました:", error);
-            //     });
             // --入力系--
             let use_flg;
             use_flg = "0";
@@ -817,6 +785,11 @@
     function addRow() {
         if (form) {
             form.clear({});
+            form.setValue({markup_rate: client_markup_rate});
+            form.setValue({client_id:client_id})
+            //form.setValue({client_no:client_no})
+            //form.setValue({client_name:client_name})
+            console.log('client_markup_rate', client_markup_rate);
         }
         dhxWindow.header.data.update("title", {value: "新規登録"});
         dhxWindow.setPosition(100, 50);
@@ -864,25 +837,50 @@
     form.getItem("save").events.on("click", () => {
 
         // 6.3.1 バリデーションを実行
-        if (!form.validate()) {
-            const info = form.getInfo();
-            const firstErrorId = Object.keys(info).find(itemId => info[itemId].error);
+        const isValid = form.validate();
+
+        if (!isValid) {
+            // フォーム全体の「現在の入力値（各キー）」を取得
+            const info = form.getValue();
+
+            // 最初のエラーアイテムのIDを特定する
+            const firstErrorId = Object.keys(info).find(itemId => {
+                const item = form.getItem(itemId);
+                if (item && typeof item.validate === "function") {
+                    // 画面表示を変えずにバリデーション結果（成否）のみ判定
+                    return item.validate(true) === false;
+                }
+                return false;
+            });
+
             if (firstErrorId) {
-                form.getItem(firstErrorId).setFocus();
+                // 【重要】Suite 9 の正しいフォーカス設定方法（フォーム本体のメソッドを使用）
+                if (typeof form.setFocus === "function") {
+                    form.setFocus(firstErrorId);
+                }
+
+                // 念のため、Comboコンポーネントなどの特殊なコントロールだった場合のフォールバック処理
+                const item = form.getItem(firstErrorId);
+                if (item && typeof item.getWidget === "function") {
+                    const widget = item.getWidget();
+                    if (widget && typeof widget.focus === "function") {
+                        widget.focus();
+                    }
+                }
             }
+
+            console.log('firstErrorId:', firstErrorId, 'formData:', info);
             return;
         }
 
         // 6.3.2. バリデーション成功後に値を取得
         const formData = form.getValue();
         console.log("送信データ:", formData);
-
         const isNew = !formData.id || formData.id === "";
-
+        console.log("送信データ:", formData);
         // 6.3.3. 新規(POST)か更新(PUT)の判定
-        const url = isNew ? `/estimate/lists/${client_id}/` : `/estimate/estimates/${formData.id}/`;
+        const url = isNew ? `/estimate/add/${client_id}/` : `/estimate/estimates/${formData.id}/`;
         const method = isNew ? "POST" : "PUT";
-
         // 6.3.4. 通信開始
         fetch(url, {
             method: method,
@@ -891,9 +889,7 @@
                 "X-CSRFToken": getCookie('csrftoken')
             },
             body: JSON.stringify(formData)
-
         })
-
             .then(res => {
                 if (!res.ok) {
                     // DRFのバリデーションエラー(400)などをキャッチ
@@ -909,15 +905,19 @@
                     css: "dhx_widget--bg_success",
                     expire: 3000
                 });
-
+                // 2. ウィンドウを閉じる
                 dhxWindow.hide();
-
-                // グリッドの再読み込み
+                // 3. 古いグリッドデータをクリア
                 grid.data.removeAll();
                 // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
-                return fetch(`/estimate/lists/${client_id}/`);
+                return fetch(`/estimate/lists/${client_id}/${sql}/`);
             })
-            .then(res => res && res.json())
+            .then(res => {
+                if (!res || !res.ok) {
+                    throw new Error("データの再読み込みに失敗しました");
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data) grid.data.parse(data);
                 // grid.data.forEach(row => {
@@ -971,7 +971,7 @@
                         }
                     })
                     .catch(err => {
-                        //console.error(err);
+                        console.error(err);
                         dhx.message({
                             text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
                         });
@@ -983,6 +983,7 @@
     // フォームのボタンクリックイベント
     sidebarForm.events.on("click", function (name) {
         if (name === "search_btn") {
+            let data;
             data = sidebarForm.getValue();
 
             const sql = JSON.stringify(data);

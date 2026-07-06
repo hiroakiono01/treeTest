@@ -132,6 +132,7 @@ class Client(models.Model):
     client_phone_no = models.CharField(max_length=20, null=True, blank=True, verbose_name='電話番号')
     client_fax_no = models.CharField(max_length=20, null=True, blank=True, verbose_name='FAX')
     storage_volume = models.FloatField(null=True, blank=True, verbose_name='M容量')
+    markup_rate = models.IntegerField(null=True, blank=True, verbose_name='掛率')
 
     ecoDocuments_client_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='なんでも書庫使用区分')
     ecoEstimate_client_flg = models.CharField(max_length=1, null=True, blank=True, verbose_name='eco見積使用区分')
@@ -534,7 +535,7 @@ class Estimate(models.Model):
     estimate_start_date = models.CharField(max_length=12, null=True, blank=True, verbose_name='工事開始予定日')
     estimate_end_date = models.CharField(max_length=12, null=True, blank=True, verbose_name='工事完成予定日')
     delivery_location = models.CharField(max_length=60, null=True, blank=True, verbose_name='受渡場所')
-    summary = models.CharField(max_length=256, null=True, blank=True, verbose_name='備考')
+    summary = models.TextField(max_length=256, null=True, blank=True, verbose_name='備考')
     estimate_budget = models.IntegerField(null=True, blank=True, verbose_name='実行予算')
     estimate_profit = models.IntegerField(null=True, blank=True, verbose_name='工事利益')
     consumption_rate = models.CharField(max_length=5, null=True, blank=True, verbose_name='消費税率')

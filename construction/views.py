@@ -1,9 +1,9 @@
 from django.db import models
 from django.db import transaction
-from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from api.serializers import ConstructionSerializer
@@ -16,29 +16,27 @@ def construction_list_call(request):
 
 @api_view(['GET'])
 def construction_list(request, client_id):
-    if request.method == 'GET':
-        constructions = Construction.objects.order_by("construction_no").exclude(construction_name="").exclude(construction_name__isnull=True).filter(client_id=client_id).all()
-        serializer = ConstructionSerializer(constructions, many=True)
-        return Response(serializer.data)
+    constructions = Construction.objects.order_by("construction_no").exclude(construction_name="").exclude(construction_name__isnull=True).filter(client_id=client_id).all()
+    serializer = ConstructionSerializer(constructions, many=True)
+    return Response(serializer.data)
 
 
 @api_view(["DELETE"])
 def construction_detail(request, pk):
     try:
         instance = Construction.objects.get(pk=pk)
+        try:
+            instance.delete()
+            return Response({'success': True}, status=status.HTTP_200_OK)
+        except models.ProtectedError:
+            msg = f'「{instance.construction_name}」は他で使われているため削除がきません'
+            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
     except Construction.DoesNotExist:
         return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == "DELETE":
-        try:
-            instance.delete()
-            return JsonResponse({'success': True}, status=status.HTTP_200_OK)
-        except models.ProtectedError as e:
-            msg = f'「{instance}」は他で使われているため削除がきません'
-            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def bulk_sync_constructions(request):
     data_list = request.data
     response_data = []

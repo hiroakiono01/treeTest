@@ -3,7 +3,8 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from api.serializers import SegmentSerializer
@@ -16,29 +17,28 @@ def segment_list_call(request):
 
 @api_view(['GET'])
 def segment_list(request, client_id):
-    if request.method == 'GET':
-        segments = Segment.objects.order_by("segment_no").exclude(segment_name="").exclude(segment_name__isnull=True).filter(client_id=client_id).all()
-        serializer = SegmentSerializer(segments, many=True)
-        return Response(serializer.data)
+    segments = Segment.objects.order_by("segment_no").exclude(segment_name="").exclude(segment_name__isnull=True).filter(client_id=client_id).all()
+    serializer = SegmentSerializer(segments, many=True)
+    return Response(serializer.data)
 
 
 @api_view(["DELETE"])
 def segment_detail(request, pk):
     try:
         instance = Segment.objects.get(pk=pk)
-    except Segment.DoesNotExist:
-        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == "DELETE":
         try:
             instance.delete()
             return JsonResponse({'success': True}, status=status.HTTP_200_OK)
-        except models.ProtectedError as e:
-            msg = f'「{instance}」は他で使われているため削除がきません'
+        except models.ProtectedError:
+            msg = f'「{instance.segment_name}」は他で使われているため削除がきません'
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Segment.DoesNotExist:
+        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def bulk_sync_segments(request):
     data_list = request.data
     response_data = []

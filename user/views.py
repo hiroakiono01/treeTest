@@ -3,7 +3,8 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes  # 💡 permission_classes を追加
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from api.serializers import UserSerializer
@@ -16,29 +17,27 @@ def user_list_call(request):
 
 @api_view(['GET'])
 def user_list(request, client_id):
-    if request.method == 'GET':
-        users = User.objects.order_by("user_no").exclude(user_name="").exclude(user_name__isnull=True).filter(client_id=client_id).all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data)
+    users = User.objects.order_by("user_no").exclude(user_name="").exclude(user_name__isnull=True).filter(client_id=client_id).all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
 
 
 @api_view(["DELETE"])
 def user_detail(request, pk):
     try:
         instance = User.objects.get(pk=pk)
-    except User.DoesNotExist:
-        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == "DELETE":
         try:
             instance.delete()
             return JsonResponse({'success': True}, status=status.HTTP_200_OK)
-        except models.ProtectedError as e:
-            msg = f'「{instance}」は他で使われているため削除がきません'
+        except models.ProtectedError:
+            msg = f'「{instance.user_name}」は他で使われているため削除ができません'
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
+    except User.DoesNotExist:
+        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])  # 💡 ログイン必須にする（未ログインなら 401 応答）
 def bulk_sync_users(request):
     data_list = request.data
     response_data = []

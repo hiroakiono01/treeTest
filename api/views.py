@@ -40,18 +40,20 @@ def index(request):
 def get_current_client(self):
     try:
         # currentClient = CurrentClient.objects.all().first()
-        currentClient = CurrentClient.objects.filter(customUser=self.user).all().first()
-        client = Client.objects.get(pk=currentClient.client.pk)
+        currentClient = CurrentClient.objects.filter(customUser=self.user).first()
+        client = Client.objects.get(pk=currentClient.client_id)
         result = {'client_id': client.id,
                   'client_no': client.client_no,
                   'client_name': client.client_name,
+                  'markup_rate': client.markup_rate,
                   }
         return JsonResponse({'current-client': result})
-    except Exception as e:
+    except Exception:
 
         result = {'client_id': '',
                   'client_no': '',
                   'client_name': '選択されていません',
+                  'markup_rate': '',
                   }
 
     return JsonResponse({'current-client': result}, status=404)
