@@ -55,9 +55,11 @@
     //  2. --- モーダルウインドウの準備 ---
     dhxWindow = new dhx.Window({
         width: 1200,
-        height: 1200,
+        height: 1000,
         title: "新規",
-        modal: true
+        modal: true,
+        closable: true, // 閉じられるように設定
+        movable: true
     });
 
     // 3. --- フォームの準備 ---
@@ -786,7 +788,7 @@
         if (form) {
             form.clear({});
             form.setValue({markup_rate: client_markup_rate});
-            form.setValue({client_id:client_id})
+            form.setValue({client_id: client_id})
             //form.setValue({client_no:client_no})
             //form.setValue({client_name:client_name})
             console.log('client_markup_rate', client_markup_rate);

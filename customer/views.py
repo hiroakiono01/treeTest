@@ -23,8 +23,21 @@ def customer_list(request, client_id):
         customers = Customer.objects.order_by("customer_no").filter(client_id=client_id).all()
         serializer = CustomerSerializer(customers, many=True)
         return Response(serializer.data)
+
     elif request.method == "POST":
-        serializer = CustomerSerializer(data=request.data)
+        # 1. リクエストデータに client_id を強制的に含める（必要な場合）
+        data = request.data.copy()
+        # 2. customer_no の重複チェック（null や空文字は除外）
+        customer_no = data.get('customer_no')
+
+        if customer_no:
+            exists = Customer.objects.filter(client_id=client_id, customer_no=customer_no).exists()
+            if exists:
+                return Response(
+                    {"customer_no": ["この得意先管理番号は既に登録されています。"]},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        serializer = CustomerSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -50,7 +63,27 @@ def customer_detail(request, pk):
             msg = f'「{instance.customer_name}」は他で使用されているため削除できません。'
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
 
-    serializer = CustomerSerializer(instance, data=request.data, partial=True)
+    # 2. 更新（PUT/PATCH）時の重複チェック
+    customer_no = request.data.get('customer_no')
+    # PATCHの場合、リクエストに含まれていない場合は現在のインスタンスの値を使用
+    if request.method == "PATCH" and 'customer_no' not in request.data:
+        customer_no = instance.customer_no
+
+    if customer_no:  # 空文字やNoneでなければチェック
+        # 自分自身(pk=pk)を除外し、同じ client_id 内で重複がないか確認
+        exists = Customer.objects.filter(
+            client_id=instance.client,
+            customer_no=customer_no
+        ).exclude(pk=pk).exists()
+
+        if exists:
+            return Response(
+                {"customer_no": ["この得意先管理番号は既に他の得意先に登録されています。"]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    # serializer = CustomerSerializer(instance, data=request.data, partial=True)
+    serializer = CustomerSerializer(instance, data=request.data, partial=(request.method == "PATCH"))
+
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)

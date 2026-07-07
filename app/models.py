@@ -316,7 +316,7 @@ class Customer(models.Model):
 
     id = models.AutoField(primary_key=True)
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
-    customer_no = models.CharField(max_length=13, null=True, blank=True, verbose_name='得意先管理番号')
+    customer_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='得意先管理番号')
     customer_name = models.CharField(max_length=60, null=True, blank=True, verbose_name='得意先名称')
     customer_short_name = models.CharField(max_length=14, null=True, blank=True, verbose_name='得意先略称')
     customer_kana = models.CharField(max_length=14, null=True, blank=True, verbose_name='得意先カナ')
