@@ -72,17 +72,17 @@
                 {
                     id: "action",
                     width: 80,
-                    header: [{text: "修正", align: "center"}],
+                    header: [{text: "修正", align: "center", rowspan: 2,}],
                     align: "center",
                     htmlEnable: true,
                     template: () => "<button class='dxi dxi-pencil'>修正</button>"
                 },
                 {id: "customer_no", width: 100, header: [{text: "管理番号", align: "center"}, {content: "inputFilter"}], align: "center"},
                 {id: "customer_name", width: 300, header: [{text: "得意先名称", align: "center"}, {content: "inputFilter"}], align: "left"},
-                {id: "customer_phone_no", width: 120, header: [{text: "電話番号", align: "center"}], align: "center"},
-                {id: "customer_fax_no", width: 120, header: [{text: "FAX", align: "center"}], align: "center"},
+                {id: "customer_phone_no", width: 120, header: [{text: "電話番号", align: "center"}, {content: "inputFilter"}], align: "center"},
+                {id: "customer_fax_no", width: 120, header: [{text: "ファックス", align: "center"}, {content: "inputFilter"}], align: "center"},
                 {id: "customer_person", width: 200, header: [{text: "得意先担当者名", align: "center"}, {content: "inputFilter"}], align: "left"},
-                {id: "customer_personal_phone", width: 120, header: [{text: "携帯番号", align: "center"}], align: "center"},
+                {id: "customer_personal_phone", width: 120, header: [{text: "携帯番号", align: "center"}, {content: "inputFilter"}], align: "center"},
                 {
                     id: "group_cls",
                     editorType: "select",
@@ -123,7 +123,7 @@
                 {
                     id: "delete",
                     width: 80,
-                    header: [{text: "削除", align: "center"}],
+                    header: [{text: "削除", align: "center", rowspan: 2}],
                     align: "center",
                     htmlEnable: true,
                     template: () => "<button class='dxi dxi-delete'>削除</button>"
@@ -157,7 +157,7 @@
         form = new dhx.Form(null, {
             css: "dhx_widget--bordered",
             rows: [
-                {name: "client", type: "input", label: "事業者", required: false, hidden: false},
+                {name: "client", type: "input", label: "事業者", required: false, hidden: true},
                 {
                     name: "customer_no",
                     type: "input",
@@ -253,7 +253,7 @@
                         {
                             name: "customer_fax_no",
                             type: "input",
-                            label: "FAX",
+                            label: "ファックス",
                             required: false,
                             labelPosition: "left",
                             labelWidth: "130px",
@@ -294,7 +294,7 @@
                                 {
                                     type: "fieldset",
                                     name: "personal",
-                                    label: "入金情報",
+                                    label: "== 入金情報 ==",
                                     labelAlignment: "center",
                                     width: "71%",
                                     rows: [
@@ -375,27 +375,6 @@
                                         {
                                             cols: [
                                                 {
-                                                    name: "customer_deposit_cls",
-                                                    type: "radioGroup",
-                                                    label: "預金種目",
-                                                    required: false,
-                                                    labelPosition: "left",  // ラベルを左側に配置
-                                                    labelWidth: "120px",    // ラベルの横幅を固定
-
-                                                    options: {
-                                                        cols: [
-                                                            {value: "1", text: "普通"},
-                                                            {value: "2", text: "当座"}
-                                                        ],
-
-
-                                                    },
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            cols: [
-                                                {
                                                     name: "customer_bank_number",
                                                     type: "input",
                                                     label: "口座番号",
@@ -414,6 +393,27 @@
                                                 },
                                             ]
                                         },
+                                        {
+                                            cols: [
+                                                {
+                                                    name: "customer_deposit_cls",
+                                                    type: "radioGroup",
+                                                    label: "預金種目",
+                                                    required: false,
+                                                    labelPosition: "left",  // ラベルを左側に配置
+                                                    labelWidth: "110px",    // ラベルの横幅を固定
+
+                                                    options: {
+                                                        cols: [
+                                                            {value: "1", text: "普通"},
+                                                            {value: "2", text: "当座"}
+                                                        ],
+                                                        width: 160
+
+                                                    },
+                                                }
+                                            ]
+                                        },
                                     ]
                                 },
                                 {
@@ -423,7 +423,7 @@
                                 {
                                     type: "fieldset",
                                     name: "account2",
-                                    label: "その他区分",
+                                    label: "== その他区分 ==",
                                     labelAlignment: "center",
                                     width: "28%",
                                     rows: [
@@ -572,6 +572,11 @@
         function addRow() {
             if (form) {
                 form.clear({}); // フォームをクリア
+                // 💡 新規作成時の初期値をセットするオブジェクトを作成
+                form.setValue({
+                        use_flg: String("0")
+                    }
+                )
 
                 // 💡 4. 保存しておいた変数をここで安全に使う！
                 if (client_id) {
@@ -604,10 +609,35 @@
         // UPDATE: 6.3. 保存ボタンの処理
         form.getItem("save").events.on("click", async () => {
 
+            const info = form.getValue();
+
+            let customerNo = String(info.customer_no || "").trim();
+            if (customerNo !== "") {
+                // 数字以外が含まれているかチェック
+                if (!/^\d+$/.test(customerNo)) {
+                    // 数字以外が含まれている場合は、フォームにエラーを表示して処理を中断
+                    form.getItem("customer_no").setProperties({
+                        errorMessage: "得意先管理番号は数字のみで入力してください。",
+                        validation: false
+                    });
+                    return;
+
+                } else {
+                    // 数字のみなら8桁に0埋めしてグリッドのデータを更新
+                    const paddedNo = customerNo.padStart(8, "0");
+                    form.setValue({customer_no: paddedNo});
+
+                    form.getItem("customer_no").setProperties({
+                        errorMessage: "",
+                        validation: true
+                    });
+                }
+            }
+
+
             // 6.3.1 バリデーションを実行
             if (!form.validate()) {
                 const info = form.getValue();
-
                 // 【修正ポイント】info[itemId] の中身（値）が空のものを探すように変更
                 const firstErrorId = Object.keys(info).find(itemId => !info[itemId] || String(info[itemId]).trim() === "");
 
@@ -616,6 +646,7 @@
                     form.setFocus(firstErrorId);
                 }
                 return;
+
             }
 
             // 6.3.2. バリデーション成功後に値を取得

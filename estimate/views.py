@@ -39,7 +39,7 @@ def estimate_list(request, client_id, sql):
 
                 # セグメント (q_segment)
                 if search_condition.get('q_segment'):
-                    query &= Q(segment=search_condition['q_segment'])
+                    query &= Q(segment_id=search_condition['q_segment'])
 
                 # 担当ユーザー (q_user)
                 if search_condition.get('q_user'):

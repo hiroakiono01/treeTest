@@ -10,37 +10,6 @@
 
 <script>
 
-    // ===================================================
-    //  1. VARIABLES （変数の宣言とデータの準備）
-    // ===================================================
-    /* global dhx */ // ← これをJSファイルの1行目に追加する
-
-    const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
-    let client_id = "";
-    let grid = null;
-    let form = null;
-    let toolbar;
-    let pagination;
-    let dhxWindow = null;
-    const dataset = new dhx.DataCollection();
-    let sidebarForm = null;
-    let sql = "null";
-    let client_markup_rate = "";
-
-    // ===================================================
-    // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
-    // ===================================================
-
-    // TOOLBAR 2.1 ツールバーの作成
-    toolbar = new dhx.Toolbar("toolbar_container", {css: "dhx_toolbar--bordered"});
-    toolbar.data.add([
-        {id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true,},
-    ]);
-
-    // SIDEBAR 2.2 サイドバーの作成
-    // sidebar = new dhx.Form("sidebar_container", formConfig);
-
-
     // 1. 日本語のロケールデータを定義
     const localeJa = {
         monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
@@ -498,194 +467,10 @@
     //setupJapaneseCalendar(form, "estimate_date"); // 日本のカレンダー
     dhxWindow.attach(form);
 
-
-    // 5. Gridの初期化
-    grid = new dhx.Grid("grid_container", {
-        columns: [
-            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColum: true},
-            {
-                id: "detail",
-                width: 100,
-                header: [{text: "見積明細", align: "center", rowspan: 2}],
-                align: "center",
-                htmlEnable: true,
-                template: () => "<button class='grid-btn-detail'>明細</button>"
-            },
-            {
-                id: "action",
-                width: 70,
-                header: [{text: "修正", align: "center", rowspan: 2}],
-                align: "center",
-                htmlEnable: true,
-                template: () => "<button class='dxi dxi-pencil'>修正</button>"
-            },
-            {
-                id: "fiscalyear_display",
-                // type: "select",
-                header: [
-                    {text: "年度", align: "center"},
-                    {
-                        content: "comboFilter",
-                        customFilter: (value, match) => value.length === match.length
-                    }
-                ],
-                width: 150
-                // editorType: "input"
-            },
-            {
-                id: "estimate_no",
-                header: [{text: "見積番号", align: "center"}, {content: "inputFilter"}],
-                align: "center",
-            },
-            {
-                id: "estimate_name",
-                header: [{text: "見積件名", align: "center"}, {content: "inputFilter"}],
-                width: 500
-            },
-            {
-                id: "estimate_branch_no",
-                header: [{text: "枝番", align: "center", rowspan: 2}],
-                hidden: false,
-                width: 60
-            },
-            {
-                id: "estimate_date",
-                header: [{text: "見積年月日", align: "center", rowspan: 2}],
-                hidden: false,
-                width: 150
-            },
-            {
-                id: "estimate_print_date",
-                header: [{text: "見積書作成日", align: "center", rowspan: 2}],
-                hidden: false,
-                width: 150
-            },
-            {
-                id: "orderer_name1",
-                header: [{text: "発注者", align: "center"}, {content: "inputFilter"}],
-                hidden: false,
-                width: 200
-            },
-            {
-                id: "customer_name_display",
-                header: [{text: "得意先", align: "center"}, {content: "comboFilter"}],
-                hidden: false,
-                width: 200
-            },
-
-
-            {
-                id: "delete",
-                width: 70,
-                header: [{text: "削除", align: "center", rowspan: 2}],
-                align: "center",
-                htmlEnable: true,
-                template: () => "<button class='dxi dxi-delete' >削除</button>"
-            }
-        ],
-        autoWidth: false,
-        //rootParent: null
-        // data: dataset, // 作成した DataCollection を直接紐付ける
-    });
-
-
-    // 💡 修正した「grid_cell」にGridをアタッチ
-    layout.getCell("grid_cell").attach(grid);
-
-    // --- ページネーション ---
-    pagination = new dhx.Pagination(null, {
-        css: "dhx_widget--bordered dhx_widget--no-border_top",
-        data: grid.data,
-        pageSize: 50
-    });
-
-    // 💡 修正した「pagination_cell」にPaginationをアタッチ
-    layout.getCell("pagination_cell").attach(pagination);
-
-    //Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
-
-    // サイドバーの設定
-    // form = new dhx.Form(null, {
-    sidebarForm = new dhx.Form(null, {
-        css: "dhx_widget--bg-white",
-        padding: "15px",
-        rows: [
-            {
-                type: "button",
-                name: "reset_btn",
-                value: "リセット",
-                submit: false, // フォーム送信を防ぐ
-                css: "my-reset-btn" // 👈 独自のCSSクラス名を指定（colorプロパティは削除するか、無しでOK
-            },
-            {
-                type: "combo",
-                name: "q_customer",
-                labelPosition: "left",
-                labelWidth: "60px",
-                label: "得意先",
-            },
-            {
-                type: "combo",
-                name: "q_segment",
-                labelPosition: "left",
-                labelWidth: "60px",
-                label: "部門",
-            },
-            {
-                type: "combo",
-                name: "q_user",
-                labelPosition: "left",
-                labelWidth: "60px",
-                label: "担当者",
-            },
-            {
-                type: "combo",
-                name: "q_construction",
-                labelPosition: "left",
-                labelWidth: "60px",
-                label: "請負形態",
-            },
-
-            {
-                type: "checkboxGroup",
-                name: "q_estimate_status",
-                labelPosition: "top",
-                label: "受注状態",
-                options: {
-                    cols: [
-                        {id: "1", type: "checkbox", text: "見積"},
-                        {id: "2", type: "checkbox", text: "受注"},
-                        {id: "3", type: "checkbox", text: "保留"},
-                        {id: "4", type: "checkbox", text: "失注"}
-
-                    ]
-                }
-            },
-
-
-            {
-                type: "button",
-                name: "search_btn",
-                text: "検索実行",
-                color: "primary",
-                fullWidth: true
-            }
-        ]
-    });
-    // 💡 修正した「grid_cell」にGridをアタッチ
-
-    layout.getCell("sidebar_cell").attach(sidebarForm);
-    layout.getCell("sidebar_container").collapse();
-    // layout.getCell("sidebar_cell").collapse();
-
-    // Layoutの "sidebar" というIDのセルにFormをアタッチ
-    //const searchForm = layout.getCell("sidebar_container").attach(new dhx.Form(null, formConfig));
-
     // ===================================================
     // 3. DATA LOADING （データ通信・サーバーとのやり取り）
     // ===================================================
 
-    // CONNECT: 3.1 DRFからデータの読み込み
     fetch("/api/get_current_client/")
         .then(res => res.json())
         .then(data => {
@@ -693,16 +478,6 @@
             const client_no = data['current-client']["client_no"];
             const client_name = data['current-client']['client_name'];
             client_markup_rate = data['current-client'].markup_rate;
-
-
-            // 💡 今回追加した「ヘッダー」の要素に文字をセット
-            const headerNoElem = document.getElementById("header_client_no");
-            const headerNameElem = document.getElementById("header_client_name");
-            const headerReportTitleElem = document.getElementById("header_report_title");
-            if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
-            if (headerNameElem) headerNameElem.textContent = client_name || '';
-            if (headerReportTitleElem) headerReportTitleElem.textContent = "見積一覧表";
-
 
             // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
             if (client_id && form) {
@@ -712,102 +487,38 @@
             // 年度のデータセット
             const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
             fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
-            // --入力系--
 
-            // --出力系--
-            let use_flg = "9";
-            // 得意先のデータセット
-            const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
-            q_customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-            // 部門のデータセット
-            const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
-            q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-            // 利用者のデータセット
-            const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
-            q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+            let use_flg = "0";
             // 得意先のデータセット
             const customerNameCombo = form.getItem("customer").getWidget();
             customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
+
             // 部門のデータセット
             const segmentNameCombo = form.getItem("segment").getWidget();
             segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
+
             // 利用者のテータセット
             const userNameCombo = form.getItem("user").getWidget();
             userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-            // --共通--
+
+
+            // 受注状態区分
             const constructionNameCombo = form.getItem("construction").getWidget();
             constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
-
-            const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
-            q_constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
-            // combo の場合は getWidget() でオブジェクトを取得して parse する
-            // const comboWidget = form.getItem("q_customer").getWidget();
-            // fetch(`/api/customers/${client_id}/`)
-            //     .then(response => response.json())
-            //     .then(data => {
-            //         // comboに適合するフォーマット [{ id: "値", value: "表示名" }] に変換
-            //         const comboData = data.map(item => ({
-            //             id: item.id,
-            //             value: item.name
-            //         }));
-
-            //         // 選択肢をセット
-            //         comboWidget.data.parse(comboData);
-            //     });
-
-
-            // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
-            if (client_id && grid) {
-                fetch(`/estimate/lists/${client_id}/${sql}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        grid.data.parse(data);
-                    })
-                    .catch(err => console.error("データ取得失敗:", err));
-            }
-
-
-        })
-        .catch(err => console.error("estimateデータ取得失敗:", err));
-
 
     // ===================================================
     // 4. EVENTS （ボタン操作・イベントリスナー）
     // ===================================================
 
-    // 4.1 toolbar
-    toolbar.events.on("click", function (id) {
-        if (id === "add") {
-            addRow(); // 関数を呼ぶ
-        }
-    })
-
-    // 6. --- イベントの処理 ---
-    // 6.1 新規作成のウインドウを表示する
+        // 6.1 新規作成のウインドウを表示する
     function addRow() {
-        // 新規時は「利用中のみ（フラグ: 1）」でコンボを更新
-        let use_flg = "0";
-        reloadCustomerCombo(use_flg);
-        reloadSegmentCombo(use_flg);
-        reloadUserCombo(use_flg);
         if (form) {
             form.clear({});
             form.setValue({markup_rate: client_markup_rate});
             form.setValue({client_id: client_id})
             //form.setValue({client_no:client_no})
             //form.setValue({client_name:client_name})
-            // let use_flg;
-            // use_flg = "0";
-            // // 得意先のデータセット
-            // const customerNameCombo = form.getItem("customer").getWidget();
-            // customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-            // // 部門のデータセット
-            // const segmentNameCombo = form.getItem("segment").getWidget();
-            // segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-            // // 利用者のテータセット
-            // const userNameCombo = form.getItem("user").getWidget();
-            // userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-            // console.log('client_markup_rate', client_markup_rate);
+
         }
         dhxWindow.header.data.update("title", {value: "新規登録"});
         dhxWindow.setPosition(100, 50);
@@ -815,42 +526,7 @@
         dhxWindow.show();
     }
 
-    // 6.2 グリッド内の「編集」ボタンクリック時
-    grid.events.on("cellClick", (row, col) => {
-        if (col.id === "action") {
-            form.setValue(row); // 選択した行のデータをフォームにセット
-            dhxWindow.header.data.update("title", {value: "編集"});
-            dhxWindow.paint();
-            dhxWindow.show();
-        }
-    });
-
-    // 6.3 グリッド内の「」から違うプログラムをコールする
-    grid.events.on("cellClick", (row, col, e) => {
-        if (col.id === "detail") {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
-            // 1. estimate_no を取得（なければ id）
-            const rawId = row.estimate_no || row.id;
-
-            // 2. 💡「001」などの文字列を数値の「1」に変換（Djangoの <int:> に合わせるため）
-            const targetId = parseInt(rawId, 10);
-
-            // 3. 💡 Djangoのルーティング構造に合わせたルート相対パスを作成
-            // ※ もし task アプリケーション内なら /task/lists/1/、直下なら /lists/1/ に調整してください
-            const targetUrl = `/task/lists/${targetId}/`;
-
-            if (window.parent && typeof window.parent.changeMainContent === "function") {
-                window.parent.changeMainContent(targetUrl);
-            } else {
-                window.top.location.href = targetUrl;
-            }
-        }
-    });
-
+    //　UPDATE: 6.3. 保存ボタンの処理
     //　UPDATE: 6.3. 保存ボタンの処理
     form.getItem("save").events.on("click", () => {
 
@@ -959,119 +635,111 @@
                 dhx.message({text: msg, css: "dhx_widget--bg_danger"});
             });
     });
+//　UPDATE: 6.3. 保存ボタンの処理
+    form.getItem("save").events.on("click", () => {
 
-    // 6.4. 削除処理
-    grid.events.on("cellClick", (row, col) => {
-        if (col.id === "delete") {
-            if (confirm("選択した行を削除してもよろしいですか？")) {
-                // 6.4.1. サーバー側のデータを削除
-                fetch(`/estimate/estimates/${row.id}/`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
+        // 6.3.1 バリデーションを実行
+        const isValid = form.validate();
+
+        if (!isValid) {
+            // フォーム全体の「現在の入力値（各キー）」を取得
+            const info = form.getValue();
+
+            // 最初のエラーアイテムのIDを特定する
+            const firstErrorId = Object.keys(info).find(itemId => {
+                const item = form.getItem(itemId);
+                if (item && typeof item.validate === "function") {
+                    // 画面表示を変えずにバリデーション結果（成否）のみ判定
+                    return item.validate(true) === false;
+                }
+                return false;
+            });
+
+            if (firstErrorId) {
+                // 【重要】Suite 9 の正しいフォーカス設定方法（フォーム本体のメソッドを使用）
+                if (typeof form.setFocus === "function") {
+                    form.setFocus(firstErrorId);
+                }
+
+                // 念のため、Comboコンポーネントなどの特殊なコントロールだった場合のフォールバック処理
+                const item = form.getItem(firstErrorId);
+                if (item && typeof item.getWidget === "function") {
+                    const widget = item.getWidget();
+                    if (widget && typeof widget.focus === "function") {
+                        widget.focus();
                     }
-                })
-                    .then(res => {
-                        if (res.ok) {
-                            // 6.4.2. サーバー削除成功後、フロントエンド(Grid)から削除
-                            grid.data.remove(row.id);
-                            dhx.message({
-                                text: "削除しました",
-                                css: "dhx_widget--bg_success",
-                                expire: 3000
-                            });
-                        } else {
-                            dhx.message({
-                                text: "削除に失敗しました",
-                                css: "dhx_widget--bg_danger",
-                                expire: -1
-                            });
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        dhx.message({
-                            text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
-                        });
-                    });
+                }
             }
+
+            console.log('firstErrorId:', firstErrorId, 'formData:', info);
+            return;
         }
-    });
 
-    // フォームのボタンクリックイベント
-    sidebarForm.events.on("click", function (name) {
-        if (name === "search_btn") {
-            let data;
-            data = sidebarForm.getValue();
+        // 6.3.2. バリデーション成功後に値を取得
+        const formData = form.getValue();
+        console.log("送信データ:", formData);
+        const isNew = !formData.id || formData.id === "";
+        console.log("送信データ:", formData);
+        // 6.3.3. 新規(POST)か更新(PUT)の判定
+        const url = isNew ? `/estimate/add/${client_id}/` : `/estimate/estimates/${formData.id}/`;
+        const method = isNew ? "POST" : "PUT";
+        // 6.3.4. 通信開始
+        fetch(url, {
+            method: method,
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie('csrftoken')
+            },
+            body: JSON.stringify(formData)
+        })
+            .then(res => {
+                if (!res.ok) {
+                    // DRFのバリデーションエラー(400)などをキャッチ
+                    return res.json().then(err => {
+                        throw err;
+                    });
+                }
+                return res.json();
+            })
+            .then(result => {
+                dhx.message({
+                    text: isNew ? "追加されました" : "更新されました",
+                    css: "dhx_widget--bg_success",
+                    expire: 3000
+                });
+                // 2. ウィンドウを閉じる
+                dhxWindow.hide();
+                // 3. 古いグリッドデータをクリア
+                grid.data.removeAll();
+                // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
+                return fetch(`/estimate/lists/${client_id}/${sql}/`);
+            })
+            .then(res => {
+                if (!res || !res.ok) {
+                    throw new Error("データの再読み込みに失敗しました");
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data) grid.data.parse(data);
+                // grid.data.forEach(row => {
+                //     if (row.estimate_year) years.push(Number(row.estimate_year));
+                // });
 
-            const sql = JSON.stringify(data);
-            console.log("検索条件:", sql);
-            fetch(`/estimate/lists/${client_id}/${sql}/`)
-                .then(response => response.json())
-                .then(result => {
-                    grid.data.removeAll();
-                    grid.data.parse(result);
-                })
-                .catch(err => console.error("データ取得失敗:", err));
-
-        }
-    });
-
-    // サイドバーのボタンでリセットを実行
-    sidebarForm.events.on("click", function (name) {
-        if (name === "reset_btn") {
-            sidebarForm.clear(); // すべての入力値が初期状態に戻ります
-        }
-    });
-
-    // 得意先コンボのデータを状況に応じて読み直す共通関数
-    function reloadCustomerCombo(useFlgValue) {
-        const customerNameCombo = form.getItem("customer").getWidget();
-        if (customerNameCombo) {
-            // 1. 選択されている値をクリア
-            customerNameCombo.clear();
-            // 2. 既存の選択肢リスト（データストア）を完全に削除【重要】
-            customerNameCombo.data.removeAll();
-            // 3. 新しいフラグを元にサーバーからデータを再読み込み
-            const apiUrl = `/api/customers/${client_id}/${useFlgValue}/`;
-            customerNameCombo.data.load(apiUrl).then(() => {
-                console.log(`得意先リストを更新しました (use_flg: ${useFlgValue})`);
+                // if (years.length > 0) {
+                //     const maxYear = Math.max(...years);
+                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
+                // }
+            })
+            .catch(err => {
+                console.error(err);
+                // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
+                let msg = "エラーが発生しました";
+                if (typeof err === 'object') {
+                    // 最初のエラー内容を抽出して表示
+                    const firstKey = Object.keys(err)[0];
+                    msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
+                }
+                dhx.message({text: msg, css: "dhx_widget--bg_danger"});
             });
-        }
-    }
-
-    // 部門コンボのデータを状況に応じて読み直す共通関数
-    function reloadSegmentCombo(useFlgValue) {
-        const segmentNameCombo = form.getItem("segment").getWidget();
-        if (segmentNameCombo) {
-            // 1. 選択されている値をクリア
-            segmentNameCombo.clear();
-            // 2. 既存の選択肢リスト（データストア）を完全に削除【重要】
-            segmentNameCombo.data.removeAll();
-            // 3. 新しいフラグを元にサーバーからデータを再読み込み
-            const apiUrl = `/api/segments/${client_id}/${useFlgValue}/`;
-            segmentNameCombo.data.load(apiUrl).then(() => {
-                console.log(`部門リストを更新しました (use_flg: ${useFlgValue})`);
-            });
-        }
-    }
-
-    // 利用者コンボのデータを状況に応じて読み直す共通関数
-    function reloadUserCombo(useFlgValue) {
-        const userNameCombo = form.getItem("user").getWidget();
-        if (userNameCombo) {
-            // 1. 選択されている値をクリア
-            userNameCombo.clear();
-            // 2. 既存の選択肢リスト（データストア）を完全に削除【重要】
-            userNameCombo.data.removeAll();
-            // 3. 新しいフラグを元にサーバーからデータを再読み込み
-            const apiUrl = `/api/users/${client_id}/${useFlgValue}/`;
-            userNameCombo.data.load(apiUrl).then(() => {
-                console.log(`利用者リストを更新しました (use_flg: ${useFlgValue})`);
-            });
-        }
-    }
-</script>
-</body>
-
-{% endblock %}
+    });
