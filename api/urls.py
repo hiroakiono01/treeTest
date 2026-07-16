@@ -18,7 +18,7 @@ app_name = 'api'
 
 urlpatterns = [
     #
-    # path('unit-options/', views.get_unit_options,),
+    path('unit-options/', views.get_unit_options,),
     # path('estimate-options/', views.get_estimate_options, ),
     path('get_estimate_name/', views.get_estimate_name, ),
     path('get_current_client/', views.get_current_client),

@@ -1,7 +1,7 @@
 from django.db import models
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes  # 💡 permission_classes を追加
 from rest_framework.permissions import IsAuthenticated
@@ -16,24 +16,22 @@ def user_list_call(request):
 
 
 @api_view(['GET'])
-def user_list(request, client_id):
+def user_list(_request, client_id):
     users = User.objects.order_by("user_no").exclude(user_name="").exclude(user_name__isnull=True).filter(client_id=client_id).all()
     serializer = UserSerializer(users, many=True)
     return Response(serializer.data)
 
 
 @api_view(["DELETE"])
-def user_detail(request, pk):
+@permission_classes([IsAuthenticated])  # 💡 ログイン必須にする（未ログインなら 401 応答）
+def user_detail(_request, pk):
+    instance = get_object_or_404(User, pk=pk)
     try:
-        instance = User.objects.get(pk=pk)
-        try:
-            instance.delete()
-            return JsonResponse({'success': True}, status=status.HTTP_200_OK)
-        except models.ProtectedError:
-            msg = f'「{instance.user_name}」は他で使われているため削除ができません'
-            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
-    except User.DoesNotExist:
-        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
+        instance.delete()
+        return JsonResponse({'success': True}, status=status.HTTP_200_OK)
+    except models.ProtectedError:
+        msg = f'「{instance.user_name}」は他で使われているため削除ができません'
+        return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

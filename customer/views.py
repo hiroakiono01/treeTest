@@ -2,7 +2,7 @@ import csv
 import io
 
 from django.db import models
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -49,13 +49,11 @@ def customer_list(request, client_id):
 @api_view(["PUT", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def customer_detail(request, pk):
-    try:
-        instance = Customer.objects.get(pk=pk)
-    except Customer.DoesNotExist:
-        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
+    # 💡 見つからない場合は自動的に 404 エラー（APIException）を返してくれる
+    instance = get_object_or_404(Customer, pk=pk)
 
-    # 1. 削除（DELETE）処理の共通化
     if request.method == "DELETE":
+        # 1. 削除（DELETE）処理の共通化
         try:
             instance.delete()
             return Response({'success': True}, status=status.HTTP_200_OK)
@@ -81,7 +79,7 @@ def customer_detail(request, pk):
                 {"customer_no": ["この得意先管理番号は既に他の得意先に登録されています。"]},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    # serializer = CustomerSerializer(instance, data=request.data, partial=True)
+
     serializer = CustomerSerializer(instance, data=request.data, partial=(request.method == "PATCH"))
 
     if serializer.is_valid():
@@ -91,107 +89,6 @@ def customer_detail(request, pk):
         # バリデーションエラー時はシリアライザのエラーをそのまま返す
         # これによりJSの .catch(err => { ... }) で項目ごとにエラー表示が可能
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def bulk_sync_customersjj(request):
-#     data_list = request.data
-#     response_data = []
-#
-#     try:
-#         with transaction.atomic():
-#             # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
-#             for index, item in enumerate(data_list):
-#                 raw_id = item.get('id')
-#                 # 元のデータを汚さないようにコピー
-#                 save_data = item.copy()
-#
-#                 if isinstance(raw_id, str) and raw_id.startswith('u'):
-#                     # 1. シリアライザのバリデーションを通すため、save_data から 'id' キーごと完全に削除する
-#                     save_data.pop('id', None)
-#
-#                     # 2. シリアライザに余計なフィールドを渡さない（エラー防止）
-#                     serializer = CustomerSerializer(data=save_data)
-#                     instance_exists = False
-#                 else:
-#                     # 💡 既存データの更新
-#                     instance = Customer.objects.filter(id=raw_id).first()
-#                     if not instance:
-#                         raise ValueError({'error': f'{index + 1}件目のデータ（ID: {raw_id}）がデータベースに存在しません。'})
-#
-#                     serializer = CustomerSerializer(instance, data=save_data, partial=True)
-#
-#                     instance_exists = True
-#
-#                 if serializer.is_valid():
-#                     saved_instance = serializer.save()
-#                     # 保存後のオブジェクトから、正式に出力用データを生成
-#                     result_item = CustomerSerializer(saved_instance).data
-#                     # マッピングの記録（後続の子要素のため）
-#                     if not instance_exists:
-#                         result_item['customer_id'] = raw_id
-#
-#                     response_data.append(serializer.data)
-#                 else:
-#                     error_message = {
-#                         'error': f'{index + 1}件目のデータ（送信ID: {raw_id}）のバリデーションに失敗しました。',
-#                         'details': serializer.errors
-#                     }
-#                     raise ValueError(error_message)
-#
-#         return Response({
-#             'status': 'success',
-#             'data': response_data
-#         }, status=status.HTTP_200_OK)
-#
-#     except ValueError as e:
-#         # 発生したエラーメッセージの辞書をそのまま400エラーとして返す
-#         return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
-#
-# @api_view(['POST'])
-# def bulk_sync_references(request):
-#     data_list = request.data
-#     response_data = []
-#     id_map = {}
-#
-#     # enumerate を使って、データの並び順（0, 1, 2...）を index として取得します
-#     for index, item in enumerate(data_list):
-#         temp_id = item.get('id')
-#         parent_val = item.get('parent')
-#         item['sort_order'] = index
-#
-#         is_temp_id = (
-#                 temp_id is None or
-#                 temp_id == "" or
-#                 (isinstance(temp_id, str) and temp_id.startswith('u'))
-#         )
-#         instance = None
-#         if not is_temp_id:
-#             # 既存データをDBから探す（エラーにならないように filter().first() を使用）
-#             instance = Reference.objects.filter(id=temp_id).first()
-#
-#         if instance:
-#             # 【更新】DBに存在する場合
-#             serializer = ReferenceSerializer(instance, data=item, partial=True)
-#         else:
-#             # 【新規】DBに存在しない、または一時IDの場合
-#             item.pop('id', None)  # IDを削除して新規作成として扱う
-#             serializer = ReferenceSerializer(data=item)
-#
-#         if serializer.is_valid():
-#             saved_instance = serializer.save()
-#
-#             # マッピングの記録（後続の子要素のため）
-#             if is_temp_id or not instance:
-#                 id_map[temp_id] = saved_instance.id
-#
-#             response_data.append(serializer.data)
-#         else:
-#             print(f"Serializer Error: {serializer.errors}")  # デバッグ用
-#             return Response(serializer.errors, status=400)
-#
-#     return Response(response_data, status=200)
 
 
 def customer_import(request):

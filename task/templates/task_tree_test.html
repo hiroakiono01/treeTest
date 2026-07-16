@@ -1,359 +1,310 @@
-<html lang="ja">
+{% extends 'base.html' %}
 
-<head>
-    {% load static %}
-    {% csrf_token %}
-    <!-- DHTMLX SuiteのJS/CSSを読み込み -->
-    <script src="{% static 'suite/suite.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'suite/suite.css' %}">
+{% block head %}
+<title>見積明細</title>
+{% endblock %}
 
-    <!-- 共通ユーティリティ -->
-    <script src="{% static 'js/utils.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'suite/myStyle.css' %}">
-</head>
+{% block contents %}
+
 <body>
-<div id="toolbar_container"></div>
-<div id="grid_container" style="width: 100%; height: 400px;"></div>
-<!--<style>-->
-<!--    /* 強制的に赤くする */-->
-<!--.dhx_form-group__label-required {-->
-<!--    color: #ff0000 !important;-->
-<!--}-->
-<!--/* エラー時のメッセージ自体の色も調整したい場合 */-->
-<!--.dhx_form-group__message&#45;&#45;error {-->
-<!--    color: #ff0000 !important;-->
-<!--}-->
-
-
-<!--</style>-->
-<style>
-
-<!--    /* コンテンツ全体を包むコンテナ */-->
-<!--    .main-container {-->
-<!--        max-width: 1200px;    /* 全体の最大幅（お好みで調整） */-->
-<!--        margin: 0 auto;       /* 左右を中央に寄せる */-->
-<!--        padding: 20px;        /* 左右に少し余白を作る */-->
-<!--    }-->
-
-<!--    /* 画面全体を中央寄せの土台にする */-->
-<!--    .grid-wrapper {-->
-<!--        display: flex;-->
-<!--        justify-content: center; /* 左右中央 */-->
-<!--        align-items: center;    /* 上下中央（必要なら） */-->
-<!--        height: 100vh;          /* 画面全体の高さ */-->
-<!--        background-color: #f5f5f5;-->
-<!--    }-->
-
-<!--    /* Gridのサイズを指定 */-->
-<!--    #grid_container {-->
-<!--        width: 100%;             /* 画面幅の80% */-->
-<!--        max-width: 1000px;      /* 広がりすぎないように制限 */-->
-<!--        height: 1000px;          /* 高さを指定（Suite 9は高さ指定が必須） */-->
-<!--        box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* 浮き出し効果 */-->
-<!--    }-->
-
-
-</style>
+<div id="layout-main-container" style="margin-top: 6rem;--layout-max-width: 1800px;"></div>
 <script>
+    // ==========================================
+    // 1.  VARIABLES  (変数の宣言とデータの準備）
+    // ==========================================
 
-</script>
-<script>
-    // 1. --- ツールバーの処理 ---
-    // 1.1 ツールバー設定（Unitの時と同じ構成）
-    const toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
-    toolbar.data.add([
-        { id: "add", type: "button", value: "新規追加", icon: "mi-plus", color: "primary" },
-    ]);
-    // 1.2. ツールバーのクリックイベント
-    toolbar.events.on("click", function(id) {
-        if (id === "add") {
-            addRow(); // 前に作った関数を呼ぶ
-        }
-    })
-
-    // 2. --- モーダルウインドウの準備 ---
-    //  2.1 ウィンドウとフォームの準備
-    const dhxWindow = new dhx.Window({
-        width: 400,
-        height: 400,
-        title: "新規",
-        modal: true
-    });
-    // 2.2 フォームの準備
-    const form = new dhx.Form(null, {
-        rows: [
-            { type: "input", name: "id", hidden: true }, // 見えないが値は保持される
-            {
-                name: "estimate_no",
-                type: "input",
-                label: "摘要",
-                required: true
-            },
-            {
-                type: "button",
-                name: "save",
-                text: "保存",
-                view: "flat",
-                color: "primary"
+    const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+    layout.getCell("sidebar_container").hide();
+    let treeGrid = null;
+    const columns = [
+        {id: "id", header: [{text: "ID"}], hidden: false, isTreeColumn: true},
+        {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
+        {id: "estimate_no", header: [{text: "工事番号"}], hidden: true,},
+        {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
+        {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}],},
+        {
+            id: "calcu_cls",
+            width: 100,
+            header: [{text: "計算区分", align: "center"}],
+            editable: false,
+            editorType: "select", // セレクトボックス形式
+            options: [
+                {id: "0", value: "加算対象"},
+                {id: "1", value: "加算しない"},
+                {id: "2", value: "税抜合計"},
+                {id: "3", value: "消費税"}
+            ],
+            // 💡 セルにカスタムCSSクラスを適用するための関数
+            htmlEnable: true,
+            css: function (value, row, col) {
+                // 区分が "2" または "3" の場合はグレーにするクラスを返す
+                if (row.calcu_cls === "2" || row.calcu_cls === "3") {
+                    return "cell-disabled";
+                }
+                return "";
             }
-        ]
+        },
+        {id: "budget_quantity", header: [{text: "予算数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
+        {id: "budget_unit_display", header: [{text: "予算単位", align: "center"}], editorType: "combobox", width: 100, options: [], align: "center"},
+        {id: "budget_price", header: [{text: "予算単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
+        {
+            id: "budget_amount",
+            header: [{text: "予算金額", align: "center"}],
+            footer: [{text: ({sum}) => sum, align: "right"}],
+            summary: "sum",
+            type: "string",
+            numberMask: {customFormat: "#,##0"},
+            align: "right"
+        },
+        {id: "markup_rate", width: 70, header: [{text: "掛率", align: "center"}], align: "right"},
+        {id: "quantity", header: [{text: "見積数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
+        {id: "unit_display", header: [{text: "見積単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
+        {
+            id: "amount",
+            header: [{text: "見積金額", align: "center"}], type: "string",
+
+            numberMask: {groupSeparator: ","},
+            footer: [{text: ({sum}) => sum, align: "right"}],
+            summary: "sum",
+            numberMask: {customFormat: "#,##0"}, align: "right",
+        },
+        {id: "parent", header: [{text: "parent"}], hidden: true},
+        {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
+        {
+            id: "actions",
+            header: [{text: "Actions", tooltip: true, align: "center"}],
+            mark: () => "dhx-demo_color--gray",
+            template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
+            align: "center",
+            tooltip: false,
+            editable: false,
+            sortable: false,
+            htmlEnable: true,
+        }
+    ];
+    // ===================================================
+    // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
+    // ===================================================
+
+
+    // const dataset = new dhx.TreeCollection()
+
+    treeGrid = new dhx.Grid(null, {
+        type: "tree",
+        columns,
+        rootParent: null,
+        //data: dataset // 階層構造を持つデータ
     });
-    dhxWindow.attach(form);
 
+    // 💡 修正した「grid_cell」にGridをアタッチ
+    layout.getCell("grid_cell").attach(treeGrid);
 
+    // Windowと通常Gridのインスタンス保持用変数
+    let editWindow = null;
+    let editGrid = null;
+    let currentParentId = null;
 
-    // 4. DRFからデータの読み込む（Django の API から取得する場合）
-    const dataset = new dhx.TreeCollection();
-    fetch(`/task/tasks_test/`, {
-        headers: {'Accept': 'application/json' }
+    // ===================================================
+    // 3. DATA LOADING （データ通信・サーバーとのやり取り）
+    // ===================================================
+    let estimateNo = 1
+    // 1. Unit一覧を取得してGridのプルダウンに反映 ---
+    const unitFields = ["budget_unit"]
+    fetch("/api/unit-options/")
+        .then(res => res.json())
+        .then(data => {
+            const formattedUnits = data.units.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+
+            const currentColumns = editGrid.config.columns.map(col => {
+                if (unitFields.includes(col.id)) {
+                    return {...col, options: formattedUnits};
+                }
+                return col;
+            });
+
+            editGrid.setColumns(currentColumns);
+            editGrid.paint();
+
         })
+        .catch(err => console.error("unitデータ取得失敗:", err));
+    
+    fetch(`/task/lists/${estimateNo}/`, {
+        headers: {'Accept': 'application/json'}
+    })
         .then(response => response.json())
         .then(data => {
-            console.log("--- Data Check Start ---");
-            console.log("データの型:", typeof data);
-            console.log("データの生中身:", data);
-
-            if (Array.isArray(data)) {
-                data.forEach((item, index) => {
-                    if (item.data) {
-                        console.log(`インデックス ${index} (ID: ${item.id}) に子要素 'data' を発見:`, item.data);
-                    }
-                });
-            } else {
-                console.error("エラー: データが配列形式ではありません。");
-            }
-            console.log("--- Data Check End ---");
-
-
-
-
-            grid.data.parse(data);
-            //grid.data.load("/task/tasks_test/");
-            // grid.expandAll();
+            treeGrid.data.parse(data)
+            // ここでloadイベントが発生し計算が走る
+            //treeGrid.collapseAll();
         });
-        //.catch(error => console.error("Error:", error));
 
+    // ==========================================
+    // 2. TreeGridのセルクリックイベント
+    // ==========================================
+    // ==========================================
+    // 2. TreeGridのセルクリックイベント（ここを丸ごと差し替えてください）
+    // ==========================================
+    treeGrid.events.on("cellClick", function (row, col, e) {
+        currentParentId = row.id;
 
+        // 選択された行の直下にある子要素（配列）を取得
+        const childItems = treeGrid.data.getItems(currentParentId);
 
-    // 5. Gridの初期化
-    const grid = new dhx.Grid("grid_container", {
-        type: "tree",
-        columns: [
-            { id: "id", header: [{ text: "ID" }], hidden: true , isTreeColumn: true },
-            {
-                id: "task_name",
-                header: [{ text: "名称" , align: "center"}],
-                //isTreeColumn: true, // この列に 展開/折りたたみ アイコンを表示
-                gravity: 1.5 },
-            { id: "material_dimensions", header: [{ text: "材質・寸法" , align: "center"}], },
-            {
-                id: "budget_quantity",
-                header: [{ text: "予算数量", align: "center"}],
-                type: "number",
-                numberMask: { maxDecLength: 2 }
-            },
-            {
-                id: "budget_unit",
-                header: [{ text: "予算単位", align: "center"}],
-            },
-            {
-                id: "budget_price",
-                header: [{ text: "予算単価", align: "center"}],
-                type: "number",
-                numberMask: { maxDecLength: 2 }
-            },
-            {
-                id: "budget_amount",
-                header: [{ text: "予算金額", align: "center"}],
-                type: "number" ,
-            },
-            {
-                id: "markup_rate",
-                header: [{ text: "掛率", align: "center"}],
-                type: "number" ,
-            },
-            {
-                id: "quantity",
-                header: [{ text: "見積数量", align: "center"}],
-                type: "number",
-                numberMask: { maxDecLength: 2 }
-            },
-            {
-                id: "unit",
-                header: [{ text: "見積単位", align: "center"}],
-            },
-            {
-                id: "price",
-                header: [{ text: "見積単価", align: "center"}],
-                type: "number",
-                numberMask: { maxDecLength: 2 }
-            },
-            {
-                id: "amount",
-                header: [{ text: "見積金額", align: "center"}],
-                type: "number" ,
-            },
-            {
-                id: "parent", header: [{ text: "parent"}],
-            },
-            {
-                id: "sort_order", header: [{ text: "sort_order"}]
-            },
-            {
-                id: "action",
-                header: [{ text: "修正" , align: "center"}],
-                align: "center",
-                width: 80,
-                htmlEnable: true,
-                template: () => "<button class='dxi dxi-pencil'>修正</button>"
-            },
-            { id: "delete", header: [{ text: "削除" , align: "center"}], align: "center",  width: 80, htmlEnable: true,
-            template: () => "<button class='dxi dxi-delete' >削除</button>"
-            }
-        ],
-        autoWidth: true,
-       // rootParent: null
-
-    });
-    // Grid.data.pase(dataset); // 作成した DataCollection を直接紐付ける
-
-    // 6. --- イベント制御 ---
-
-    // 6.1 新規作成のウインドウを表示する
-    function addRow() {
-        if (form) {
-            form.clear({});
-            }
-        dhxWindow.header.data.update("title", { value: "新規登録" });
-        dhxWindow.setPosition(100, 50);
-        dhxWindow.paint();
-        dhxWindow.show();
-    }
-
-    // 6.2 グリッド内の「編集」ボタンクリック時
-    grid.events.on("cellClick", (row, col) => {
-        if (col.id === "action") {
-            form.setValue(row); // 選択した行のデータをフォームにセット
-            dhxWindow.header.data.update("title", { value: "編集"});
-            dhxWindow.paint();
-            dhxWindow.show();
+        // 既にWindowが開いている場合は重複防止のため一度破棄する
+        if (editWindow) {
+            editWindow.destructor();
         }
-    });
 
-    // 7. 保存ボタンの処理
-    form.getItem("save").events.on("click", () => {
-
-        const formData = form.getValue();
-        const isNew = !formData.id || formData.id === "";
-
-        const url = isNew ? "/unit/units/" : `/unit/units/${formData.id}/`;
-        const method = isNew ? "POST" : "PUT";
-
-        // Djangoへ送信
-        fetch(url, {
-            method: method,
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCookie('csrftoken') // DjangoのCSRF対策
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(res => {
-            if(!res.ok) {
-                return res.json().then(err => { throw err; });
-            }
-            return res.json();
-        })
-        .then(result => {
-
-            // 3. 成功時の処理（DRFは成功時にオブジェクトを返す）
-            dhx.message({
-                text: isNew ? "追加されました" : "更新されました",
-                css: "dhx_widget--bg_success",
-                expire: 3000
-            });
-            dhxWindow.hide();
-
-            grid.data.removeAll();
-            fetch("/unit/units/")
-                .then(response => response.json())
-                .then(data => {
-                    grid.data.parse(data);
-                });
-
-        })
-        .catch(err => {
-            console.error("Error details:", err);
-            let mainMessage = "入力内容を確認してください";
-            // サーバーからのバリデーションエラーがある場合
-            if (typeof err === "object" && err !== null) {
-                for (const fieldId in err) {
-                    const item = form.getItem(fieldId);
-                    if (item) {
-                        const errorMsg = Array.isArray(err[fieldId]) ? err[fieldId][0] : err[fieldId];
-                        item.setProperties({
-                            error: true,
-                            errorMessage: errorMsg
-                        });
-                        mainMessage = errorMsg;
-                    }
-                }
-            } else {
-                // 通信断絶などの致命的エラー
-                mainMessage = "サーバーとの通信に失敗しました";
-            }
-            // 2. トースト（メッセージ）を表示
-            dhx.message({
-                text: mainMessage,
-                css: "dhx_widget--bg_danger", // Suite 9 の赤い背景
-                expire: 6000,                // 6秒間表示
-                node: document.body
-            });
+        // --- ① ウィンドウ（Window）の初期化 ---
+        editWindow = new dhx.Window({
+            title: `「${row.task_name || row.id}」の子階層を編集`,
+            width: 1800,
+            height: 450,
+            modal: true,    // 背景をロック
+            closable: true, // 右上の×ボタン
+            movable: true,  // ドラッグ可能
+            resizable: true // サイズ変更可能
         });
-    });
 
-    // 8. 削除処理
-    // 削除ボタンの即時実行
-    grid.events.on("cellClick", (row, col) => {
-        if (col.id === "delete") {
-            if (confirm("即時に削除しますか？")) {
-                // サーバーへ削除リクエスト
-                fetch(`/unit/units/${row.id}/`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+        // --- ② ウィンドウ内部を「上（ボタン）」「下（Grid）」の2行に分割するレイアウトを作る ---
+        // HTML文字列（<div id="...">）を使わず、DHTMLXの機能で枠を組むためエラーが起きません
+        const layout = new dhx.Layout(null, {
+            rows: [
+                {id: "toolbar_cell", height: "auto"}, // 上段：ボタン用の領域
+                {id: "grid_cell"}                     // 下段：通常Grid用の領域
+            ]
+        });
+
+        // Windowにレイアウトを結合し、表示
+        editWindow.attach(layout);
+        editWindow.show();
+
+        // --- ③ 上段に Toolbar（ボタン群）を配置 ---
+        const toolbar = new dhx.Toolbar(null, {
+            css: "dhx_widget--bg-white",
+            data: [
+                {id: "add", value: "同じレベルに項目追加", type: "button", circle: true},
+                {id: "save", value: "変更を保存", type: "button", color: "primary"}
+            ]
+        });
+        layout.getCell("toolbar_cell").attach(toolbar);
+
+
+        // --- ④ 下段に 編集用の通常Grid を配置 ---
+        editGrid = new dhx.Grid(null, {
+            columns: [
+                {id: "id", header: [{text: "ID"}], hidden: false},
+                {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
+                {id: "estimate_no", header: [{text: "工事番号"}], editable: true},
+                {id: "task_name", header: [{text: "名称"}], editable: true, width: 200, footer: [{text: "合計"}]},
+                {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}], editable: true,},
+                {
+                    id: "calcu_cls",
+                    width: 100,
+                    header: [{text: "計算区分", align: "center"}],
+                    editable: true,
+                    editorType: "select", // セレクトボックス形式
+                    options: [
+                        {id: "0", value: "加算対象"},
+                        {id: "1", value: "加算しない"},
+                        {id: "2", value: "税抜合計"},
+                        {id: "3", value: "消費税"}
+                    ],
+                    // 💡 セルにカスタムCSSクラスを適用するための関数
+                    htmlEnable: true,
+                    css: function (value, row, col) {
+                        // 区分が "2" または "3" の場合はグレーにするクラスを返す
+                        if (row.calcu_cls === "2" || row.calcu_cls === "3") {
+                            return "cell-disabled";
                         }
-                    })
-                .then(res => {
-                    if (!res.ok) {
-                        return res.json().then(err => { throw err; });
+                        return "";
                     }
-                    return res.json();
-                })
-                .then(result => {
-                    grid.data.remove(row.id);
-                    dhx.message({
-                        text: "削除しました",
-                        css: "dhx_widget--bg_success",
-                        expire: 3000
+                },
+                {id: "budget_quantity", header: [{text: "予算数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right", editable: true},
+                {
+                    id: "budget_unit",
+                    header: [{text: "予算単位", align: "center"}],
+                    editorType: "combobox",
+                    width: 100,
+                    options: [],
+                    align: "center",
+                    editable: true
+                },
+                {id: "budget_price", header: [{text: "予算単価", align: "center"}], type: "number", numberMask: {maxDecLength: 2}},
+                {id: "budget_amount", header: [{text: "予算金額", align: "center"}], type: "number", footer: [{text: ({sum}) => sum}], summary: "sum", numberMask: {customFormat: "#,##0"},},
+                {id: "markup_rate", width: 70, header: [{text: "掛率", align: "center"}], type: "number",},
+                {id: "quantity", header: [{text: "見積数量", align: "center"}], type: "number", numberMask: {maxDecLength: 2}},
+                {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: []},
+                {id: "price", header: [{text: "見積単価", align: "center"}], type: "number", numberMask: {maxDecLength: 2}},
+                {
+                    id: "amount",
+                    header: [{text: "見積金額", align: "center"}],
+                    type: "number",
+                    numberMask: {groupSeparator: ","},
+                    footer: [{text: ({sum}) => sum}],
+                    summary: "sum",
+                    numberMask: {customFormat: "#,##0"},
+                },
+                {id: "parent", header: [{text: "parent"}], hidden: true},
+                {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
+                {
+                    id: "actions",
+                    header: [{text: "Actions", tooltip: true, align: "center"}],
+                    mark: () => "dhx-demo_color--gray",
+                    template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
+                    align: "center",
+                    tooltip: false, editable: false, sortable: false, htmlEnable: true,
+                }
+            ],
+            // 元のツリーデータを汚さないように複製してロード
+            data: JSON.parse(JSON.stringify(childItems))
+        });
 
-                    });
+        layout.getCell("grid_cell").attach(editGrid);
 
-                })
-                .catch(err => {
-                    const errorMsg = err.detail || err.message || "削除に失敗しました";
-                    dhx.message({
-                        text: errorMsg,
-                        css: "dhx_widget--bg_danger", // 赤いトースト
-                        expire: 6000
-                    });
-
+        // ==========================================
+        // 3. ボタンイベントの実装（DHTMLX Toolbarのイベント機能を使用）
+        // ==========================================
+        // ※注意: 従来の document.getElementById().onclick 方式を完全に廃止しました。
+        // これにより「Cannot set properties of null (setting 'onclick')」は100%発生しなくなります。
+        toolbar.events.on("click", function (id) {
+            if (id === "add") {
+                // 【同じレベルに項目追加】ボタンが押されたとき
+                const newId = "new_item_" + Date.now();
+                editGrid.data.add({
+                    id: newId,
+                    task_name: "新しい項目",
+                    estimate_no: row.estimate_no || ""
+                });
+            } else if (id === "save") {
+                // 【変更を保存】ボタンが押されたとき
+                // 1. TreeGrid側の古い子要素を一度すべて削除
+                const oldChildren = treeGrid.data.getItems(currentParentId);
+                oldChildren.forEach(function (child) {
+                    treeGrid.data.remove(child.id);
                 });
 
-            }
-        }
-    });
+                // 2. 通常Gridから最新の編集後データを取得
+                const updatedData = editGrid.data.serialize();
 
+                // 3. 取得したデータをTreeGridの指定した親（currentParentId）の直下に再挿入
+                updatedData.forEach(function (item) {
+                    treeGrid.data.add(item, -1, currentParentId);
+                });
+
+                // 4. ウィンドウを閉じてメモリを解放
+                editWindow.hide();
+                editWindow.destructor();
+                editWindow = null;
+            }
+        });
+    });
 </script>
 </body>
-</html>
+{% endblock %}

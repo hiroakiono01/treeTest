@@ -16,14 +16,14 @@ def segment_list_call(request):
 
 
 @api_view(['GET'])
-def segment_list(request, client_id):
+def segment_list(_request, client_id):
     segments = Segment.objects.order_by("segment_no").exclude(segment_name="").exclude(segment_name__isnull=True).filter(client_id=client_id).all()
     serializer = SegmentSerializer(segments, many=True)
     return Response(serializer.data)
 
 
 @api_view(["DELETE"])
-def segment_detail(request, pk):
+def segment_detail(_request, pk):
     try:
         instance = Segment.objects.get(pk=pk)
         try:

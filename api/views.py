@@ -3,25 +3,27 @@
 # from rest_framework import renderers
 from django.http import JsonResponse
 from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
-from app.models import Estimate, CurrentClient, Client, Fiscalyear, Customer, Segment, Construction, User
+from app.models import Estimate, CurrentClient, Client, Fiscalyear, Customer, Segment, Construction, User, Unit
 
 
 def index(request):
     return render(request, 'index.html')
 
 
-# @api_view(['GET'])
-# def get_unit_options(request):
-#     # combobox の場合はid,valueでselectは使えない
-#     unit_options = [
-#         {
-#             "id": unit.id,  # 文字型として代入
-#             "value": unit.unit_name  # 文字列型（表示名）
-#         }
-#         for unit in Unit.objects.order_by("unit_no").all()
-#     ]
-#     return Response({"units": unit_options})
+@api_view(['GET'])
+def get_unit_options(request):
+    # combobox の場合はid,valueでselectは使えない
+    unit_options = [
+        {
+            "id": unit.id,  # 文字型として代入
+            "value": unit.unit_name  # 文字列型（表示名）
+        }
+        for unit in Unit.objects.order_by("unit_no").all()
+    ]
+    return Response({"units": unit_options})
 
 
 # @api_view(['GET'])
@@ -71,7 +73,7 @@ def get_estimate_name(request):
     return JsonResponse({'estimate_name': ''}, status=404)
 
 
-def get_fiscalyears(request, client_id):
+def get_fiscalyears(_request, client_id):
     # データベースから全年度を取得
     years = Fiscalyear.objects.all().filter(client_id=client_id).order_by('-id')  # 必要に応じてソート
 
@@ -88,7 +90,7 @@ def get_fiscalyears(request, client_id):
     return JsonResponse(data, safe=False)
 
 
-def get_users(request, client_id, use_flg):
+def get_users(_request, client_id, use_flg):
     if use_flg == "0":
         users = User.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('user_no')  # 必要に応じてソート
     else:
@@ -103,7 +105,7 @@ def get_users(request, client_id, use_flg):
     return JsonResponse(data, safe=False)
 
 
-def get_customers(request, client_id, use_flg):
+def get_customers(_request, client_id, use_flg):
     if use_flg == "0":
         customers = Customer.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('customer_no')  # 必要に応じてソート
     else:
@@ -118,7 +120,7 @@ def get_customers(request, client_id, use_flg):
     return JsonResponse(data, safe=False)
 
 
-def get_segments(request, client_id, use_flg):
+def get_segments(_request, client_id, use_flg):
     if use_flg == "0":
         segments = Segment.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('segment_no')  # 必要に応じてソート
     else:
@@ -134,7 +136,7 @@ def get_segments(request, client_id, use_flg):
     return JsonResponse(data, safe=False)
 
 
-def get_constructions(request, client_id):
+def get_constructions(_request, client_id):
     constructions = Construction.objects.all().filter(client_id=client_id).order_by('construction_no')  # 必要に応じてソート
     data = [
         {

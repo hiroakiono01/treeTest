@@ -116,7 +116,7 @@
     fetch("/api/get_current_client/")
         .then(res => res.json())
         .then(data => {
-            const client_id = data['current-client'].client_id;
+            client_id = data['current-client'].client_id;
             const client_no = data['current-client']['client_no'];
             const client_name = data['current-client']['client_name'];
 

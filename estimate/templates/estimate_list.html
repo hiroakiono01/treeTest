@@ -77,7 +77,7 @@
                 type: "input",
                 label: "事業者",
                 required: false,
-                hidden: true
+                hidden: false
             },
             {type: "input", name: "id", hidden: true}, // 見えないが値は保持される
             {
@@ -273,7 +273,7 @@
                         labelWidth: "130px"
                     },
                     {
-                        name: "user",
+                        name: "estimate_person",
                         type: "combo",
                         label: "担当者",
                         required: false,
@@ -719,27 +719,26 @@
             // 得意先のデータセット
             const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
             q_customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-            // 部門のデータセット
-            const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
-            q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-            // 利用者のデータセット
-            const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
-            q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-            // 得意先のデータセット
             const customerNameCombo = form.getItem("customer").getWidget();
             customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
             // 部門のデータセット
+            const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
+            q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
             const segmentNameCombo = form.getItem("segment").getWidget();
             segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-            // 利用者のテータセット
-            const userNameCombo = form.getItem("user").getWidget();
+            // 利用者のデータセット
+            const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
+            q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+            const userNameCombo = form.getItem("estimate_person").getWidget();
             userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-            // --共通--
+            // --共通-- 工事区分のデータセット
             const constructionNameCombo = form.getItem("construction").getWidget();
             constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
-
             const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
             q_constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
+
+            //use_flg = "9";
+            // reloadCombo(use_flg)
             // combo の場合は getWidget() でオブジェクトを取得して parse する
             // const comboWidget = form.getItem("q_customer").getWidget();
             // fetch(`/api/customers/${client_id}/`)
@@ -785,29 +784,19 @@
     // 6. --- イベントの処理 ---
     // 6.1 新規作成のウインドウを表示する
     function addRow() {
+        console.log('client_id', client_id)
         // 新規時は「利用中のみ（フラグ: 1）」でコンボを更新
         let use_flg = "0";
-        reloadCustomerCombo(use_flg);
-        reloadSegmentCombo(use_flg);
-        reloadUserCombo(use_flg);
+        reloadCombo(use_flg)
+        // reloadCustomerCombo(use_flg);
+        // reloadSegmentCombo(use_flg);
+        // reloadUserCombo(use_flg);
         if (form) {
             form.clear({});
             form.setValue({markup_rate: client_markup_rate});
-            form.setValue({client_id: client_id})
+            form.setValue({client: client_id})
             //form.setValue({client_no:client_no})
             //form.setValue({client_name:client_name})
-            // let use_flg;
-            // use_flg = "0";
-            // // 得意先のデータセット
-            // const customerNameCombo = form.getItem("customer").getWidget();
-            // customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-            // // 部門のデータセット
-            // const segmentNameCombo = form.getItem("segment").getWidget();
-            // segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-            // // 利用者のテータセット
-            // const userNameCombo = form.getItem("user").getWidget();
-            // userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-            // console.log('client_markup_rate', client_markup_rate);
         }
         dhxWindow.header.data.update("title", {value: "新規登録"});
         dhxWindow.setPosition(100, 50);
@@ -817,11 +806,23 @@
 
     // 6.2 グリッド内の「編集」ボタンクリック時
     grid.events.on("cellClick", (row, col) => {
+
         if (col.id === "action") {
-            form.setValue(row); // 選択した行のデータをフォームにセット
-            dhxWindow.header.data.update("title", {value: "編集"});
-            dhxWindow.paint();
-            dhxWindow.show();
+            let use_flg = "9";
+
+            // 1. まずコンボボックスのデータをリロードする（通信開始）
+            reloadCombo(use_flg).then(() => {
+
+                // 2. 通信が【すべて完了した後に】データをフォームにセットする
+                form.setValue(row);
+
+                dhxWindow.header.data.update("title", {value: "編集"});
+                dhxWindow.paint();
+                dhxWindow.show();
+
+            }).catch(err => {
+                console.error("データの読み込みに失敗しました:", err);
+            });
         }
     });
 
@@ -895,9 +896,10 @@
         const formData = form.getValue();
         console.log("送信データ:", formData);
         const isNew = !formData.id || formData.id === "";
-        console.log("送信データ:", formData);
+        //console.log("送信データdesu:", formData, 'sql',sql);
+        let sql = "null"
         // 6.3.3. 新規(POST)か更新(PUT)の判定
-        const url = isNew ? `/estimate/add/${client_id}/` : `/estimate/estimates/${formData.id}/`;
+        const url = isNew ? `/estimate/lists/${client_id}/${sql}/` : `/estimate/detail/${formData.id}/`;
         const method = isNew ? "POST" : "PUT";
         // 6.3.4. 通信開始
         fetch(url, {
@@ -917,7 +919,7 @@
                 }
                 return res.json();
             })
-            .then(result => {
+            .then(() => {
                 dhx.message({
                     text: isNew ? "追加されました" : "更新されました",
                     css: "dhx_widget--bg_success",
@@ -938,14 +940,6 @@
             })
             .then(data => {
                 if (data) grid.data.parse(data);
-                // grid.data.forEach(row => {
-                //     if (row.estimate_year) years.push(Number(row.estimate_year));
-                // });
-
-                // if (years.length > 0) {
-                //     const maxYear = Math.max(...years);
-                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
-                // }
             })
             .catch(err => {
                 console.error(err);
@@ -1025,52 +1019,46 @@
     });
 
     // 得意先コンボのデータを状況に応じて読み直す共通関数
-    function reloadCustomerCombo(useFlgValue) {
+    // 得意先コンボのデータを状況に応じて読み直す共通関数
+    function reloadCombo(useFlgValue) {
+        const promises = []; // 各通信の完了を監視するための配列
+
+        // 1. まず現在のCombo（またはDataCollection）のデータをすべてクリアする
         const customerNameCombo = form.getItem("customer").getWidget();
         if (customerNameCombo) {
-            // 1. 選択されている値をクリア
             customerNameCombo.clear();
-            // 2. 既存の選択肢リスト（データストア）を完全に削除【重要】
             customerNameCombo.data.removeAll();
-            // 3. 新しいフラグを元にサーバーからデータを再読み込み
             const apiUrl = `/api/customers/${client_id}/${useFlgValue}/`;
-            customerNameCombo.data.load(apiUrl).then(() => {
-                console.log(`得意先リストを更新しました (use_flg: ${useFlgValue})`);
-            });
-        }
-    }
 
-    // 部門コンボのデータを状況に応じて読み直す共通関数
-    function reloadSegmentCombo(useFlgValue) {
+            // load()が返すPromiseを配列に追加
+            promises.push(customerNameCombo.data.load(apiUrl));
+        }
+
         const segmentNameCombo = form.getItem("segment").getWidget();
         if (segmentNameCombo) {
-            // 1. 選択されている値をクリア
             segmentNameCombo.clear();
-            // 2. 既存の選択肢リスト（データストア）を完全に削除【重要】
             segmentNameCombo.data.removeAll();
-            // 3. 新しいフラグを元にサーバーからデータを再読み込み
             const apiUrl = `/api/segments/${client_id}/${useFlgValue}/`;
-            segmentNameCombo.data.load(apiUrl).then(() => {
-                console.log(`部門リストを更新しました (use_flg: ${useFlgValue})`);
-            });
+
+            // load()が返すPromiseを配列に追加
+            promises.push(segmentNameCombo.data.load(apiUrl));
         }
+
+        const userNameCombo = form.getItem("estimate_person").getWidget(); // userから修正されていますね、OKです！
+        if (userNameCombo) {
+            userNameCombo.clear();
+            userNameCombo.data.removeAll();
+            const apiUrl = `/api/users/${client_id}/${useFlgValue}/`;
+
+            // load()が返すPromiseを配列に追加
+            promises.push(userNameCombo.data.load(apiUrl));
+        }
+
+        // すべてのコンボボックスのデータロード（通信）が完了したら通知する
+        return Promise.all(promises);
     }
 
-    // 利用者コンボのデータを状況に応じて読み直す共通関数
-    function reloadUserCombo(useFlgValue) {
-        const userNameCombo = form.getItem("user").getWidget();
-        if (userNameCombo) {
-            // 1. 選択されている値をクリア
-            userNameCombo.clear();
-            // 2. 既存の選択肢リスト（データストア）を完全に削除【重要】
-            userNameCombo.data.removeAll();
-            // 3. 新しいフラグを元にサーバーからデータを再読み込み
-            const apiUrl = `/api/users/${client_id}/${useFlgValue}/`;
-            userNameCombo.data.load(apiUrl).then(() => {
-                console.log(`利用者リストを更新しました (use_flg: ${useFlgValue})`);
-            });
-        }
-    }
+
 </script>
 </body>
 

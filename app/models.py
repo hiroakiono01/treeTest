@@ -347,7 +347,7 @@ class Customer(models.Model):
     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
     def __str__(self):
-        return str(self.customer_no) + " " + self.customer_name
+        return self.customer_name
 
     def get_group_cls_cha(self) -> str:
         if self.group_cls == '1':
@@ -416,7 +416,7 @@ class Unit(models.Model):
     updated_at = models.DateTimeField(verbose_name='更新日時', auto_now=True)
 
     def __str__(self):
-        return str(self.unit_name) + str(self.updated_at)
+        return str(self.unit_name) 
 
 
 class Process(models.Model):
@@ -441,7 +441,7 @@ class Process(models.Model):
             return "Consumption tax"
 
     def __str__(self):
-        return str(self.calcu_cls) + " " + str(self.processl_name)
+        return str(self.calcu_cls) + " " + str(self.process_name)
 
 
 class Aggregation(models.Model):

@@ -1,6 +1,6 @@
 from django.db import models
 from django.db import transaction
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -15,7 +15,7 @@ def fiscalyear_list_call(request):
 
 
 @api_view(['GET'])
-def fiscalyear_list(request, client_id):
+def fiscalyear_list(_request, client_id):
     fiscalyears = Fiscalyear.objects.order_by("-fiscalyear_no"). \
         exclude(fiscalyear_name="").exclude(fiscalyear_name__isnull=True).filter(client_id=client_id).all()
     serializer = FiscalyearSerializer(fiscalyears, many=True)
@@ -23,17 +23,16 @@ def fiscalyear_list(request, client_id):
 
 
 @api_view(["DELETE"])
-def fiscalyear_detail(request, pk):
+@permission_classes([IsAuthenticated])
+def fiscalyear_detail(_request, pk):
+    # 見つからない場合は自動的に 404 エラー（APIException）を返してくれる
+    instance = get_object_or_404(Fiscalyear, pk=pk)
     try:
-        instance = Fiscalyear.objects.get(pk=pk)
-        try:
-            instance.delete()
-            return Response({'success': True}, status=status.HTTP_200_OK)
-        except models.ProtectedError:
-            msg = f'「{instance.fiscalyear_name}」は他で使われているため削除がきません'
-            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
-    except Fiscalyear.DoesNotExist:
-        return Response({"detail": "対象が見つかりません"}, status=status.HTTP_404_NOT_FOUND)
+        instance.delete()
+        return Response({'success': True}, status=status.HTTP_200_OK)
+    except models.ProtectedError:
+        msg = f'「{instance.fiscalyear_name}」は他で使われているため削除がきません'
+        return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

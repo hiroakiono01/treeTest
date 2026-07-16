@@ -15,14 +15,14 @@ def unit_list_call(request):
 
 
 @api_view(['GET'])
-def unit_list(request, client_id):
+def unit_list(_request, client_id):
     units = Unit.objects.order_by("unit_no").exclude(unit_name="").exclude(unit_name__isnull=True).filter(client_id=client_id).all()
     serializer = UnitSerializer(units, many=True)
     return Response(serializer.data)
 
 
 @api_view(["DELETE"])
-def unit_detail(request, pk):
+def unit_detail(_request, pk):
     try:
         instance = Unit.objects.get(id=pk)
         try:

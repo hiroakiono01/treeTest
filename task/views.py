@@ -14,7 +14,7 @@ def task_list_call(request):
     return render(request, 'task_list.html')
 
 
-def task_tree_test_call(request):
+def task_tree_test(request):
     return render(request, 'task_tree_test.html')
 
 
