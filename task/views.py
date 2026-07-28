@@ -1,10 +1,8 @@
 from django.db import models
-from django.db import models
 from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
 
 from api.serializers import TaskSerializer
 from app.models import Task
@@ -19,11 +17,11 @@ def task_tree_test(request):
 
 
 @api_view(['GET', 'POST'])
-def tree_list_test(request):
+def tree_list_test(request, client_id):
     # estimate_no = request.query_params.get('estimate_no')
     # estimate_no = 1
     if request.method == 'GET':
-        tasks = Task.objects.all()
+        tasks = Task.objects.filter(client_id=client_id).all()
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
@@ -118,10 +116,6 @@ def task_detail(request, pk):
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from app.models import Unit
-from api.serializers import UnitSerializer
-
-from django.shortcuts import get_object_or_404
 
 
 @api_view(['POST'])
@@ -174,4 +168,3 @@ def bulk_sync_tasks(request):
             return Response(serializer.errors, status=400)
 
     return Response(response_data, status=200)
-

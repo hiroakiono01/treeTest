@@ -58,7 +58,9 @@
         },
         {id: "markup_rate", width: 70, header: [{text: "掛率", align: "center"}], align: "right"},
         {id: "quantity", header: [{text: "見積数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
-        {id: "unit_display", header: [{text: "見積単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
+        {id: "unit_display", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: [], align: "center"},
+        {id: "price", header: [{text: "見積単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
+
         {
             id: "amount",
             header: [{text: "見積金額", align: "center"}], type: "string",
@@ -109,31 +111,33 @@
     // ===================================================
     let estimateNo = 1
     // 1. Unit一覧を取得してGridのプルダウンに反映 ---
-    const unitFields = ["budget_unit"]
-    fetch("/api/unit-options/")
-        .then(res => res.json())
-        .then(data => {
-            const formattedUnits = data.units.map(item => ({
-                id: Number(item.id),
-                value: item.value
-            }));
 
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+    // const unitFields = ["budget_unit"]
+    // fetch("/api/unit-options/")
+    //     .then(res => res.json())
+    //     .then(data => {
+    //         const formattedUnits = data.units.map(item => ({
+    //             id: Number(item.id),
+    //             value: item.value
+    //         }));
+    //
+    //         // ★ 先頭に「未選択用」の空の選択肢を差し込む
+    //         formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+    //
+    //         const currentColumns = editGrid.config.columns.map(col => {
+    //             if (unitFields.includes(col.id)) {
+    //                 return {...col, options: formattedUnits};
+    //             }
+    //             console.log("col", col)
+    //             return col;
+    //         });
+    //
+    //         editGrid.setColumns(currentColumns);
+    //         editGrid.paint();
+    //
+    //     })
+    //     .catch(err => console.error("unitデータ取得失敗:", err));
 
-            const currentColumns = editGrid.config.columns.map(col => {
-                if (unitFields.includes(col.id)) {
-                    return {...col, options: formattedUnits};
-                }
-                return col;
-            });
-
-            editGrid.setColumns(currentColumns);
-            editGrid.paint();
-
-        })
-        .catch(err => console.error("unitデータ取得失敗:", err));
-    
     fetch(`/task/lists/${estimateNo}/`, {
         headers: {'Accept': 'application/json'}
     })
@@ -265,7 +269,31 @@
             // 元のツリーデータを汚さないように複製してロード
             data: JSON.parse(JSON.stringify(childItems))
         });
+        const unitFields = ["budget_unit", "unit"]
+        fetch("/api/unit-options/")
+            .then(res => res.json())
+            .then(data => {
+                const formattedUnits = data.units.map(item => ({
+                    id: Number(item.id),
+                    value: item.value
+                }));
 
+                // ★ 先頭に「未選択用」の空の選択肢を差し込む
+                formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+
+                const currentColumns = editGrid.config.columns.map(col => {
+                    if (unitFields.includes(col.id)) {
+                        return {...col, options: formattedUnits};
+                    }
+                    console.log("col", col)
+                    return col;
+                });
+
+                editGrid.setColumns(currentColumns);
+                editGrid.paint();
+
+            })
+            .catch(err => console.error("unitデータ取得失敗:", err));
         layout.getCell("grid_cell").attach(editGrid);
 
         // ==========================================

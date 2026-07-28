@@ -1,0 +1,1140 @@
+{% extends "base.html" %}
+
+{% block head %}
+<title>見積明細</title>
+{% endblock %}
+
+{% block contents %}
+
+<body>
+<div id="layout-main-container" style="margin-top: 6rem;"></div>
+
+<script>
+    // ===================================================
+    //  1. VARIABLES （変数の宣言とデータの準備）
+    // ===================================================
+    const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+    layout.getCell("sidebar_container").hide();
+    let treeGrid = null;
+    // ==========================================
+    // 1. メインの表示用 TreeGrid の初期化
+    // ==========================================
+    const columns = [
+        {
+            id:
+                "id",
+            header: [{text: "ID"}],
+            hidden: false,
+            isTreeColumn: true
+        },
+        {
+            id: "estimate_no_display",
+            header: [{text: "工事名称"}],
+            hidden: true,
+        },
+        {
+            id: "estimate_no",
+            header: [{text: "工事番号"}],
+            hidden: true,
+        },
+        {
+            id: "task_name",
+            width: 200,
+            header: [{text: "名称", align: "center"}],
+            footer: [{text: "合計"}],
+            isTreeColumn: true, // この列に 展開/折りたたみ アイコンを表示
+        },
+        {
+            id: "material_dimensions",
+            width: 200,
+            header: [{text: "材質・寸法", align: "center"}],
+        },
+        {
+            id: "calcu_cls",
+            width: 100,
+            header: [{text: "計算区分", align: "center"}],
+            editable: true,
+            editorType: "select", // セレクトボックス形式
+            options: [
+                {id: "0", value: "加算対象"},
+                {id: "1", value: "加算しない"},
+                {id: "2", value: "税抜合計"},
+                {id: "3", value: "消費税"}
+            ],
+            // 💡 セルにカスタムCSSクラスを適用するための関数
+            htmlEnable: true,
+            css: function (value, row, col) {
+                // 区分が "2" または "3" の場合はグレーにするクラスを返す
+                if (row.calcu_cls === "2" || row.calcu_cls === "3") {
+                    return "cell-disabled";
+                }
+                return "";
+            }
+        },
+        {
+            id: "budget_quantity",
+            header: [{text: "予算数量", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "budget_unit",
+            header: [{text: "予算単位", align: "center"}],
+            editorType: "combobox",
+            width: 100,
+            options: []
+        },
+        {
+            id: "budget_price",
+            header: [{text: "予算単価", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "budget_amount",
+            header: [{text: "予算金額", align: "center"}],
+            type: "number",
+            footer: [{text: ({sum}) => sum}],
+            summary: "sum",
+            numberMask: {customFormat: "#,##0"},
+        },
+        {
+            id: "markup_rate",
+            width: 70,
+            header: [{text: "掛率", align: "center"}],
+            type: "number",
+        },
+        {
+            id: "quantity",
+            header: [{text: "見積数量", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "unit",
+            header: [{text: "見積単位", align: "center"}],
+            editorType: "combobox",
+            width: 100,
+            options: []
+        },
+        {
+            id: "price",
+            header: [{text: "見積単価", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "amount",
+            header: [{text: "見積金額", align: "center"}],
+            type: "number",
+            numberMask: {groupSeparator: ","},
+            footer: [{text: ({sum}) => sum}],
+            summary: "sum",
+            numberMask: {customFormat: "#,##0"},
+        },
+        {
+            id: "parent", header: [{text: "parent"}], hidden: true
+        },
+        {
+            id: "sort_order", header: [{text: "sort_order"}], hidden: true
+        },
+        {
+            id: "actions",
+            header: [{text: "Actions", tooltip: true, align: "center", rowspan: 2}],
+            mark: () => "dhx-demo_color--gray",
+            template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
+            align: "center",
+            tooltip: false, editable: false, sortable: false, htmlEnable: true,
+        }
+    ];
+
+    treeGrid = new dhx.Grid(null, {
+        type: "tree",
+        rootParent: null,
+        columns,
+        eventHandlers: {
+            onclick: {
+                "row-menu": event => rowMenu.showAt(event.target)
+            }
+        },
+        // data: dataset,
+        group: {
+            panel: false,   // Disable the group panel
+        },
+        // autoWidth: true,
+        keyNavigation: true,
+        selection: "cell",
+        editing: false,
+        sortable: false,
+        selection: "row",
+        dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
+        dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
+        // clipboard: "row"
+        // autoEmptyRow: true
+    });
+
+
+    // 💡 修正した「grid_cell」にGridをアタッチ
+    layout.getCell("grid_cell").attach(treeGrid);
+    // Windowと通常Gridのインスタンス保持用変数
+    let editWindow = null;
+    let editGrid = null;
+    let currentParentId = null;
+    // ==========================================
+    // 2. treeGridのセルクリックイベント
+    // ==========================================
+    treeGrid.events.on("cellClick", function (row, col, e) {
+        currentParentId = row.id;
+        console.log('currentParentId',currentParentId)
+
+        // 選択された行の直下にある子要素（配列）を取得
+        const childItems = treeGrid.data.getItems(currentParentId);
+
+        // 既にWindowが開いている場合は一度破棄する（二重起動防止）
+        if (editWindow) {
+            editWindow.destructor();
+        }
+        // ==========================================
+        // 3. dhx.Window の初期化（モーダル設定）
+        // ==========================================
+        editWindow = new dhx.Window({
+            // title: `「${row.text}」の子階層を編集`, // ウィンドウのタイトル
+            width: 550,
+            height: 450,
+            modal: true,    // 背景をグレーアウトして操作不能にする（最重要）
+            closable: true, // 右上の「×」ボタンを表示する
+            movable: true,  // ドラッグで移動可能にする
+            resizable: true // マウスでサイズ変更可能にする
+        });
+
+        // ウィンドウ内に配置するHTMLレイアウト（Grid領域とボタン）をセット
+        editWindow.attachHTML(`
+        <div style="padding: 15px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box;">
+            <div style="margin-bottom: 12px;">
+                <button id="btn_win_add" class="dhx_button dhx_button--color-secondary">同じレベルに項目追加</button>
+                <button id="btn_win_save" class="dhx_button dhx_button--color-primary" style="margin-left: 8px;">変更を保存</button>
+            </div>
+            <!-- Gridを格納するコンテナ（残りの高さをいっぱいに使う） -->
+            <div id="win_grid_container" style="flex: 1; min-height: 250px;"></div>
+        </div>
+    `);
+
+        // Windowを画面中央に表示
+        editWindow.show();
+
+        // ==========================================
+        // 4. Window内に【編集用の通常Grid】を初期化
+        // ==========================================
+        editGrid = new dhx.Grid("win_grid_container", {
+            editColumns,
+            // 元のツリーデータを汚さないように複製して読み込ませる
+            data: JSON.parse(JSON.stringify(childItems))
+        });
+        // ==========================================
+        // 5. ボタンイベントの実装
+        // ==========================================
+        // 【項目追加ボタン】
+        document.getElementById("btn_win_add").onclick = function () {
+            const newId = "new_item_" + Date.now();
+            editGrid.data.add({
+                id: newId,
+                text: "新しい項目",
+                owner: "未割り当て"
+            });
+        };
+        // 【変更を保存ボタン】
+        document.getElementById("btn_win_save").onclick = function () {
+            // TreeGrid側にある古い子要素を一斉削除
+            const oldChildren = treeGrid.data.getItems(currentParentId);
+            oldChildren.forEach(child => {
+                treeGrid.data.remove(child.id);
+            });
+
+            // Window内のGridから最新の編集後データを取得
+            const updatedData = editGrid.data.serialize();
+
+            // 取得したデータをTreeGridの指定した親（currentParentId）の直下に再挿入
+            updatedData.forEach(item => {
+                treeGrid.data.add(item, -1, currentParentId);
+            });
+
+            // 処理が終わったらWindowを閉じて破棄
+            // editWindow.hide();
+            // editWindow.destructor();
+            // editWindow = null;
+        };
+    });
+
+    // Windowと通常Gridのインスタンス保持用変数
+    // let editWindow = null;
+    // let editGrid = null;
+    // let currentParentId = null;
+
+
+    // --- カラムの処理 ---
+    // --- カラムの処理 ---
+    const editColumns = [
+        {
+            id:
+                "id",
+            header: [{text: "ID"}],
+            hidden: false,
+            isTreeColumn: true
+        },
+        {
+            id: "estimate_no_display",
+            header: [{text: "工事名称"}],
+            hidden: true,
+        },
+        {
+            id: "estimate_no",
+            header: [{text: "工事番号"}],
+            hidden: true,
+        },
+        {
+            id: "task_name",
+            width: 200,
+            header: [{text: "名称", align: "center"}],
+            footer: [{text: "合計"}],
+            isTreeColumn: true, // この列に 展開/折りたたみ アイコンを表示
+        },
+        {
+            id: "material_dimensions",
+            width: 200,
+            header: [{text: "材質・寸法", align: "center"}],
+        },
+        {
+            id: "calcu_cls",
+            width: 100,
+            header: [{text: "計算区分", align: "center"}],
+            editable: true,
+            editorType: "select", // セレクトボックス形式
+            options: [
+                {id: "0", value: "加算対象"},
+                {id: "1", value: "加算しない"},
+                {id: "2", value: "税抜合計"},
+                {id: "3", value: "消費税"}
+            ],
+            // 💡 セルにカスタムCSSクラスを適用するための関数
+            htmlEnable: true,
+            css: function (value, row, col) {
+                // 区分が "2" または "3" の場合はグレーにするクラスを返す
+                if (row.calcu_cls === "2" || row.calcu_cls === "3") {
+                    return "cell-disabled";
+                }
+                return "";
+            }
+        },
+        {
+            id: "budget_quantity",
+            header: [{text: "予算数量", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "budget_unit",
+            header: [{text: "予算単位", align: "center"}],
+            editorType: "combobox",
+            width: 100,
+            options: []
+        },
+        {
+            id: "budget_price",
+            header: [{text: "予算単価", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "budget_amount",
+            header: [{text: "予算金額", align: "center"}],
+            type: "number",
+            footer: [{text: ({sum}) => sum}],
+            summary: "sum",
+            numberMask: {customFormat: "#,##0"},
+        },
+        {
+            id: "markup_rate",
+            width: 70,
+            header: [{text: "掛率", align: "center"}],
+            type: "number",
+        },
+        {
+            id: "quantity",
+            header: [{text: "見積数量", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "unit",
+            header: [{text: "見積単位", align: "center"}],
+            editorType: "combobox",
+            width: 100,
+            options: []
+        },
+        {
+            id: "price",
+            header: [{text: "見積単価", align: "center"}],
+            type: "number",
+            numberMask: {maxDecLength: 2}
+        },
+        {
+            id: "amount",
+            header: [{text: "見積金額", align: "center"}],
+            type: "number",
+            numberMask: {groupSeparator: ","},
+            footer: [{text: ({sum}) => sum}],
+            summary: "sum",
+            numberMask: {customFormat: "#,##0"},
+        },
+        {
+            id: "parent", header: [{text: "parent"}], hidden: true
+        },
+        {
+            id: "sort_order", header: [{text: "sort_order"}], hidden: true
+        },
+        {
+            id: "actions",
+            header: [{text: "Actions", tooltip: true, align: "center", rowspan: 2}],
+            mark: () => "dhx-demo_color--gray",
+            template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
+            align: "center",
+            tooltip: false, editable: false, sortable: false, htmlEnable: true,
+        }
+    ];
+
+    // ==========================================
+    // 1. メインの表示用 TreeGrid の初期化
+    // ==========================================
+    // const treeGrid = new dhx.Grid("tree_grid_container", {
+    //     type: "tree",
+    //     rootParent: null,
+    //     columns,
+    //     eventHandlers: {
+    //         onclick: {
+    //             "row-menu": event => rowMenu.showAt(event.target)
+    //         }
+    //     },
+    //     // data: dataset,
+    //     group: {
+    //         panel: false,   // Disable the group panel
+    //     },
+    //     // autoWidth: true,
+    //     keyNavigation: true,
+    //     selection: "cell",
+    //     editing: false,
+    //     sortable: false,
+    //     selection: "row",
+    //     dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
+    //     dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
+    //     // clipboard: "row"
+    //     autoEmptyRow: true
+    //     // data: treeDataset // 階層構造を持つデータ
+    // });
+
+    // --- ツールバーの処理 ---
+    const toolbar = new dhx.Toolbar("toolbar_container", {css: "dhx_toolbar--bordered"});
+    toolbar.data.add([
+        {id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true,},
+        {type: "spacer"},
+        {id: "moveRowUp", type: "button", value: "上へ移動", icon: "dxi dxi-arrow-up", color: "primary",},
+        {id: "moveRowDown", type: "button", value: "下へ移動", icon: "dxi dxi-arrow-down", color: "primary",},
+
+        {id: "expandAll", type: "button", value: "展開する", icon: "dxi dxi-folder-open"},
+        {id: "collapseAll", type: "button", value: "折りたたむ", icon: "dxi dxi-folder"},
+        {type: "spacer"},
+        {id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true,},
+        {id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true,}
+    ]);
+    toolbar.events.on("click", function (id) {
+        if (id === "add") {
+            addRow();
+        }
+        if (id === "update") {
+            updateAll();
+        }
+        if (id === "moveRowUp") {
+            moveRowUp();
+        }
+        if (id === "moveRowDown") {
+            moveRowDown();
+        }
+        if (id === "expandAll") {
+            expandAll();
+        }
+        if (id === "collapseAll") {
+            collapseAll();
+        }
+        if (id === "resetGrid") {
+            resetGrid();
+        }
+    })
+
+    // --- コンテキストメニューの処理 ---
+    const rowMenu = new dhx.ContextMenu(null, {
+        data: [
+            {"id": "insertRowAbove", "value": "Insert row above", "icon": "dxi dxi-plus"},
+            {"id": "insertRowBelow", "value": "Insert row below", "icon": "dxi dxi-plus"},
+            {"id": "clearRow", "value": "Clear row", "icon": "dxi dxi-close"},
+            {"id": "copySelectedTree", "value": "Copy row", "icon": "dxi dxi-copy"},
+            {"id": "pasteTreeHierarchy", "value": "Paste row", "icon": "dxi dxi-paste"},
+            {"id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete"}
+        ]
+    });
+
+
+    // Template function for cells, returns value for regular rows, but leaves empty for grouped rows
+    const cellTemplate = (value, row) => (!row.$group && value || "");
+
+
+    // --- ページネーション ---
+    const pagination = new dhx.Pagination(null, {
+        css: "dhx_widget--bordered dhx_widget--no-border_top",
+        data: treeGrid.data,
+        pageSize: 50
+    });
+
+    // 💡 修正した「pagination_cell」にPaginationをアタッチ
+    layout.getCell("pagination_cell").attach(pagination);
+
+    // === 検索　自動で行を追加し入力が何もない時一括で更新した時その行を削除する ===
+
+    // 自動追加された行を識別するためのフラグ用プロパティ名
+    const AUTO_ADDED_FLAG = "_isAutoAdded";
+    // 2. 最後のカラム編集終了時に行を自動追加するイベント設定
+    treeGrid.events.on("afterEditEnd", (value, row, column) => {
+        const columns = treeGrid.config.columns;
+        const lastColumnId = columns[columns.length - 1].id; // 最後のカラムのID
+
+        // 全データ行を取得
+        const allRows = grid.data.map(item => item);
+        const lastRowId = allRows[allRows.length - 1].id; // 最終行のID
+
+        // 「編集されたのが最後のカラム」かつ「現在の行が最終行」の場合に新しい行を追加
+        if (column.id === lastColumnId && row.id === lastRowId) {
+            const newRowId = "auto_" + Date.now(); // ユニークなIDを生成
+
+            treeGrid.data.add({
+                id: newRowId,
+                estimate_no: "estimate_no",
+                task_name: "",
+                material_dimensions: "",
+                calcu_cls: "",
+                budget_quantity: "",
+                budget_unit: "",
+                budget_price: "",
+                budget_amount: "",
+                markup_rate: "",
+                quantity: "",
+                unit: "",
+                price: "",
+                amount: "",
+                parent: "",
+                sort_order: "",
+                [AUTO_ADDED_FLAG]: true // 自動追加された行であることをマーク
+            });
+        }
+    });
+
+    // 💡 2. 編集を開始する直前にインターセプト（編集不可の制御）
+    treeGrid.events.on("beforeEditStart", function (row, col) {
+        // 対象の列が「calcu_cls」かつ、値が "2" または "3" の場合は編集をキャンセル
+        if (col.id === "calcu_cls" && (row.calcu_cls === "2" || row.calcu_cls === "3")) {
+            return false; // falseを返すと編集モードになりません
+        }
+        return true;
+    });
+
+    // 💡 3. 値が変更されたら背景色をリアルタイムに更新するための設定
+    treeGrid.events.on("afterEditEnd", function (value, row, col) {
+        if (col.id === "calcu_cls") {
+            treeGrid.paint(); // 画面を再描画してCSS（背景色）を反映させる
+        }
+    });
+
+    // 💡--- 値の自動計算 ----
+    treeGrid.events.on("afterEditEnd", function (value, row, column) {
+
+        // 1. 数量（budget_quantity=>quantity）のコピー処理
+        if (column.id === "quantity" || column.id === "budget_quantity") {
+            const currentQty = parseFloat(row.quantity);
+            if (isNaN(currentQty) || row.quantity === "" || row.quantity === null) {
+                treeGrid.data.update(row.id, {
+                    quantity: row.budget_quantity
+                });
+            }
+        }
+
+        // 2. 単位（budget_unit=>unit）のコピー処理
+        if (column.id === "unit" || column.id === "budget_unit") {
+            const currentUnit = row.unit;
+            if (!currentUnit || currentUnit.toString().trim() === "") {
+                treeGrid.data.update(row.id, {
+                    unit: row.budget_unit
+                });
+            }
+        }
+
+        if (column.id === "quantity" || column.id === "price") {
+            const qty = parseFloat(row.quantity);
+            const price = parseFloat(row.price);
+            if (!isNaN(qty) && !isNaN(price)) {
+                // 計算結果を「生データ」として直接treeGridに保存（これが出荷データになります）
+                treeGrid.data.update(row.id, {
+                    amount: Math.round(qty * price)
+                });
+            }
+        }
+
+        // 4. 予算数量または予算単価が変更された場合の、予算金額（budget_amount）計算
+        if (column.id === "budget_quantity" || column.id === "budget_price") {
+            const qty = parseFloat(row.budget_quantity);
+            const price = parseFloat(row.budget_price);
+            if (!isNaN(qty) && !isNaN(price)) {
+                treeGrid.data.update(row.id, {
+                    budget_amount: Math.round(qty * price)
+                });
+            } else {
+                treeGrid.data.update(row.id, {
+                    budget_amount: 0
+                });
+            }
+        }
+
+
+        // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更
+        if (column.id === "price" || column.id === "quantity" || column.id === "markup_rate") {
+            const currentPrice = parseFloat(row.price);
+            if (isNaN(currentPrice) || row.price === "" || row.price === null) {
+                const bPrice = parseFloat(row.budget_price);
+                const rate = parseFloat(row.markup_rate);
+
+                // 両方に有効な数値が入っている場合のみ掛け算（片方でも無ければ予算単価をそのままコピー）
+                if (!isNaN(bPrice) && !isNaN(rate)) {
+                    treeGrid.data.update(row.id, {
+                        price: Math.round((bPrice * rate) / 100)
+                    });
+                } else if (!isNaN(bPrice)) {
+                    treeGrid.data.update(row.id, {
+                        price: bPrice
+                    });
+                }
+            }
+        }
+
+
+        // 階層全体の再計算関数（以前作成したもの）を呼び出して親要素も更新
+        if (typeof calculateTreeSum === "function") {
+            calculateTreeSum();
+        }
+
+        // 💡 Enterキーで編集が終わった場合のみ実行
+        if (window.event && (window.event.key === "Enter" || window.event.keyCode === 13)) {
+            const columns = treeGrid.config.columns;
+            const currentIndex = columns.findIndex(col => col.id === column.id);
+
+            // 右隣に列が存在するかチェック
+            if (currentIndex !== -1 && currentIndex < columns.length - 1) {
+                const nextColumn = columns[currentIndex + 1];
+
+                // 10ミリ秒だけ処理をずらすことで、Suite9の内部確定処理との衝突を防ぎます
+                setTimeout(() => {
+                    // 右のセルを選択状態にする
+                    treeGrid.selection.setCell(row.id, nextColumn.id);
+                    // そのセルを編集モードにする
+                    treeGrid.editCell(row.id, nextColumn.id);
+                }, 10);
+            }
+        }
+    });
+
+    function calculateTreeSums() {
+        treeGrid.data.events.detach("change");
+        // 全てのデータを走査
+        treeGrid.data.forEach((item) => {
+            // 子要素（直下だけでなくネストされたすべての子孫）を配列で取得
+            if (treeGrid.data.haveItems(item.id)) {
+                const children = treeGrid.data.getItems(item.id);
+
+                let totalBudget = 0;
+                let totalAmount = 0;
+                // 最下層（リーフノード）の値のみを足し合わせる場合
+
+                children.forEach(child => {
+                    let budget = child.budget_amount;
+                    if (typeof budget === "string") budget = budget.replace(/,/g, "");
+                    budget = Number(budget);
+                    // console.log(child.amount)
+                    if (!treeGrid.data.haveItems(child.id)) {
+                        totalBudget += Number(child.budget_amount || 0);
+                        totalAmount += Number(child.amount || 0);
+                        // console.log(totalBudget, totalAmount)
+                    }
+                });
+                // 親行のデータを直接更新
+                treeGrid.data.update(item.id, {
+                    budget_amount: totalBudget,
+                    amount: totalAmount
+                });
+            }
+        });
+        //  計算が終わったらイベント監視を再開
+        treeGrid.data.events.on("change", calculateTreeSums);
+    }
+
+    // 3. データ読み込み時、および値が書き換わった時に自動計算を実行
+    treeGrid.data.events.on("load", calculateTreeSums);
+    treeGrid.data.events.on("change", calculateTreeSums);
+
+    // 初回データが load イベント以降にセットされる場合は手動で一回実行
+    calculateTreeSums();
+
+
+    // ワンクリックでエディタを開く　https://docs.dhtmlx.com/suite/treeGrid/configuration/#opening-editor-with-one-click
+    treeGrid.events.on("cellClick", function (row, column) {
+
+        treeGrid.editCell(row.id, column.id);
+
+    });
+
+    // クリックしたセルの内容を取得
+    let rowIndex = null;
+    let rowId = null;
+    let rowParent = null;
+    treeGrid.events.on("cellClick", function (row, col, e) {
+        rowIdIndex = treeGrid.data.getIndex(row.id);
+        rowId = row.id;
+        rowParent = row.parent;
+        // console.log("rowId",rowId,"rowIndex",rowIndex,"rowParent",rowParent)
+    });
+
+    // ---　コンテキストメニューの処理 ---
+    rowMenu.events.on("click", id => {
+        const row = treeGrid.selection.getCell()?.row;
+        const rowIndex = treeGrid.data.getIndex(row.id);
+        switch (id) {
+            case "insertRowAbove":
+                treeGrid.data.add({
+                    estimate_no: estimateNo,
+                    parent: rowParent,
+                }, rowIndex);
+                break;
+            case "insertRowBelow":
+                treeGrid.data.add({
+                    estimate_no: estimateNo,
+                    parent: rowParent,
+                }, rowIndex + 1);
+                break;
+            case "clearRow":
+                treeGrid.data.update(row.id, {
+                    task_name: "",
+                    material_dimensions: "",
+                    calcu_cls: "",
+                    budget_quantity: "",
+                    budget_unit: "",
+                    budget_price: "",
+                    budget_amount: "",
+                    markup_rate: "",
+                    quantity: "",
+                    unit: "",
+                    price: "",
+                    amount: ""
+                });
+                break;
+            case "deleteRow":
+                deleteRow(row.id);
+                // treeGrid.data.remove(row.id);
+                break;
+
+            case "copySelectedTree":
+                copySelectedTree();
+                break;
+            case "pasteTreeHierarchy":
+                pasteTreeHierarchy();
+                break;
+        }
+    });
+
+    // --- 新規作成のウインドウを表示する ---
+    function addRow() {
+        const newRowData = {
+            //id: dhx.uid(),          // DHTMLXの機能で一意のIDを生成
+            estimate_no: estimateNo, // ★ここにセットしたい番号を指定
+            task_name: "新規タスク",  // 初期表示名（任意）
+            parent: rowParent            // 親階層（任意）
+        };
+        // 2. グリッドのデータストアに直接追加
+        treeGrid.data.add(newRowData);
+        // 3. (オプション) 追加した行を自動でフォーカスしてスクロール
+        treeGrid.selection.setCell(newRowData.id);
+    }
+
+    // --- リセット処理 ---
+    function resetGrid() {
+        // ユーザーに確認（キャンセルされたら処理を中断）
+        // if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
+
+        // 1. サーバーから最新のデータを再取得
+        fetch(`/task/lists/${estimateNo}/`)
+            .then(res => res.json())
+            .then(result => {
+                // 2. 現在のGrgrididデータをすべてクリア
+                treeGrid.data.removeAll();
+
+                // 3. 取得したデータを再読み込み
+                treeGrid.data.parse(result);
+
+                // 💡 必須チェック等で付いたエラーの赤枠CSSも自動で消えます
+
+                // dhx.message({ text: "変更をリセットしました", expire: 2000 });
+            })
+            .catch(err => {
+                console.error("リセット失敗:", err);
+                dhx.message({text: "データの再取得に失敗しました", status: "error"});
+            });
+    }
+
+
+    // --- 行を右クリックでコンテキストメニューを表示する ---
+    treeGrid.events.on("cellRightClick", (row, column, event) => {
+        event.preventDefault();
+        treeGrid.selection.setCell(row, column);
+        rowMenu.showAt(event.target);
+    });
+
+
+    function getPriorityTemplate(value) {
+        if (!value) return;
+        let status = "dhx-demo_grid-status--suspended";
+        if (value === "Completed") status = "dhx-demo_grid-status--completed";
+        if (value === "In progress") status = "dhx-demo_grid-status--in-progress";
+        return `
+                <div class='dhx-demo_grid-status ${status}'>
+                    <div class='dhx-demo_grid-status-indicator'></div>
+                    <span class='dhx-demo_grid-status-text'>${value}</span>
+                </div>
+                `
+    }
+
+    function collapseAll() {
+        treeGrid.collapseAll();
+    }
+
+    function expandAll() {
+        treeGrid.expandAll();
+    }
+
+    function moveRowUp() {
+        console.log("moveRowUp");
+        const selectedCell = treeGrid.selection.getCell();
+        if (!selectedCell || !selectedCell.row) {
+            alert("移動する行を選択してください。");
+            return;
+        }
+        const targetId = selectedCell.row.id;
+        const currentIndex = treeGrid.data.getIndex(targetId);
+
+        if (currentIndex <= 0) {
+            return;
+        }
+
+        // 1. 位置を移動
+        treeGrid.data.move(targetId, currentIndex - 1);
+
+        // 2. すべての行の sort_order を再配分
+        updateAllSortOrders();
+
+        // 💡 3. グリッドを強制的に再描画（画面を動かす）
+        treeGrid.paint();
+
+        // 移動後も選択状態をキープ
+        treeGrid.selection.setCell(targetId, selectedCell.column.id);
+    }
+
+    function moveRowDown() {
+        const selectedCell = treeGrid.selection.getCell();
+        console.log("moveRowDown", selectedCell);
+        if (!selectedCell || !selectedCell.row) {
+            alert("移動する行を選択してください。");
+            return;
+        }
+        const targetId = selectedCell.row.id;
+        const currentIndex = treeGrid.data.getIndex(targetId);
+        const totalCount = treeGrid.data.getLength();
+
+        if (currentIndex >= totalCount - 1) {
+            return;
+        }
+
+        // 1. 位置を移動
+        treeGrid.data.move(targetId, currentIndex + 1);
+
+        // 2. すべての行の sort_order を再配分
+        updateAllSortOrders();
+
+        // 💡 3. グリッドを強制的に再描画（画面を動かす）
+        treeGrid.paint();
+        // 移動後も選択状態をキープ
+        treeGrid.selection.setCell(targetId, selectedCell.column.id);
+    }
+
+    /**
+     * 💡 追加：現在の並び順（インデックス）に基づいて sort_order を一括更新する共通関数
+     */
+    function updateAllSortOrders() {
+        // 変更通知を一時停止してパフォーマンスを最適化
+        treeGrid.data.map((item, index) => {
+            const newOrder = index + 1; // 1始まりの連番にする場合
+
+            // 値が変わっている場合のみ更新
+            if (item.sort_order !== newOrder) {
+                treeGrid.data.update(item.id, {sort_order: newOrder});
+            }
+        });
+    }
+
+
+    // --- Unit一覧を取得してGridのプルダウンに反映 ---
+    const unitFields = ["budget_unit", "unit"];
+    fetch("/api/unit-options/")
+        .then(res => res.json())
+        .then(data => {
+            // 2. Grid のカラムに適用
+            unitFields.forEach(fieldId => {
+                const column = treeGrid.getColumn(fieldId);
+                if (column) {
+                    column.options = data.units;
+                }
+            });
+            // 重要：ループの後に再描画を実行
+            treeGrid.paint();
+        })
+        .catch(err => console.error("unitデータ取得失敗:", err));
+
+    // ===================================================
+    // 3. DATA LOADING （データ通信・サーバーとのやり取り）
+    // ===================================================
+
+    // 4. 最後にしてデータを流し込む
+    const pathSegments = window.location.pathname.split('/');
+    const estimateNo = pathSegments[pathSegments.length - 1] || pathSegments[pathSegments.length - 2];
+    // const dataset = new dhx.TreeCollection()
+
+    fetch(`/task/lists/${estimateNo}/`, {
+        headers: {'Accept': 'application/json'}
+    })
+        .then(response => response.json())
+        .then(data => {
+            treeGrid.data.parse(data)
+            // ここでloadイベントが発生し計算が走る
+            treeGrid.collapseAll();
+        });
+    //.catch(error => console.error("Error:", error));
+
+    // 💡 コピーしたデータを一時的に保存しておくための「箱」（グローバル変数）
+    let clipboardTreeData = null;
+
+    /**
+     * 1. 選択中の行（ツリー階層ごと）をコピーする関数
+     */
+    function copySelectedTree() {
+        const selectedCell = treeGrid.selection.getCell();
+        if (!selectedCell || !selectedCell.row) {
+            alert("コピーする行を選択してください。");
+            return;
+        }
+        const targetRowId = selectedCell.row.id;
+        console.log("copy")
+
+        // 選択された行とその配下の子要素をすべて集める配列
+        const nodesToCopy = [];
+
+        // 再帰的に子要素を探索してデータを収集する関数
+        function collectNodes(nodeId) {
+            const rowData = treeGrid.data.getItem(nodeId);
+            if (!rowData) return;
+
+            // 元データが変更されないよう、中身を複製して保存
+            nodesToCopy.push({...rowData});
+
+            // ★修正点: getValues の代わりに Suite 9 で動く map を使用して子要素を探す
+            const allItems = treeGrid.data.map(item => item);
+            const children = allItems.filter(item => item.parent === nodeId);
+
+            // 子要素があれば同じように再帰で集める
+            children.forEach(child => collectNodes(child.id));
+        }
+
+        // データの収集を実行
+        collectNodes(targetRowId);
+
+        // 一時保存用の箱にデータを保存
+        clipboardTreeData = {
+            rootId: targetRowId,
+            nodes: nodesToCopy
+        };
+
+        alert("ツリー構造をコピーしました。");
+    }
+
+    /**
+     * 2. コピーしたツリーを、現在選択中の行の「中に（子要素として）」貼り付ける関数
+     */
+    function pasteTreeHierarchy() {
+        if (!clipboardTreeData || clipboardTreeData.nodes.length === 0) {
+            alert("コピーされたデータがありません。");
+            return;
+        }
+
+        const selectedCell = treeGrid.selection.getCell();
+        if (!selectedCell || !selectedCell.row) {
+            alert("貼り付け先の親となる行を選択してください。");
+            return;
+        }
+        const targetParentId = selectedCell.row.id;
+
+        // 古いIDと「新しくDHTMLXが発行したuから始まる自動ID」の対応表
+        const idMap = {};
+
+        // 💡 データの破壊を防ぐため、clipboardTreeData の中身をディープコピーしてループを回す
+        const nodesToPaste = JSON.parse(JSON.stringify(clipboardTreeData.nodes));
+
+        // データをGridに追加していく
+        nodesToPaste.forEach(node => {
+            const oldId = node.id;
+
+            // 1. コピー元の古いIDを完全に消去（DHTMLXに「u〜」の自動IDを作らせるため）
+            delete node.id;
+
+            // 2. 親ID（parent）の紐付けを決定する
+            if (oldId === clipboardTreeData.rootId) {
+                // 一番上の親ノードは、選択した行が新しい親になる
+                node.parent = targetParentId;
+            } else {
+                // 子要素や孫要素は、対応表（idMap）から「新しく発行されたu〜のID」を取得して親にする
+                node.parent = idMap[node.parent];
+            }
+
+            // 💡 3. DHTMLX Suite 9 の仕様に基づき、オブジェクト内ではなく「第3引数」で親IDを渡して追加する [1]
+            // 第1引数: 追加するデータオブジェクト、第2引数: 挿入位置（-1は末尾）、第3引数: 親のID [1]
+            const addedRow = treeGrid.data.add(node, -1, node.parent);
+
+            if (addedRow && addedRow.id) {
+                // DHTMLXが自動生成した「u〜」のIDを対応表にメモ（次の世代の子要素が使えるようにする）
+                idMap[oldId] = addedRow.id;
+            }
+        });
+
+        // 4. 金額データなどの再計算
+        if (typeof calculateTreeSum === "function") {
+            calculateTreeSum();
+        }
+
+        alert("貼り付けが完了しました。");
+    }
+
+
+    //--- イベント制御 ---
+
+    const rawData = treeGrid.data.serialize(true);
+
+    // === 検索　一括保存ボタンの処理 ===
+    function updateAll() {
+
+        // 1.1 自動追加された行のうち、何も入力されていない行を抽出して削除
+        const rowsToRemove = [];
+
+        treeGrid.data.forEach(item => {
+            // 自動追加フラグが立っている行をチェック
+            if (item[AUTO_ADDED_FLAG]) {
+                // IDやフラグ用のプロパティを除いた、純粋な入力値がすべて空か確認
+                const hasInput = Object.keys(item).some(key => {
+                    if (key === "id" || key === AUTO_ADDED_FLAG) return false;
+                    return item[key] !== undefined && item[key] !== null && String(item[key]).trim() !== "";
+                });
+
+                // 何も入力されていなければ削除対象リストに追加
+                if (!hasInput) {
+                    rowsToRemove.push(item.id);
+                }
+            }
+        });
+
+        // 1.2 該当する未入力行をグリッドから削除
+        rowsToRemove.forEach(id => {
+            treeGrid.data.remove(id);
+        });
+
+
+        const allData = treeGrid.data.serialize();
+
+        if (allData.length === 0) return;
+        fetch("/task/bulk_sync/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie('csrftoken')
+            },
+            body: JSON.stringify(allData)
+        })
+            .then(res => {
+                if (!res.ok) throw res;
+                return res.json();
+            })
+            .then(result => {
+                dhx.message({text: "保存しました", css: "dhx_widget--bg_success", expire: 3000,});
+                // サーバー側で採番されたIDなどを含む最新データでグリッドを更新
+                treeGrid.data.removeAll();
+                treeGrid.data.parse(result);
+            })
+            .catch(err => {
+
+                dhx.message({text: "保存失敗: 入力内容を確認してください", css: "dhx_widget--bg_danger"});
+            });
+
+
+    }
+
+    // 8. 削除処理
+    // 削除ボタンの即時実行
+    function deleteRow(rowId) {
+        if (confirm("即時に削除しますか？")) {
+            // サーバーへ削除リクエスト
+            fetch(`/task/detail/${rowId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+                }
+            })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(err => {
+                            throw err;
+                        });
+                    }
+                    return res.json();
+                })
+                .then(result => {
+                    treeGrid.data.removeAll();
+
+                    data.load(`/task/lists/${estimateNo}/`).then(() => {
+                        dhx.message({
+                            text: "削除しました",
+                            css: "dhx_widget--bg_success",
+                            expire: 3000
+                        });
+                    });
+                })
+                .catch(err => {
+                    const errorMsg = err.detail || err.message || "削除に失敗しました";
+                    dhx.message({
+                        text: errorMsg,
+                        css: "dhx_widget--bg_danger", // 赤いトースト
+                        expire: 6000
+                    });
+                });
+        }
+    };
+</script>
+</body>
+
+{% endblock %}

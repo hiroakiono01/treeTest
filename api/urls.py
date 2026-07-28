@@ -18,9 +18,10 @@ app_name = 'api'
 
 urlpatterns = [
     #
-    path('unit-options/', views.get_unit_options,),
+    path('unit-options/<int:client_id>/', views.get_unit_options,),
+    path('aggr-options/<int:client_id>/', views.get_aggr_options, ),
     # path('estimate-options/', views.get_estimate_options, ),
-    path('get_estimate_name/', views.get_estimate_name, ),
+    path('get_estimate_name/<int:client_id>/<str:estimate_no>/', views.get_estimate_name, ),
     path('get_current_client/', views.get_current_client),
     path('fiscalyears/<int:client_id>/', views.get_fiscalyears, name='get_fiscalyears'),
     path('customers/<int:client_id>/<str:use_flg>/', views.get_customers, name='get_customers'),

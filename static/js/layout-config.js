@@ -14,6 +14,8 @@ window.MySharedLayoutConfig = {
             </div>
             <div class="header-center" style="flex: 1; width: 33.33%; text-align: center;">
                 <span id="header_report_title"></span>
+                <span id="header_estimate_no"></span>
+                <span id="header_estimate_name"></span>
             </div>
             <div class="header-right" style="flex: 1; width: 33.33%; text-align: right;"></div>
         </div>

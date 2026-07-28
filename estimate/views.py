@@ -67,7 +67,7 @@ def estimate_list(request, client_id, sql):
 
         # 5. 組み立てた条件でデータベースを検索db = {str} 'default'（内部で安全なSQLが自動生成されます）
         if request.method == 'GET':
-            estimates = Estimate.objects.filter(query)
+            estimates = Estimate.objects.filter(query).order_by('-fiscalyear')
             serializer = EstimateSerializer(estimates, many=True)
             return Response(serializer.data)
         # デバッグ用：実際に発行される生のSQLをコンソールで確認できます

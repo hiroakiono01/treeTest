@@ -197,8 +197,9 @@
 .custom-radio-align .dhx_radiobutton__label {
     line-height: 1 !important;
     margin-top: 40px; /* 環境によって文字が上にズレる場合はここで微調整 */
-}
-*/
+
+
+
 .dropzone{
     width:400px;
     height:250px;
@@ -207,6 +208,8 @@
     line-height:300px;
     text-align:center;
     }
+
+
 .dropzone.dragover{
     border-color:#000;
     color:#000;

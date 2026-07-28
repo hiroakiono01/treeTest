@@ -14,28 +14,37 @@
  * @param {dhx.Grid} grid - 初期化済みのDHTMLX Gridインスタンス
  */
 function enableGridEnterNavigation(grid) {
-grid.events.on("beforeKeyDown", event => {
-    if (event.key !== "Enter" || event.ctrlKey || event.altKey || event.metaKey) {
-        return;
-    }
+    grid.events.on("beforeKeyDown", event => {
+        if (event.key !== "Enter" && event.key !== "Tab" || event.ctrlKey || event.altKey || event.metaKey) {
+            return;
+        }
 
-    const selectedCell = grid.selection.getCell();
-
-    if (!selectedCell) {
-        return false;
-    }
-
-    event.preventDefault();
-
-    if (grid.config.$editable) {
-        grid.editEnd();
-
-        if (grid.config.$editable) {
+        const currentCell = grid.selection.getCell();
+        if (!currentCell) {
             return false;
         }
-    }
 
-    moveSelectionLikeTab(grid, selectedCell, event.shiftKey ? -1 : 1);
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (grid.config.$editable) {
+            grid.editEnd();
+
+            if (grid.config.$editable) {
+                return false;
+            }
+        }
+
+
+        // if (grid.config.$editable) {
+        //
+        //
+        //     if (grid.config.$editable) {
+        //         return false;
+        //     }
+        // }
+
+        moveSelectionLikeTab(grid, currentCell, event.shiftKey ? -1 : 1);
         // 2. ★【最重要】移動が完了した「直後の最新の選択セル」をもう一度取得
         const nextCell = grid.selection.getCell();
 
@@ -46,8 +55,10 @@ grid.events.on("beforeKeyDown", event => {
             }, 30);
         }
 
-    return false;
-});
+        return false;
+    });
+
+}
 
 function moveSelectionLikeTab(grid, selectedCell, direction) {
     const visibleColumns = grid.config.columns.filter(column => !column.hidden);
@@ -78,7 +89,7 @@ function moveSelectionLikeTab(grid, selectedCell, direction) {
 }
 
 
-}
+
 
 
 

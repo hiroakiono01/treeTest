@@ -525,7 +525,7 @@
                 header: [
                     {text: "年度", align: "center"},
                     {
-                        content: "comboFilter",
+                        content: "selectFilter",
                         customFilter: (value, match) => value.length === match.length
                     }
                 ],
@@ -838,11 +838,11 @@
             const rawId = row.estimate_no || row.id;
 
             // 2. 💡「001」などの文字列を数値の「1」に変換（Djangoの <int:> に合わせるため）
-            const targetId = parseInt(rawId, 10);
+            //const targetId = parseInt(rawId, 10);
 
             // 3. 💡 Djangoのルーティング構造に合わせたルート相対パスを作成
             // ※ もし task アプリケーション内なら /task/lists/1/、直下なら /lists/1/ に調整してください
-            const targetUrl = `/task/lists/${targetId}/`;
+            const targetUrl = `/task/lists/${rawId}/`;
 
             if (window.parent && typeof window.parent.changeMainContent === "function") {
                 window.parent.changeMainContent(targetUrl);

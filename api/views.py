@@ -6,7 +6,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from app.models import Estimate, CurrentClient, Client, Fiscalyear, Customer, Segment, Construction, User, Unit
+from app.models import Estimate, CurrentClient, Client, Fiscalyear, Customer, Segment, Construction, User, Unit, Aggregation
 
 
 def index(request):
@@ -14,16 +14,29 @@ def index(request):
 
 
 @api_view(['GET'])
-def get_unit_options(request):
+def get_unit_options(request, client_id):
     # combobox の場合はid,valueでselectは使えない
     unit_options = [
         {
             "id": unit.id,  # 文字型として代入
             "value": unit.unit_name  # 文字列型（表示名）
         }
-        for unit in Unit.objects.order_by("unit_no").all()
+        for unit in Unit.objects.order_by("unit_no").filter(client_id=client_id).all()
     ]
     return Response({"units": unit_options})
+
+
+@api_view(['GET'])
+def get_aggr_options(request, client_id):
+    # combobox の場合はid,valueでselectは使えない
+    aggr_options = [
+        {
+            "id": aggregation.id,  # 文字型として代入
+            "value": aggregation.aggregation_name  # 文字列型（表示名）
+        }
+        for aggregation in Aggregation.objects.order_by("aggregation_no").filter(client_id=client_id).all()
+    ]
+    return Response({"aggregations": aggr_options})
 
 
 # @api_view(['GET'])
@@ -61,16 +74,17 @@ def get_current_client(self):
     return JsonResponse({'current-client': result}, status=404)
 
 
-def get_estimate_name(request):
+def get_estimate_name(request, client_id, estimate_no):
     # GETパラメータから 'estimate_no' を取得
-    est_no = request.GET.get('estimate_no', None)
+    # est_no = request.GET.get(estimate_no, client_id, None)
 
-    if est_no:
-        estimate = Estimate.objects.filter(estimate_no=est_no).first()
-        if estimate:
-            return JsonResponse({'estimate_name': estimate.estimate_name})
+    # if est_no:
+    estimate = Estimate.objects.filter(estimate_no=estimate_no, client_id=client_id).first()
+    if estimate:
+        return JsonResponse({'estimate_name': estimate.estimate_name})
 
-    return JsonResponse({'estimate_name': ''}, status=404)
+    else:
+        return JsonResponse({'estimate_name': ''}, status=404)
 
 
 def get_fiscalyears(_request, client_id):
