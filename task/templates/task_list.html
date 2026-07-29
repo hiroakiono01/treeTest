@@ -13,6 +13,7 @@
     // 1.  VARIABLES  (変数の宣言とデータの準備）
     // ==========================================
 
+
     const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
     layout.getCell("sidebar_container").hide();
     let toolbar;
@@ -93,30 +94,9 @@
                 header: [{text: "計算区分", align: "center"}],
                 editorType: "combobox",
                 options: [],
+                editable: true,
                 align: "center"
             },
-            // {
-            //     id: "calcu_cls",
-            //     width: 100,
-            //     header: [{text: "計算区分", align: "center"}],
-            //     editable: true,
-            //     editorType: "select", // セレクトボックス形式
-            //     options: [
-            //         {id: "0", value: "加算対象"},
-            //         {id: "1", value: "加算しない"},
-            //         {id: "2", value: "税抜合計"},
-            //         {id: "3", value: "消費税"}
-            //     ],
-            //     // 💡 セルにカスタムCSSクラスを適用するための関数
-            //     htmlEnable: true,
-            //     css: function (value, row, col) {
-            //         // 区分が "2" または "3" の場合はグレーにするクラスを返す
-            //         if (row.calcu_cls === "2" || row.calcu_cls === "3") {
-            //             return "cell-disabled";
-            //         }
-            //         return "";
-            //     }
-            // },
             {id: "budget_quantity", header: [{text: "予算数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             {
                 id: "budget_unit",
@@ -256,8 +236,11 @@
             await Promise.all([
                 fetchEstimateInfo(),
                 fetchUnitOptions(),
+                fetchAggregationOptions(),
                 fetchTaskLists()
             ]);
+       // 3. データをGridに流し込む
+        grid.data.parse(estimateInfo);
 
         } catch (err) {
             console.error("初期データロード中にエラーが発生しました:", err);
@@ -284,28 +267,43 @@
     // 3.3 Unit一覧を取得してGridおよびeditGridのプルダウンに反映
     async function fetchUnitOptions() {
         try {
+            const unitFields = ["budget_unit", "unit"]
             const res = await fetch(`/api/unit-options/${clientId}/`);
             const data = await res.json();
-
-            // 親Gridへの反映
-            const unitFields = ["budget_unit", "unit"];
-            unitFields.forEach(fieldId => {
-                const column = treeGrid.getColumn(fieldId);
-                if (column) {
-                    column.options = data.units;
+            const formattedUnits = data.units.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+            const currentColumns = treeGrid.config.columns.map(col => {
+                if (unitFields.includes(col.id)) {
+                    return {...col, options: formattedUnits};
                 }
+                // console.log("col", col)
+                return col;
             });
+            treeGrid.setColumns(currentColumns);
+            //treeGrid.paint(); // 🔥 反映を確定させるために再描画
+            // 親Gridへの反映
+            // const unitFields = ["budget_unit", "unit"];
+            // unitFields.forEach(fieldId => {
+            //     const column = treeGrid.getColumn(fieldId);
+            //     if (column) {
+            //         column.options = data.units;
+            //     }
+            // });
 
             // 💡 子Grid（editGrid）が存在する場合、そちらのカラムにも選択肢をセットする
-            if (typeof editGrid !== 'undefined' && editGrid) {
-                unitFields.forEach(fieldId => {
-                    const childColumn = editGrid.getColumn(fieldId);
-                    if (childColumn) {
-                        childColumn.options = data.units;
-                    }
-                });
-                // 必要に応じて editGrid.paint();
-            }
+            // if (typeof editGrid !== 'undefined' && editGrid) {
+            //     unitFields.forEach(fieldId => {
+            //         const childColumn = editGrid.getColumn(fieldId);
+            //         if (childColumn) {
+            //             childColumn.options = data.units;
+            //         }
+            //     });
+            //     // 必要に応じて editGrid.paint();
+            // }
 
         } catch (err) {
             console.error("unitデータ取得失敗:", err);
@@ -313,30 +311,42 @@
     }
 
     // 3.4 Aggregation一覧を取得してGridおよびeditGridのプルダウンに反映
-    async function fetchUnitOptions() {
+    async function fetchAggregationOptions() {
         try {
+            const aggrFields = ["aggregation"];
             const res = await fetch(`/api/aggr-options/${clientId}/`);
             const data = await res.json();
+            const formattedAggregations = data.aggregations.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
 
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む（必要に応じて）
+            formattedAggregations.unshift({id: null, value: "（選択解除）"});
             // 親Gridへの反映
-            const aggrFields = ["aggregation"];
-            aggrFields.forEach(fieldId => {
-                const column = treeGrid.getColumn(fieldId);
-                if (column) {
-                    column.options = data.aggregations;
+            const currentColumns = treeGrid.config.columns.map(col => {
+                if (aggrFields.includes(col.id)) {
+                    return {...col, options: formattedAggregations};
                 }
+                // console.log("col", col)
+                return col;
             });
+            treeGrid.setColumns(currentColumns);
+            //editGrid.setColumns(currentColumns);
+            //treeGrid.paint();
 
             // 💡 子Grid（editGrid）が存在する場合、そちらのカラムにも選択肢をセットする
             if (typeof editGrid !== 'undefined' && editGrid) {
-                aggrFields.forEach(fieldId => {
-                    const childColumn = editGrid.getColumn(fieldId);
-                    if (childColumn) {
-                        childColumn.options = data.aggregations;
+                // treeGridと同様に setColumns を使って安全に反映させます
+                const currentChildColumns = editGrid.config.columns.map(col => {
+                    if (aggrFields.includes(col.id)) {
+                        return {...col, options: formattedAggregations}; // ★ 共通のフォーマット済データをセット
                     }
+                    return col;
                 });
-                // 必要に応じて editGrid.paint();
-            }
+                editGrid.setColumns(currentChildColumns);
+           }
+
 
         } catch (err) {
             console.error("aggregationデータ取得失敗:", err);
@@ -860,31 +870,31 @@
 
         // editWindow.show();
 
-        const unitFields = ["budget_unit", "unit"]
-        fetch(`/api/unit-options/${clientId}/`)
-            .then(res => res.json())
-            .then(data => {
-                const formattedUnits = data.units.map(item => ({
-                    id: Number(item.id),
-                    value: item.value
-                }));
-
-                // ★ 先頭に「未選択用」の空の選択肢を差し込む
-                formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
-
-                const currentColumns = editGrid.config.columns.map(col => {
-                    if (unitFields.includes(col.id)) {
-                        return {...col, options: formattedUnits};
-                    }
-                    // console.log("col", col)
-                    return col;
-                });
-
-                editGrid.setColumns(currentColumns);
-                editGrid.paint();
-
-            })
-            .catch(err => console.error("unitデータ取得失敗:", err));
+        // const unitFields = ["budget_unit", "unit"]
+        // fetch(`/api/unit-options/${clientId}/`)
+        //     .then(res => res.json())
+        //     .then(data => {
+        //         const formattedUnits = data.units.map(item => ({
+        //             id: Number(item.id),
+        //             value: item.value
+        //         }));
+        //
+        //         // ★ 先頭に「未選択用」の空の選択肢を差し込む
+        //         formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+        //
+        //         const currentColumns = editGrid.config.columns.map(col => {
+        //             if (unitFields.includes(col.id)) {
+        //                 return {...col, options: formattedUnits};
+        //             }
+        //             // console.log("col", col)
+        //             return col;
+        //         });
+        //
+        //         editGrid.setColumns(currentColumns);
+        //         editGrid.paint();
+        //
+        //     })
+        //     .catch(err => console.error("unitデータ取得失敗:", err));
         // layout.getCell("grid_cell").attach(editGrid);
 
         // ==========================================

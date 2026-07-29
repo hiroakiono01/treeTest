@@ -70,13 +70,13 @@ class UnitSerializer(serializers.ModelSerializer):
 class ProcessSerializer(serializers.ModelSerializer):
     unit_name_display = serializers.ReadOnlyField(source='unit_name.unit_name')
     process_name = serializers.CharField(required=True)
-    calcu_cls = serializers.CharField(required=True)
+   # calcu_cls = serializers.CharField(required=True)
 
     class Meta:
         model = Process
         fields = ('id',
                   'process_name',
-                  'calcu_cls',
+                  #'calcu_cls',
                   'unit_name',
                   'unit_name_display',
                   'budget_price',
@@ -145,7 +145,7 @@ class TaskSerializer(serializers.ModelSerializer):
                   'quantity', 'unit',
                   'unit_display',
                   'price', 'amount',
-                  'markup_rate', 'calcu_cls',
+                  'markup_rate', 'aggregation',
                   'parent', 'sort_order',
                   )
 

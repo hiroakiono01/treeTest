@@ -11,6 +11,7 @@ from app.models import Unit
 from app.models import Construction
 from app.models import Reference
 from app.models import CurrentClient
+from app.models import Aggregation
 
 admin.site.register(Client)
 admin.site.register(User)
@@ -24,3 +25,4 @@ admin.site.register(Construction)
 admin.site.register(Task)
 admin.site.register(Reference)
 admin.site.register(CurrentClient)
+admin.site.register(Aggregation)

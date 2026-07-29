@@ -14,7 +14,7 @@ def index(request):
 
 
 @api_view(['GET'])
-def get_unit_options(request, client_id):
+def get_unit_options(_request, client_id):
     # combobox の場合はid,valueでselectは使えない
     unit_options = [
         {
@@ -27,7 +27,7 @@ def get_unit_options(request, client_id):
 
 
 @api_view(['GET'])
-def get_aggr_options(request, client_id):
+def get_aggr_options(_request, client_id):
     # combobox の場合はid,valueでselectは使えない
     aggr_options = [
         {
