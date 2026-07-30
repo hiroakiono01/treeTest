@@ -169,17 +169,17 @@
         //data: dataset // 階層構造を持つデータ
     });
     // 編集を不可にする
-    treeGrid.selection.disable();
+    //treeGrid.selection.disable();
 
     // 2.4 ワンクリックで入力ができる ---　
-    treeGrid.events.on("cellClick", function (row, column) {
-        setTimeout(() => {
-            treeGrid.editCell(row.id, column.id);
-        }, 50);
-    });
+    // treeGrid.events.on("cellClick", function (row, column) {
+    //     setTimeout(() => {
+    //         treeGrid.editCell(row.id, column.id);
+    //     }, 50);
+    // });
 
     // 2.5 Enterで移動する
-    enableGridEnterNavigation(treeGrid);
+    // enableGridEnterNavigation(treeGrid);
 
     // 💡 修正した「grid_cell」にGridをアタッチ
     layout.getCell("grid_cell").attach(treeGrid);
