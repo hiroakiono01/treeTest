@@ -8,16 +8,15 @@ window.MySharedLayoutConfig = {
             css: "my-layout-header",
             html: `
         <div style="display: flex; width: 100%; height: 100%; align-items: center;">
-                        <div class="header-left" style="flex: 1; width: 33.33%; text-align: left; margin-left: 10px;">
+             <div class="header-left" style="flex: 1; width: 20%; text-align: left; margin-left: 10px;">
                 <span id="header_client_no"></span>
                 <span id="header_client_name"></span>
             </div>
-            <div class="header-center" style="flex: 1; width: 33.33%; text-align: center;">
+            <div class="header-center" style="flex: 1; width: 80%; text-align: left;">
                 <span id="header_report_title"></span>
                 <span id="header_estimate_no"></span>
                 <span id="header_estimate_name"></span>
             </div>
-            <div class="header-right" style="flex: 1; width: 33.33%; text-align: right;"></div>
         </div>
     `
 

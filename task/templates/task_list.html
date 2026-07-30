@@ -9,6 +9,7 @@
 <body>
 <div id="layout-main-container" style="margin-top: 6rem;--layout-max-width: 1800px;"></div>
 <script>
+
     // ==========================================
     // 1.  VARIABLES  (変数の宣言とデータの準備）
     // ==========================================
@@ -19,6 +20,8 @@
     let toolbar;
     let treeGrid = null;
     let estimateName = "";
+    let globalUnitOptions = [];
+    let globalAggregationOptions = [];
 
 
     // ===================================================
@@ -28,8 +31,8 @@
     // 2.1 ツールバーの作成
     toolbar = new dhx.Toolbar("toolbar_container", {css: "dhx_toolbar--bordered"});
     toolbar.data.add([
-        {id: "historyBack", type: "button", value: "戻る", icon: "dxi dxi-arrow-left", color: "secondary", circle: true},
         {id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true,},
+        {id: "historyBack", type: "button", value: "戻る", icon: "dxi dxi-arrow-left", color: "secondary", circle: true},
         {type: "spacer"},
         {id: "moveRowUp", type: "button", value: "上へ移動", icon: "dxi dxi-arrow-up", color: "primary",},
         {id: "moveRowDown", type: "button", value: "下へ移動", icon: "dxi dxi-arrow-down", color: "primary",},
@@ -82,19 +85,18 @@
     treeGrid = new dhx.Grid(null, {
         type: "tree",
         columns: [
-            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColumn: false},
-            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
-            {id: "estimate_no", header: [{text: "工事番号"}], hidden: true,},
-
+            {id: "id", header: [{text: "ID"}], hidden: false, isTreeColumn: false},
+            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: false,},
+            {id: "estimate_no", header: [{text: "工事番号"}], hidden: false,},
             {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
-            {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}],},
+            {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}], editable: false},
             {
                 id: "aggregation",
                 width: 100,
                 header: [{text: "計算区分", align: "center"}],
                 editorType: "combobox",
                 options: [],
-                editable: true,
+                editable: false,
                 align: "center"
             },
             {id: "budget_quantity", header: [{text: "予算数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
@@ -107,7 +109,6 @@
                 align: "center",
                 editable: true
             },
-            // {id: "budget_unit_display", header: [{text: "予算単位", align: "center"}], editorType: "combobox", width: 100, options: [], align: "center"},
             {id: "budget_price", header: [{text: "予算単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             {
                 id: "budget_amount",
@@ -123,7 +124,6 @@
             // {id: "unit_display", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: [], align: "center"},
             {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: [], align: "center"},
             {id: "price", header: [{text: "見積単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
-
             {
                 id: "amount",
                 header: [{text: "見積金額", align: "center"}], type: "string",
@@ -133,7 +133,7 @@
                 summary: "sum",
                 numberMask: {customFormat: "#,##0"}, align: "right",
             },
-            {id: "parent", header: [{text: "parent"}], hidden: true},
+            {id: "parent", header: [{text: "parent"}], hidden: false},
             {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
             {id: "detail", header: [{text: "階層", align: "center"}], editable: false},
             {
@@ -159,13 +159,18 @@
 
         },
         rootParent: null,
-        selection: "col",
+        selection: "row",
         dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
         dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
-        editable: true,
+        editable: false,
+        tooltip: false // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
+
         // autoEmptyRow: true
         //data: dataset // 階層構造を持つデータ
     });
+    // 編集を不可にする
+    treeGrid.selection.disable();
+
     // 2.4 ワンクリックで入力ができる ---　
     treeGrid.events.on("cellClick", function (row, column) {
         setTimeout(() => {
@@ -239,8 +244,8 @@
                 fetchAggregationOptions(),
                 fetchTaskLists()
             ]);
-       // 3. データをGridに流し込む
-        grid.data.parse(estimateInfo);
+            // 3. データをGridに流し込む
+            //treeGrid.data.parse(estimateInfo);
 
         } catch (err) {
             console.error("初期データロード中にエラーが発生しました:", err);
@@ -265,6 +270,7 @@
     }
 
     // 3.3 Unit一覧を取得してGridおよびeditGridのプルダウンに反映
+
     async function fetchUnitOptions() {
         try {
             const unitFields = ["budget_unit", "unit"]
@@ -275,7 +281,7 @@
                 value: item.value
             }));
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            formattedUnits.unshift({id: null, value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+            formattedUnits.unshift({id: "", value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
             const currentColumns = treeGrid.config.columns.map(col => {
                 if (unitFields.includes(col.id)) {
                     return {...col, options: formattedUnits};
@@ -284,26 +290,9 @@
                 return col;
             });
             treeGrid.setColumns(currentColumns);
-            //treeGrid.paint(); // 🔥 反映を確定させるために再描画
-            // 親Gridへの反映
-            // const unitFields = ["budget_unit", "unit"];
-            // unitFields.forEach(fieldId => {
-            //     const column = treeGrid.getColumn(fieldId);
-            //     if (column) {
-            //         column.options = data.units;
-            //     }
-            // });
 
-            // 💡 子Grid（editGrid）が存在する場合、そちらのカラムにも選択肢をセットする
-            // if (typeof editGrid !== 'undefined' && editGrid) {
-            //     unitFields.forEach(fieldId => {
-            //         const childColumn = editGrid.getColumn(fieldId);
-            //         if (childColumn) {
-            //             childColumn.options = data.units;
-            //         }
-            //     });
-            //     // 必要に応じて editGrid.paint();
-            // }
+            // 2. データを変数にキャッシュしておく
+            globalUnitOptions = formattedUnits;
 
         } catch (err) {
             console.error("unitデータ取得失敗:", err);
@@ -332,20 +321,22 @@
                 return col;
             });
             treeGrid.setColumns(currentColumns);
+            // 2. データを変数にキャッシュしておく
+            globalAggregationOptions = formattedAggregations;
             //editGrid.setColumns(currentColumns);
             //treeGrid.paint();
 
             // 💡 子Grid（editGrid）が存在する場合、そちらのカラムにも選択肢をセットする
-            if (typeof editGrid !== 'undefined' && editGrid) {
-                // treeGridと同様に setColumns を使って安全に反映させます
-                const currentChildColumns = editGrid.config.columns.map(col => {
-                    if (aggrFields.includes(col.id)) {
-                        return {...col, options: formattedAggregations}; // ★ 共通のフォーマット済データをセット
-                    }
-                    return col;
-                });
-                editGrid.setColumns(currentChildColumns);
-           }
+            // if (typeof editGrid !== 'undefined' && editGrid) {
+            //     // treeGridと同様に setColumns を使って安全に反映させます
+            //     const currentChildColumns = editGrid.config.columns.map(col => {
+            //         if (aggrFields.includes(col.id)) {
+            //             return {...col, options: formattedAggregations}; // ★ 共通のフォーマット済データをセット
+            //         }
+            //         return col;
+            //     });
+            //     editGrid.setColumns(currentChildColumns);
+            // }
 
 
         } catch (err) {
@@ -386,7 +377,7 @@
 
             //id: dhx.uid(),          // DHTMLXの機能で一意のIDを生成
             estimate_no: estimateNo, // ★ここにセットしたい番号を指定
-            task_name: "新規タスク",  // 初期表示名（任意）
+            task_name: "",  // 初期表示名（任意）
             //parent: rowParent            // 親階層（任意）
         };
         // 2. グリッドのデータストアに直接追加
@@ -420,7 +411,7 @@
                 // デフォルトのEnterキー挙動（フォーカスアウトや改行など）をキャンセル
                 event.preventDefault();
                 // 1. 新しい空の行を追加（ユニークIDを自動生成など）
-                const newRowId = "row_" + Date.now();
+                const newRowId = "u" + Date.now();
                 treeGrid.data.add({id: newRowId, title: "", price: ""})
 
                 // 2. 画面を更新し、即座に新しい行の最初の列を選択・編集状態にする
@@ -659,6 +650,76 @@
         }
     };
 
+    // 4.2.6 値の自動計算
+    treeGrid.events.on("afterEditEnd", function (value, row, column) {
+
+        // 1. 数量（budget_quantity=>quantity）のコピー処理
+        if (column.id === "quantity" || column.id === "budget_quantity") {
+            const currentQty = parseFloat(row.quantity);
+            if (isNaN(currentQty) || row.quantity === "" || row.quantity === null) {
+                treeGrid.data.update(row.id, {
+                    quantity: row.budget_quantity
+                });
+            }
+        }
+
+        // 2. 単位（budget_unit=>unit）のコピー処理
+        if (column.id === "unit" || column.id === "budget_unit") {
+            const currentUnit = row.unit;
+            if (!currentUnit || currentUnit.toString().trim() === "") {
+                treeGrid.data.update(row.id, {
+                    unit: row.budget_unit
+                });
+            }
+        }
+
+        if (column.id === "quantity" || column.id === "price") {
+            const qty = parseFloat(row.quantity);
+            const price = parseFloat(row.price);
+            if (!isNaN(qty) && !isNaN(price)) {
+                // 計算結果を「生データ」として直接treeGridに保存（これが出荷データになります）
+                treeGrid.data.update(row.id, {
+                    amount: Math.round(qty * price)
+                });
+            }
+        }
+
+        // 4. 予算数量または予算単価が変更された場合の、予算金額（budget_amount）計算
+        if (column.id === "budget_quantity" || column.id === "budget_price") {
+            const qty = parseFloat(row.budget_quantity);
+            const price = parseFloat(row.budget_price);
+            if (!isNaN(qty) && !isNaN(price)) {
+                treeGrid.data.update(row.id, {
+                    budget_amount: Math.round(qty * price)
+                });
+            } else {
+                treeGrid.data.update(row.id, {
+                    budget_amount: 0
+                });
+            }
+        }
+
+
+        // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更
+        if (column.id === "price" || column.id === "quantity" || column.id === "markup_rate") {
+            const currentPrice = parseFloat(row.price);
+            if (isNaN(currentPrice) || row.price === "" || row.price === null) {
+                const bPrice = parseFloat(row.budget_price);
+                const rate = parseFloat(row.markup_rate);
+
+                // 両方に有効な数値が入っている場合のみ掛け算（片方でも無ければ予算単価をそのままコピー）
+                if (!isNaN(bPrice) && !isNaN(rate)) {
+                    treeGrid.data.update(row.id, {
+                        price: Math.round((bPrice * rate) / 100)
+                    });
+                } else if (!isNaN(bPrice)) {
+                    treeGrid.data.update(row.id, {
+                        price: bPrice
+                    });
+                }
+            }
+        }
+    });
     // const unitFields = ["budget_unit"]
     // fetch("/api/unit-options/")
     //     .then(res => res.json())
@@ -705,9 +766,11 @@
             return;
         }
         currentParentId = row.id;
+        const currentParent = currentParentId;
 
         // 選択された行の直下にある子要素（配列）を取得
         const childItems = treeGrid.data.getItems(currentParentId);
+        console.log('childItems', childItems)
 
         // 既にWindowが開いている場合は重複防止のため一度破棄する
         if (editWindow) {
@@ -785,7 +848,7 @@
                     width: 100,
                     header: [{text: "計算区分", align: "center"}],
                     editorType: "combobox",
-                    options: [],
+                    options: globalAggregationOptions,
                     align: "center"
                 },
                 // {
@@ -816,7 +879,7 @@
                     header: [{text: "予算単位", align: "center"}],
                     editorType: "combobox",
                     width: 100,
-                    options: [],
+                    options: globalUnitOptions,
                     align: "center",
                     editable: true
 
@@ -825,7 +888,7 @@
                 {id: "budget_amount", header: [{text: "予算金額", align: "center"}], type: "number", footer: [{text: ({sum}) => sum}], summary: "sum", numberMask: {customFormat: "#,##0"},},
                 {id: "markup_rate", width: 70, header: [{text: "掛率", align: "center"}], type: "number",},
                 {id: "quantity", header: [{text: "見積数量", align: "center"}], type: "number", numberMask: {maxDecLength: 2}},
-                {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: []},
+                {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: globalUnitOptions},
                 {id: "price", header: [{text: "見積単価", align: "center"}], type: "number", numberMask: {maxDecLength: 2}},
                 {
                     id: "amount",
@@ -836,7 +899,7 @@
                     summary: "sum",
                     numberMask: {customFormat: "#,##0"},
                 },
-                {id: "parent", header: [{text: "parent"}], hidden: true},
+                {id: "parent", header: [{text: "parent"}], hidden: false},
                 {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
                 {
                     id: "actions",
@@ -853,6 +916,11 @@
             selection: "col",
             keyNavigation: true, // ★必ずtrueに設定してください
             editable: true,
+            tooltip: false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
+            sortable: false,
+            dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
+            dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
+            multiselection: true,
             // autoEmptyRow: true
         });
 
@@ -903,9 +971,10 @@
 
         // 6.1 editGridに新たな行を追加
         function addRow() {
-            const newId = "new_item_" + Date.now();
+            const newId = "u" + Date.now();
             editGrid.data.add({
                 id: newId,
+                parent: currentParent,
                 task_name: "",
                 estimate_no: row.estimate_no || ""
             });
@@ -1045,6 +1114,78 @@
             // 5. グリッドの再描画（Suite 9のparseは自動描画されますが明示的に行う場合）
             editGrid.paint();
         }
+
+        // 6.6 値の自動計算
+        editGrid.events.on("afterEditEnd", function (value, row, column) {
+
+            // 1. 数量（budget_quantity=>quantity）のコピー処理
+            if (column.id === "quantity" || column.id === "budget_quantity") {
+                const currentQty = parseFloat(row.quantity);
+                if (isNaN(currentQty) || row.quantity === "" || row.quantity === null) {
+                    editGrid.data.update(row.id, {
+                        quantity: row.budget_quantity
+                    });
+                }
+            }
+
+            // 2. 単位（budget_unit=>unit）のコピー処理
+            if (column.id === "unit" || column.id === "budget_unit") {
+                const currentUnit = row.unit;
+                if (!currentUnit || currentUnit.toString().trim() === "") {
+                    editGrid.data.update(row.id, {
+                        unit: row.budget_unit
+                    });
+                }
+            }
+
+            if (column.id === "quantity" || column.id === "price") {
+                const qty = parseFloat(row.quantity);
+                const price = parseFloat(row.price);
+                if (!isNaN(qty) && !isNaN(price)) {
+                    // 計算結果を「生データ」として直接treeGridに保存（これが出荷データになります）
+                    editGrid.data.update(row.id, {
+                        amount: Math.round(qty * price)
+                    });
+                }
+            }
+
+            // 4. 予算数量または予算単価が変更された場合の、予算金額（budget_amount）計算
+            if (column.id === "budget_quantity" || column.id === "budget_price") {
+                const qty = parseFloat(row.budget_quantity);
+                const price = parseFloat(row.budget_price);
+                if (!isNaN(qty) && !isNaN(price)) {
+                    editGrid.data.update(row.id, {
+                        budget_amount: Math.round(qty * price)
+                    });
+                } else {
+                    editGrid.data.update(row.id, {
+                        budget_amount: 0
+                    });
+                }
+            }
+
+
+            // 2. 単価（price）の計算処理（空なら budget_price * markup_rate をセット）★変更
+            if (column.id === "price" || column.id === "quantity" || column.id === "markup_rate") {
+                const currentPrice = parseFloat(row.price);
+                if (isNaN(currentPrice) || row.price === "" || row.price === null) {
+                    const bPrice = parseFloat(row.budget_price);
+                    const rate = parseFloat(row.markup_rate);
+
+                    // 両方に有効な数値が入っている場合のみ掛け算（片方でも無ければ予算単価をそのままコピー）
+                    if (!isNaN(bPrice) && !isNaN(rate)) {
+                        editGrid.data.update(row.id, {
+                            price: Math.round((bPrice * rate) / 100)
+                        });
+                    } else if (!isNaN(bPrice)) {
+                        editGrid.data.update(row.id, {
+                            price: bPrice
+                        });
+                    }
+                }
+            }
+        });
+
 
         editWindow.events.on("afterHide", function () {
             editWindow.destructor(); // ウィンドウと内包するレイアウト・グリッドを一括破棄
