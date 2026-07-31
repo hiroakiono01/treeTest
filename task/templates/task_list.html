@@ -40,6 +40,7 @@
         {id: "collapseAll", type: "button", value: "折りたたむ", icon: "dxi dxi-folder"},
         {type: "spacer"},
         {id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "warning", circle: true,},
+        {id: "editRow", type: "button", value: "修正", icon: "dxi dxi-pencil", color: "warning", circle: true,},
         {id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true,}
     ]);
     toolbar.events.on("click", function (id) {
@@ -63,6 +64,9 @@
         }
         if (id === "collapseAll") {
             collapseAll();
+        }
+        if (id === "editRow") {
+            editRow();
         }
         if (id === "resetGrid") {
             resetGrid();
@@ -89,14 +93,13 @@
             {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: false,},
             {id: "estimate_no", header: [{text: "工事番号"}], hidden: false,},
             {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
-            {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}], editable: false},
+            {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}]},
             {
                 id: "aggregation",
                 width: 100,
                 header: [{text: "計算区分", align: "center"}],
                 editorType: "combobox",
                 options: [],
-                editable: false,
                 align: "center"
             },
             {id: "budget_quantity", header: [{text: "予算数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
@@ -107,7 +110,6 @@
                 width: 100,
                 options: [],
                 align: "center",
-                editable: true
             },
             {id: "budget_price", header: [{text: "予算単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             {
@@ -159,17 +161,19 @@
 
         },
         rootParent: null,
-        selection: "row",
+        selection: "col",
         multiselection: true,
         //dragMode: "both",// 他のgridからデータをドラグできる
         dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
         dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
-        editable: false,
+        editable: false, // 全体として編集は有効にしておく
         tooltip: false // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
 
         // autoEmptyRow: true
         //data: dataset // 階層構造を持つデータ
     });
+
+
     // 編集を不可にする
     //treeGrid.selection.disable();
 
@@ -373,7 +377,16 @@
         collapseAll();
         // treeGridを編集可能する
         // 編集モードを有効にする場合
-        //treeGrid.config.editable = true;
+        treeGrid.config.editable = true;
+        // 2.4 ワンクリックで入力ができる ---　
+        treeGrid.events.on("cellClick", function (row, column) {
+            setTimeout(() => {
+                treeGrid.editCell(row.id, column.id);
+            }, 50);
+        });
+
+        // 2.5 Enterで移動する
+        enableGridEnterNavigation(treeGrid);
         //treeGrid.paint();
         const newRowData = {
 
@@ -381,12 +394,15 @@
             estimate_no: estimateNo, // ★ここにセットしたい番号を指定
             task_name: "",  // 初期表示名（任意）
             //parent: rowParent            // 親階層（任意）
+            type: "parent",
+            isNew: true,
         };
         // 2. グリッドのデータストアに直接追加
         treeGrid.data.add(newRowData);
         // 3. (オプション) 追加した行を自動でフォーカスしてスクロール
-        treeGrid.selection.setCell(newRowData.id, "estimate_no");
+        // treeGrid.selection.setCell(newRowData.id, "estimate_no");
     }
+
 
     // 自動で行を追加する処理
     treeGrid.events.on("beforeKeyDown", function (event) {
@@ -528,6 +544,7 @@
                 // treeGrid.data.remove(row.id);
                 break;
         }
+
     });
 
     // 4.2.3 リセット処理
@@ -544,6 +561,9 @@
 
                 // 3. 取得したデータを再読み込み
                 treeGrid.data.parse(result);
+
+                // ボタンを活性化（クリック可能にする）
+                toolbar.enable("editRow");
 
                 // 💡 必須チェック等で付いたエラーの赤枠CSSも自動で消えます
 
@@ -603,6 +623,8 @@
                 // サーバー側で採番されたIDなどを含む最新データでグリッドを更新
                 treeGrid.data.removeAll();
                 treeGrid.data.parse(result);
+                // ボタンを活性化（クリック可能にする）
+                toolbar.enable("editRow");
             })
             .catch(err => {
 
@@ -651,6 +673,23 @@
                 });
         }
     };
+
+    function editRow(rowId) {
+        console.log('rowId', rowId)
+        treeGrid.config.editable = true;
+        // 2.4 ワンクリックで入力ができる ---　
+        treeGrid.events.on("cellClick", function (row, column) {
+            setTimeout(() => {
+                treeGrid.editCell(row.id, column.id);
+            }, 50);
+        });
+        // 2.5 Enterで移動する
+        enableGridEnterNavigation(treeGrid);
+
+        toolbar.disable("editRow");
+
+
+    }
 
     // 4.2.6 値の自動計算
     treeGrid.events.on("afterEditEnd", function (value, row, column) {
