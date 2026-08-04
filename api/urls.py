@@ -26,10 +26,10 @@ urlpatterns = [
     path('fiscalyear-options/<int:client_id>/', views.get_fiscalyear_options),
 
     path('fiscalyears/<int:client_id>/', views.get_fiscalyears, name='get_fiscalyears'),
-    path('customer-options/<int:client_id>/<str:use_flg>/', views.get_customers, name='get_customers'),
-    path('segment-options/<int:client_id>/<str:use_flg>/', views.get_segments, name='get_segments'),
-    path('construction-options/<int:client_id>/', views.get_constructions, name='get_constructions'),
-    path('user-options/<int:client_id>/<str:use_flg>/', views.get_users, name='get_users'),
+    path('customer-options/<int:client_id>/<str:use_flg>/', views.get_customer_options),
+    path('segment-options/<int:client_id>/<str:use_flg>/', views.get_segment_options),
+    path('construction-options/<int:client_id>/', views.get_construction_options),
+    path('user-options/<int:client_id>/<str:use_flg>/', views.get_user_options),
     # path('', views.ReferenceList.as_view(), name='reference_list'),  # 一覧
     # path('add/', views.ReferenceAdd.as_view(), name='reference_add'),  # 登録
     # path('edit/<int:pk>/', views.ReferenceEdit.as_view(), name='reference_edit'),  # 修正

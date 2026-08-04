@@ -34,13 +34,13 @@
     let use_flg;
     let client_markup_rate;
     let fiscalyearOptions = [];
-    let currentUserOptions;
-    let allUserOptions;
-    let currentCustomerOptions;
-    let allCustomerOptions;
-    let currentSegmentOptions;
-    let allSegmentOptions;
-    let constructionOptions;
+    let currentUserOptions = [];
+    let allUserOptions = [];
+    let currentCustomerOptions = [];
+    let allCustomerOptions = [];
+    let currentSegmentOptions = [];
+    let allSegmentOptions = [];
+    let constructionOptions = [];
 
 
     // CONNECT: 3.1 DRFからデータの読み込み
@@ -93,6 +93,7 @@
                 id: Number(item.id),
                 value: item.value
             }));
+            // console.log("fiscalyearOptions", fiscalyearOptions)
         } catch (err) {
             console.error("fiscalyearデータ取得失敗", err)
         }
@@ -102,13 +103,16 @@
         try {
             use_flg = "0"
             const res = await fetch(`/api/user-options/${client_id}/${use_flg}/`);
-            const data = await res.json()
-            currentUserOptions = data.usres.map(item => ({
+            const data = await res.json();
+            console.log("data", data)
+            currentUserOptions = data.users.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
+            console.log("currentUserOptions", currentUserOptions, "res", res)
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             currentUserOptions.unshift({id: null, value: ""});
+
         } catch (err) {
             console.log("currentUsersデータ取得失敗", err)
         }
@@ -119,16 +123,17 @@
             use_flg = "9"
             const res = await fetch(`/api/user-options/${client_id}/${use_flg}/`);
             const data = await res.json();
-            console.log("allUserOptions", allUserOptions, "data", data)
-
+            console.log("data", data)
             allUserOptions = data.users.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
-            console.log("allUserOptions", allUserOptions, "data", data)
-
+            console.log("allUserOptions", allUserOptions, "res", res)
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             allUserOptions.unshift({id: null, value: ""});
+            const comboWidget = form.getItem("q_user").getWidget();
+            //         // 選択肢をセット
+            comboWidget.data.parse(allUserOptions);
 
         } catch (err) {
             console.log("allUsersデータ取得失敗", err)
@@ -918,7 +923,7 @@
                 labelPosition: "left",
                 labelWidth: "60px",
                 label: "担当者",
-                data: allUserOptions
+                options: allUserOptions
             },
             {
                 type: "combo",

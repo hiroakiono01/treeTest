@@ -132,62 +132,64 @@ def get_user_options(_request, client_id, use_flg):
     return Response({"users": user_options})
 
 
-def get_users(_request, client_id, use_flg):
-    if use_flg == "0":
-        users = User.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('user_no')  # 必要に応じてソート
-    else:
-        users = User.objects.all().filter(client_id=client_id).order_by('user_no')  # 必要に応じてソート
-    data = [
-        {
-            "id": str(user.id),
-            "value": str(user.user_name)
-        }
-        for user in users
-    ]
-    return JsonResponse(data, safe=False)
+# def get_users(_request, client_id, use_flg):
+#     if use_flg == "0":
+#         users = User.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('user_no')  # 必要に応じてソート
+#     else:
+#         users = User.objects.all().filter(client_id=client_id).order_by('user_no')  # 必要に応じてソート
+#     data = [
+#         {
+#             "id": str(user.id),
+#             "value": str(user.user_name)
+#         }
+#         for user in users
+#     ]
+#     return JsonResponse(data, safe=False)
 
-
-def get_customers(_request, client_id, use_flg):
+@api_view(['GET'])
+def get_customer_options(_request, client_id, use_flg):
     if use_flg == "0":
         customers = Customer.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('customer_no')  # 必要に応じてソート
     else:
         customers = Customer.objects.all().filter(client_id=client_id).order_by('customer_no')  # 必要に応じてソート
-    data = [
+    customer_options = [
         {
             "id": str(customer.id),
             "value": str(customer.customer_name)
         }
         for customer in customers
     ]
-    return JsonResponse(data, safe=False)
+    return Response({"customers": customer_options})
 
 
-def get_segments(_request, client_id, use_flg):
+@api_view(['GET'])
+def get_segment_options(_request, client_id, use_flg):
     if use_flg == "0":
         segments = Segment.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('segment_no')  # 必要に応じてソート
     else:
         segments = Segment.objects.all().filter(client_id=client_id).order_by('segment_no')  # 必要に応じてソート
 
-    data = [
+    segment_options = [
         {
             "id": str(segment.id),
             "value": str(segment.segment_name)
         }
         for segment in segments
     ]
-    return JsonResponse(data, safe=False)
+    return Response({"segments": segment_options})
 
 
-def get_constructions(_request, client_id):
+@api_view(['GET'])
+def get_construction_options(_request, client_id):
     constructions = Construction.objects.all().filter(client_id=client_id).order_by('construction_no')  # 必要に応じてソート
-    data = [
+    construction_options = [
         {
             "id": str(construction.id),
             "value": str(construction.construction_name)
         }
         for construction in constructions
     ]
-    return JsonResponse(data, safe=False)
+    return Response({"constructions": construction_options})
 
 # def reference_page(request):
 #     # DHTMLX Gridのoptions形式に合わせてリネームして取得
