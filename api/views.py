@@ -104,6 +104,34 @@ def get_fiscalyears(_request, client_id):
     return JsonResponse(data, safe=False)
 
 
+@api_view(['GET'])
+def get_fiscalyear_options(_request, client_id):
+    fiscalyear_options = [
+        {
+            "id": item.id,
+            "value": item.fiscalyear_name
+        }
+        for item in Fiscalyear.objects.all().filter(client_id=client_id).order_by('-id')
+    ]
+    return Response({"fiscalyears": fiscalyear_options})
+
+
+@api_view(['GET'])
+def get_user_options(_request, client_id, use_flg):
+    if use_flg == "0":
+        users = User.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('user_no')  # 必要に応じてソート
+    else:
+        users = User.objects.all().filter(client_id=client_id).order_by('user_no')  # 必要に応じてソート
+    user_options = [
+        {
+            "id": item.id,
+            "value": item.user_name
+        }
+        for item in users
+    ]
+    return Response("users", user_options)
+
+
 def get_users(_request, client_id, use_flg):
     if use_flg == "0":
         users = User.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('user_no')  # 必要に応じてソート

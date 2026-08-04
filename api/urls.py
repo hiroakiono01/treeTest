@@ -23,11 +23,13 @@ urlpatterns = [
     # path('estimate-options/', views.get_estimate_options, ),
     path('get_estimate_name/<int:client_id>/<str:estimate_no>/', views.get_estimate_name, ),
     path('get_current_client/', views.get_current_client),
+    path('fiscalyear-options/<int:client_id>/', views.get_fiscalyear_options),
+
     path('fiscalyears/<int:client_id>/', views.get_fiscalyears, name='get_fiscalyears'),
-    path('customers/<int:client_id>/<str:use_flg>/', views.get_customers, name='get_customers'),
-    path('segments/<int:client_id>/<str:use_flg>/', views.get_segments, name='get_segments'),
-    path('constructions/<int:client_id>/', views.get_constructions, name='get_constructions'),
-    path('users/<int:client_id>/<str:use_flg>/', views.get_users, name='get_users'),
+    path('customer-options/<int:client_id>/<str:use_flg>/', views.get_customers, name='get_customers'),
+    path('segment-options/<int:client_id>/<str:use_flg>/', views.get_segments, name='get_segments'),
+    path('construction-options/<int:client_id>/', views.get_constructions, name='get_constructions'),
+    path('user-options/<int:client_id>/<str:use_flg>/', views.get_users, name='get_users'),
     # path('', views.ReferenceList.as_view(), name='reference_list'),  # 一覧
     # path('add/', views.ReferenceAdd.as_view(), name='reference_add'),  # 登録
     # path('edit/<int:pk>/', views.ReferenceEdit.as_view(), name='reference_edit'),  # 修正

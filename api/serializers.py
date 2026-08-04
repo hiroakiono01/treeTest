@@ -70,13 +70,14 @@ class UnitSerializer(serializers.ModelSerializer):
 class ProcessSerializer(serializers.ModelSerializer):
     unit_name_display = serializers.ReadOnlyField(source='unit_name.unit_name')
     process_name = serializers.CharField(required=True)
-   # calcu_cls = serializers.CharField(required=True)
+
+    # calcu_cls = serializers.CharField(required=True)
 
     class Meta:
         model = Process
         fields = ('id',
                   'process_name',
-                  #'calcu_cls',
+                  # 'calcu_cls',
                   'unit_name',
                   'unit_name_display',
                   'budget_price',
@@ -85,7 +86,6 @@ class ProcessSerializer(serializers.ModelSerializer):
 
 
 class EstimateSerializer(serializers.ModelSerializer):
-    estimate_year = serializers.CharField(required=True)
     estimate_no = serializers.CharField(required=True)
     estimate_name = serializers.CharField(required=True)
     fiscalyear_display = serializers.ReadOnlyField(source='fiscalyear.fiscalyear_name')
@@ -94,7 +94,7 @@ class EstimateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estimate
         fields = ('id', 'client', 'fiscalyear', 'fiscalyear_display',
-                  'estimate_year', 'estimate_date', 'estimate_print_date',
+                  'estimate_date', 'estimate_print_date',
                   'estimate_no', 'estimate_branch_no', 'orderer_name1',
                   'orderer_name2', 'orderer_representative', 'orderer_person',
                   'estimate_amount', 'estimate_tax_amount', 'consumption_cls',

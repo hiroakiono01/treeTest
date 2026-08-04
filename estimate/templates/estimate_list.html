@@ -25,7 +25,257 @@
     const dataset = new dhx.DataCollection();
     let sidebarForm = null;
     let sql = "null";
-    let client_markup_rate = "";
+    // ===================================================
+    // 3. DATA LOADING （データ通信・サーバーとのやり取り）
+    // ===================================================
+    // 他の関数やeditGridからも参照できるように外側で定義（グローバル/モジュールスコープ）
+    let clientId;
+    let estimateNo = "";
+    let use_flg;
+    let client_markup_rate;
+    let fiscalyearOptions = [];
+    let currentUserOptions;
+    let allUserOptions;
+    let currentCustomerOptions;
+    let allCustomerOptions;
+    let currentSegmentOptions;
+    let allSegmentOptions;
+    let constructionOptions;
+
+
+
+    // CONNECT: 3.1 DRFからデータの読み込み
+    async function loadInitialData() {
+        try {
+            // 3.2 現在のクライアントデータを取得（全ての基盤）
+            const clientRes = await fetch("/api/get_current_client/");
+            const clientData = await clientRes.json();
+            const currentClient = clientData['current-client'] || {};
+
+            // 外側の変数にデータを格納（editGrid等で利用可能になる）
+            client_id = currentClient['client_id'] || 0;
+            // client_markup_rate = currentClient['current-client']["markup_rate"];
+            const client_no = currentClient["client_no"];
+            const client_name = currentClient['client_name'];
+
+
+            // 💡 今回追加した「ヘッダー」の要素に文字をセット
+            const headerNoElem = document.getElementById("header_client_no");
+            const headerNameElem = document.getElementById("header_client_name");
+            const headerReportTitleElem = document.getElementById("header_report_title");
+            if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
+            if (headerNameElem) headerNameElem.textContent = client_name || '';
+            if (headerReportTitleElem) headerReportTitleElem.textContent = "見積一覧表";
+
+            await Promise.all([
+                fetchFiscalYears(),
+                fetchCurrentUsers(),
+                fetchAllUsers(),
+                fetchCurrentCustomers(),
+                fetchAllCustomers(),
+                fetchCurrentSegments(),
+                fetchAllSegments(),
+                fetchConstructions(),
+                fetchEstimateLists()
+
+            ]);
+
+        } catch (err) {
+            console.error("get_current_clientロードエラーが発生しました:", err);
+        }
+    }
+
+
+    async function fetchFiscalYears() {
+        try {
+            const res = await fetch(`/api/fiscalyear-options/${client_id}/`);
+            const data = await res.json()
+            fiscalyearOptions = data.fiscalyears.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+        } catch (err) {
+            console.error("fiscalyearデータ取得失敗", err)
+        }
+    }
+
+    async function fetchCurrentUsers() {
+        try {
+            use_flg = "0"
+            const res = await fetch(`/api/user-options/${client_id}/${use_flg}/`);
+            const data = await res.json()
+            currentUserOptions = data.usres.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            currentUserOptions.unshift({id: null, value: ""});
+        } catch (err) {
+            console.log("currentUsersデータ取得失敗", err)
+        }
+    }
+
+    async function fetchAllUsers() {
+        try {
+            use_flg = "9"
+            const res = await fetch(`/api/user-options/${client_id}/${use_flg}/`);
+            const data = await res.json()
+            allUserOptions = data.usres.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            allUserOptions.unshift({id: null, value: ""});
+        } catch (err) {
+            console.log("allUsersデータ取得失敗", err)
+        }
+    }
+
+    async function fetchCurrentCustomers() {
+        try {
+            use_flg = "0"
+            const res = await fetch(`/api/customer-options/${client_id}/${use_flg}/`);
+            const data = await res.json()
+            currentCustomerOptions = data.customers.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            currentCustomerOptions.unshift({id: null, value: ""});
+        } catch (err) {
+            console.log("currentCustomersデータ取得失敗", err)
+        }
+    }
+
+    async function fetchAllCustomers() {
+        try {
+            use_flg = "9"
+            const res = await fetch(`/api/customer-options/${client_id}/${use_flg}/`);
+            const data = await res.json()
+            allCustomerOptions = data.customers.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            allCustomerOptions.unshift({id: null, value: ""});
+        } catch (err) {
+            console.log("allCustomersデータ取得失敗", err)
+        }
+    }
+
+    async function fetchCurrentSegments() {
+        try {
+            use_flg = "0"
+            const res = await fetch(`/api/segment-options/${client_id}/${use_flg}/`);
+            const data = await res.json()
+            currentSegmentOptions = data.segments.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            currentSegmentOptions.unshift({id: null, value: ""});
+        } catch (err) {
+            console.log("currentSegmentsデータ取得失敗", err)
+        }
+    }
+
+    async function fetchAllSegments() {
+        try {
+            use_flg = "9"
+            const res = await fetch(`/api/segment-options/${client_id}/${use_flg}/`);
+            const data = await res.json()
+            allSegmentOptions = data.segments.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            allSegmentOptions.unshift({id: null, value: ""});
+        } catch (err) {
+            console.log("allSegmentsデータ取得失敗", err)
+        }
+    }
+
+    async function fetchConstructions() {
+        try {
+            const res = await fetch(`/api/construction-options/${client_id}/`);
+            const data = await res.json()
+            currentConstructionOptions = data.constructions.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+            // ★ 先頭に「未選択用」の空の選択肢を差し込む
+            constructionOptions.unshift({id: null, value: ""});
+        } catch (err) {
+            console.log("currentConstructionsデータ取得失敗", err)
+        }
+    }
+
+
+
+    // // 年度のデータセット
+    // const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
+    // fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
+    // // --入力系--
+    //
+    // // --出力系--
+    // let use_flg = "9";
+    // // 得意先のデータセット
+    // const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
+    // q_customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
+    // const customerNameCombo = form.getItem("customer").getWidget();
+    // customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
+    // // 部門のデータセット
+    // const q_ConstructionNameCombo = sidebarForm.getItem("q_segment").getWidget();
+    // q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
+    // const segmentNameCombo = form.getItem("segment").getWidget();
+    // segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
+    // // 利用者のデータセット
+    // const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
+    // q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+    // const userNameCombo = form.getItem("estimate_person").getWidget();
+    // userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+    // // --共通-- 工事区分のデータセット
+    // const constructionNameCombo = form.getItem("construction").getWidget();
+    // constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
+    // const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
+    // q_constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
+
+    //use_flg = "9";
+    // reloadCombo(use_flg)
+    // combo の場合は getWidget() でオブジェクトを取得して parse する
+    // const comboWidget = form.getItem("q_customer").getWidget();
+    // fetch(`/api/customers/${client_id}/`)
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         // comboに適合するフォーマット [{ id: "値", value: "表示名" }] に変換
+    //         const comboData = data.map(item => ({
+    //             id: item.id,
+    //             value: item.name
+    //         }));
+
+    //         // 選択肢をセット
+    //         comboWidget.data.parse(comboData);
+    //     });
+
+    async function fetchEstimateLists() {
+        try {
+            const res = await fetch(`/estimate/lists/${client_id}/${sql}/`);
+            const data = await res.json();
+            grid.data.parse(data);
+        } catch (err) {
+
+            console.error("Estimateデータ取得失敗:", err);
+            // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
+            // if (client_id && form) {
+            //     form.setValue({client: String(client_id)});
+            // }
+
+            // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
+        }
+    }
+
+    // 3.6 実行
+    loadInitialData();
 
     // ===================================================
     // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
@@ -55,7 +305,7 @@
     //  2. --- モーダルウインドウの準備 ---
     dhxWindow = new dhx.Window({
         width: 1200,
-        height: 1000,
+        height: 1200,
         title: "新規",
         modal: true,
         closable: true, // 閉じられるように設定
@@ -130,6 +380,7 @@
                         labelPosition: "left",
                         labelWidth: "130px",
                         width: 320,
+                        options: fiscalyearOptions,
                         css: "my-custom-required" // 任意のクラス名を追加
                     },
                     {
@@ -304,7 +555,17 @@
                                                 required: true,
                                                 labelWidth: "120px",
                                                 css: "my-custom-required", // 任意のクラス名を追加
-                                                width: "100%"
+                                                width: "100%",
+                                                // 組み込みの "integer" の代わりにカスタム関数を指定
+                                                validation: function (value) {
+                                                    // 未入力（空文字）の場合はバリデーションをパスさせる
+                                                    if (value === "") {
+                                                        return true;
+                                                    }
+                                                    // 入力がある場合は、整数かどうかのチェックを行う（正規表現など）
+                                                    return /^-?\d+$/.test(value);
+                                                },
+                                                errorMessage: "有効な整数を入力してください"
                                             },
                                             {
                                                 name: "estimate_budget",
@@ -312,6 +573,14 @@
                                                 label: "実行予算額",
                                                 labelPosition: "left",
                                                 labelWidth: "120px",
+                                                tooltip: false, // ★ ここに記述してツールチップを無効化します
+                                                validation: function (value) {
+                                                    if (value === "") {
+                                                        return true;
+                                                    }
+                                                    return /^-?\d+$/.test(value);
+                                                },
+                                                errorMessage: "有効な整数を入力してください",
                                                 width: "100%"
                                             },
                                             {
@@ -336,6 +605,14 @@
                                                 label: "消費税額",
                                                 labelPosition: "left",
                                                 labelWidth: "120px",
+                                                tooltip: false, // ★ ここに記述してツールチップを無効化します
+                                                validation: function (value) {
+                                                    if (!value && value !== 0) {
+                                                        return true;
+                                                    }
+                                                    return /^-?\d+$/.test(value);
+                                                },
+                                                errorMessage: "有効な整数を入力してください",
                                                 width: "100%"
                                             },
                                             {
@@ -681,94 +958,6 @@
     // Layoutの "sidebar" というIDのセルにFormをアタッチ
     //const searchForm = layout.getCell("sidebar_container").attach(new dhx.Form(null, formConfig));
 
-    // ===================================================
-    // 3. DATA LOADING （データ通信・サーバーとのやり取り）
-    // ===================================================
-
-    // CONNECT: 3.1 DRFからデータの読み込み
-    fetch("/api/get_current_client/")
-        .then(res => res.json())
-        .then(data => {
-            client_id = data['current-client'].client_id;
-            const client_no = data['current-client']["client_no"];
-            const client_name = data['current-client']['client_name'];
-            client_markup_rate = data['current-client'].markup_rate;
-
-
-            // 💡 今回追加した「ヘッダー」の要素に文字をセット
-            const headerNoElem = document.getElementById("header_client_no");
-            const headerNameElem = document.getElementById("header_client_name");
-            const headerReportTitleElem = document.getElementById("header_report_title");
-            if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
-            if (headerNameElem) headerNameElem.textContent = client_name || '';
-            if (headerReportTitleElem) headerReportTitleElem.textContent = "見積一覧表";
-
-
-            // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
-            if (client_id && form) {
-                form.setValue({client: String(client_id)});
-            }
-
-            // 年度のデータセット
-            const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
-            fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
-            // --入力系--
-
-            // --出力系--
-            let use_flg = "9";
-            // 得意先のデータセット
-            const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
-            q_customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-            const customerNameCombo = form.getItem("customer").getWidget();
-            customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
-            // 部門のデータセット
-            const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
-            q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-            const segmentNameCombo = form.getItem("segment").getWidget();
-            segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
-            // 利用者のデータセット
-            const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
-            q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-            const userNameCombo = form.getItem("estimate_person").getWidget();
-            userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
-            // --共通-- 工事区分のデータセット
-            const constructionNameCombo = form.getItem("construction").getWidget();
-            constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
-            const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
-            q_constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
-
-            //use_flg = "9";
-            // reloadCombo(use_flg)
-            // combo の場合は getWidget() でオブジェクトを取得して parse する
-            // const comboWidget = form.getItem("q_customer").getWidget();
-            // fetch(`/api/customers/${client_id}/`)
-            //     .then(response => response.json())
-            //     .then(data => {
-            //         // comboに適合するフォーマット [{ id: "値", value: "表示名" }] に変換
-            //         const comboData = data.map(item => ({
-            //             id: item.id,
-            //             value: item.name
-            //         }));
-
-            //         // 選択肢をセット
-            //         comboWidget.data.parse(comboData);
-            //     });
-
-
-            // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
-            if (client_id && grid) {
-                fetch(`/estimate/lists/${client_id}/${sql}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        grid.data.parse(data);
-                    })
-                    .catch(err => console.error("データ取得失敗:", err));
-            }
-
-
-        })
-        .catch(err => console.error("estimateデータ取得失敗:", err));
-
 
     // ===================================================
     // 4. EVENTS （ボタン操作・イベントリスナー）
@@ -806,6 +995,7 @@
 
     // 6.2 グリッド内の「編集」ボタンクリック時
     grid.events.on("cellClick", (row, col) => {
+        console.log('row', row, 'col', col)
 
         if (col.id === "action") {
             let use_flg = "9";
@@ -814,6 +1004,7 @@
             reloadCombo(use_flg).then(() => {
 
                 // 2. 通信が【すべて完了した後に】データをフォームにセットする
+
                 form.setValue(row);
 
                 dhxWindow.header.data.update("title", {value: "編集"});
@@ -897,7 +1088,7 @@
         console.log("送信データ:", formData);
         const isNew = !formData.id || formData.id === "";
         //console.log("送信データdesu:", formData, 'sql',sql);
-        let sql = "null"
+        //const sql = "nonSQL"
         // 6.3.3. 新規(POST)か更新(PUT)の判定
         const url = isNew ? `/estimate/lists/${client_id}/${sql}/` : `/estimate/detail/${formData.id}/`;
         const method = isNew ? "POST" : "PUT";
@@ -959,7 +1150,7 @@
         if (col.id === "delete") {
             if (confirm("選択した行を削除してもよろしいですか？")) {
                 // 6.4.1. サーバー側のデータを削除
-                fetch(`/estimate/estimates/${row.id}/`, {
+                fetch(`/estimate/detail/${row.id}/`, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策

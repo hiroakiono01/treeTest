@@ -516,7 +516,7 @@ class Estimate(models.Model):
     id = models.AutoField(primary_key=True)
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
     fiscalyear = models.ForeignKey(Fiscalyear, null=True, blank=True, verbose_name='受注年度', on_delete=models.PROTECT)
-    estimate_year = models.CharField(max_length=15, null=True, blank=True, verbose_name='受注年度')
+    # estimate_year = models.CharField(max_length=15, null=True, blank=True, verbose_name='受注年度')
     estimate_date = models.CharField(max_length=12, null=True, blank=True, verbose_name='見積年月日')
     estimate_print_date = models.CharField(max_length=12, null=True, blank=True, verbose_name='見積書作成日')
     estimate_no = models.CharField(max_length=8, null=True, blank=True, verbose_name='見積書番号')
