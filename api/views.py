@@ -129,7 +129,7 @@ def get_user_options(_request, client_id, use_flg):
         }
         for item in users
     ]
-    return Response("users", user_options)
+    return Response({"users": user_options})
 
 
 def get_users(_request, client_id, use_flg):

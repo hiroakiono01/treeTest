@@ -43,7 +43,6 @@
     let constructionOptions;
 
 
-
     // CONNECT: 3.1 DRFからデータの読み込み
     async function loadInitialData() {
         try {
@@ -119,13 +118,18 @@
         try {
             use_flg = "9"
             const res = await fetch(`/api/user-options/${client_id}/${use_flg}/`);
-            const data = await res.json()
-            allUserOptions = data.usres.map(item => ({
+            const data = await res.json();
+            console.log("allUserOptions", allUserOptions, "data", data)
+
+            allUserOptions = data.users.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
+            console.log("allUserOptions", allUserOptions, "data", data)
+
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             allUserOptions.unshift({id: null, value: ""});
+
         } catch (err) {
             console.log("allUsersデータ取得失敗", err)
         }
@@ -211,7 +215,6 @@
     }
 
 
-
     // // 年度のデータセット
     // const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
     // fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
@@ -276,6 +279,7 @@
 
     // 3.6 実行
     loadInitialData();
+    console.log("allUserOptions", allUserOptions)
 
     // ===================================================
     // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
@@ -914,6 +918,7 @@
                 labelPosition: "left",
                 labelWidth: "60px",
                 label: "担当者",
+                data: allUserOptions
             },
             {
                 type: "combo",
@@ -973,7 +978,7 @@
     // 6. --- イベントの処理 ---
     // 6.1 新規作成のウインドウを表示する
     function addRow() {
-        console.log('client_id', client_id)
+        //console.log('client_id', client_id)
         // 新規時は「利用中のみ（フラグ: 1）」でコンボを更新
         let use_flg = "0";
         reloadCombo(use_flg)
@@ -995,7 +1000,7 @@
 
     // 6.2 グリッド内の「編集」ボタンクリック時
     grid.events.on("cellClick", (row, col) => {
-        console.log('row', row, 'col', col)
+        // console.log('row', row, 'col', col)
 
         if (col.id === "action") {
             let use_flg = "9";
@@ -1079,13 +1084,13 @@
                 }
             }
 
-            console.log('firstErrorId:', firstErrorId, 'formData:', info);
+            // console.log('firstErrorId:', firstErrorId, 'formData:', info);
             return;
         }
 
         // 6.3.2. バリデーション成功後に値を取得
         const formData = form.getValue();
-        console.log("送信データ:", formData);
+        // console.log("送信データ:", formData);
         const isNew = !formData.id || formData.id === "";
         //console.log("送信データdesu:", formData, 'sql',sql);
         //const sql = "nonSQL"
@@ -1190,7 +1195,7 @@
             data = sidebarForm.getValue();
 
             const sql = JSON.stringify(data);
-            console.log("検索条件:", sql);
+            // console.log("検索条件:", sql);
             fetch(`/estimate/lists/${client_id}/${sql}/`)
                 .then(response => response.json())
                 .then(result => {
