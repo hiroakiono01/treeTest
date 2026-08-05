@@ -269,13 +269,6 @@
                         //required: false,
                         labelPosition: "left",
                         labelWidth: "130px",
-                        data: [
-                            {value: "1", id: "id_1"},
-                            {value: "2", id: "id_2"},
-                            {value: "3", id: "id_3"},
-                            {value: "4", id: "id_4"},
-                            {value: "5", id: "id_5"}
-                        ],
                     },
                 ]
             },
@@ -762,6 +755,8 @@
                 id: Number(item.id),
                 value: item.value
             }));
+            const fiscalyearCombo = form.getItem("fiscalyear").getWidget();
+            fiscalyearCombo.data.parse(fiscalyearOptions)
             // console.log("fiscalyearOptions", fiscalyearOptions)
         } catch (err) {
             console.error("fiscalyearデータ取得失敗", err)
@@ -781,6 +776,8 @@
             console.log("currentUserOptions", currentUserOptions, "res", res)
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             currentUserOptions.unshift({id: null, value: ""});
+
+            return currentUserOptions;
 
         } catch (err) {
             console.log("currentUsersデータ取得失敗", err)
@@ -823,6 +820,8 @@
             }));
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             currentCustomerOptions.unshift({id: null, value: ""});
+            return currentCustomerOptions;
+
         } catch (err) {
             console.log("currentCustomersデータ取得失敗", err)
         }
@@ -839,8 +838,14 @@
             }));
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             allCustomerOptions.unshift({id: null, value: ""});
+
+            const customerNameCombo = form.getItem("customer").getWidget();
+            customerNameCombo.data.parse(allCustomerOptions);
+
             const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
             q_customerNameCombo.data.parse(allCustomerOptions);
+
+            return allCustomerOptions;
 
         } catch (err) {
             console.log("allCustomersデータ取得失敗", err)
@@ -858,6 +863,9 @@
             }));
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             currentSegmentOptions.unshift({id: null, value: ""});
+
+            return currentSegmentOptions;
+
         } catch (err) {
             console.log("currentSegmentsデータ取得失敗", err)
         }
@@ -873,10 +881,15 @@
                 value: item.value
             }));
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            allSegmentOptions.unshift({id: null, value: ""});
+            //allSegmentOptions.unshift({id: null, value: ""});
+
+            const segmentNameCombo = form.getItem("segment").getWidget();
+            segmentNameCombo.data.parse(allSegmentOptions);
 
             const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
-            q_segmentNameCombo.data.pase(allSegmentOptions);
+            q_segmentNameCombo.data.parse(allSegmentOptions);
+
+            return allSegmentOptions;
 
         } catch (err) {
             console.log("allSegmentsデータ取得失敗", err)
@@ -887,14 +900,19 @@
         try {
             const res = await fetch(`/api/construction-options/${client_id}/`);
             const data = await res.json()
-            currentConstructionOptions = data.constructions.map(item => ({
+            constructionOptions = data.constructions.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             constructionOptions.unshift({id: null, value: ""});
+            const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
+            q_constructionNameCombo.data.parse(constructionOptions)
+
+            return constructionOptions;
+
         } catch (err) {
-            console.log("currentConstructionsデータ取得失敗", err)
+            console.log("constructionデータ取得失敗", err)
         }
     }
 
@@ -981,7 +999,7 @@
         //console.log('client_id', client_id)
         // 新規時は「利用中のみ（フラグ: 1）」でコンボを更新
         let use_flg = "0";
-        reloadCombo(use_flg)
+
         // reloadCustomerCombo(use_flg);
         // reloadSegmentCombo(use_flg);
         // reloadUserCombo(use_flg);
@@ -989,6 +1007,7 @@
             form.clear({});
             form.setValue({markup_rate: client_markup_rate});
             form.setValue({client: client_id})
+            reloadCombo(use_flg)
             //form.setValue({client_no:client_no})
             //form.setValue({client_name:client_name})
         }
@@ -1221,33 +1240,25 @@
 
         // 1. まず現在のCombo（またはDataCollection）のデータをすべてクリアする
         const customerNameCombo = form.getItem("customer").getWidget();
+        console.log("currentUserOptions",currentUserOptions)
         if (customerNameCombo) {
             customerNameCombo.clear();
             customerNameCombo.data.removeAll();
-            const apiUrl = `/api/customer-options/${client_id}/${useFlgValue}/`;
-
-            // load()が返すPromiseを配列に追加
-            promises.push(customerNameCombo.data.load(apiUrl));
+            promises.push(customerNameCombo.data.parse(currentCustomerOptions));
         }
 
         const segmentNameCombo = form.getItem("segment").getWidget();
         if (segmentNameCombo) {
             segmentNameCombo.clear();
             segmentNameCombo.data.removeAll();
-            const apiUrl = `/api/segment-options/${client_id}/${useFlgValue}/`;
-
-            // load()が返すPromiseを配列に追加
-            promises.push(segmentNameCombo.data.load(apiUrl));
+            promises.push(segmentNameCombo.data.parse(currentSegmentOptions));
         }
 
-        const userNameCombo = form.getItem("estimate_person").getWidget(); // userから修正されていますね、OKです！
+        const userNameCombo = form.getItem("estimate_person").getWidget();
         if (userNameCombo) {
             userNameCombo.clear();
             userNameCombo.data.removeAll();
-            const apiUrl = `/api/user-options/${client_id}/${useFlgValue}/`;
-
-            // load()が返すPromiseを配列に追加
-            promises.push(userNameCombo.data.load(apiUrl));
+            promises.push(userNameCombo.data.parse(currentUserOptions));
         }
 
         // すべてのコンボボックスのデータロード（通信）が完了したら通知する
