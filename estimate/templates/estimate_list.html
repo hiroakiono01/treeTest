@@ -14,6 +14,7 @@
     //  1. VARIABLES （変数の宣言とデータの準備）
     // ===================================================
 
+
     const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
     let client_id = "";
     let grid = null;
@@ -691,7 +692,7 @@
     // ===================================================
     // 他の関数やeditGridからも参照できるように外側で定義（グローバル/モジュールスコープ）
     let clientId;
-    let estimateNo = "";
+    //let estimateNo = "";
     let use_flg;
     let client_markup_rate;
     let fiscalyearOptions = [];
@@ -713,7 +714,7 @@
             const currentClient = clientData['current-client'] || {};
 
             // 外側の変数にデータを格納（editGrid等で利用可能になる）
-            client_id = currentClient['client_id'] || 0;
+            clientId = currentClient['client_id'] || 0;
             // client_markup_rate = currentClient['current-client']["markup_rate"];
             const client_no = currentClient["client_no"];
             const client_name = currentClient['client_name'];
@@ -749,7 +750,7 @@
 
     async function fetchFiscalYears() {
         try {
-            const res = await fetch(`/api/fiscalyear-options/${client_id}/`);
+            const res = await fetch(`/api/fiscalyear-options/${clientId}/`);
             const data = await res.json()
             fiscalyearOptions = data.fiscalyears.map(item => ({
                 id: Number(item.id),
@@ -766,16 +767,12 @@
     async function fetchCurrentUsers() {
         try {
             use_flg = "0"
-            const res = await fetch(`/api/user-options/${client_id}/${use_flg}/`);
+            const res = await fetch(`/api/user-options/${clientId}/${use_flg}/`);
             const data = await res.json();
-            console.log("data", data)
             currentUserOptions = data.users.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
-            console.log("currentUserOptions", currentUserOptions, "res", res)
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            currentUserOptions.unshift({id: null, value: ""});
 
             return currentUserOptions;
 
@@ -787,20 +784,17 @@
     async function fetchAllUsers() {
         try {
             use_flg = "9"
-            const res = await fetch(`/api/user-options/${client_id}/${use_flg}/`);
+            const res = await fetch(`/api/user-options/${clientId}/${use_flg}/`);
             const data = await res.json();
-            console.log("data", data)
             allUserOptions = data.users.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
 
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            allUserOptions.unshift({id: null, value: ""});
-
             // 3. 【修正点】FormアイテムのsetOptionsを使用して選択肢を一括更新する
             const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
             q_userNameCombo.data.parse(allUserOptions);
+            console.log("allUserOptions",allUserOptions)
 
             return allUserOptions;
 
@@ -812,14 +806,13 @@
     async function fetchCurrentCustomers() {
         try {
             use_flg = "0"
-            const res = await fetch(`/api/customer-options/${client_id}/${use_flg}/`);
+            const res = await fetch(`/api/customer-options/${clientId}/${use_flg}/`);
             const data = await res.json()
             currentCustomerOptions = data.customers.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            currentCustomerOptions.unshift({id: null, value: ""});
+
             return currentCustomerOptions;
 
         } catch (err) {
@@ -830,17 +823,12 @@
     async function fetchAllCustomers() {
         try {
             use_flg = "0"
-            const res = await fetch(`/api/customer-options/${client_id}/${use_flg}/`);
+            const res = await fetch(`/api/customer-options/${clientId}/${use_flg}/`);
             const data = await res.json()
             allCustomerOptions = data.customers.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            allCustomerOptions.unshift({id: null, value: ""});
-
-            const customerNameCombo = form.getItem("customer").getWidget();
-            customerNameCombo.data.parse(allCustomerOptions);
 
             const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
             q_customerNameCombo.data.parse(allCustomerOptions);
@@ -855,14 +843,12 @@
     async function fetchCurrentSegments() {
         try {
             use_flg = "0"
-            const res = await fetch(`/api/segment-options/${client_id}/${use_flg}/`);
+            const res = await fetch(`/api/segment-options/${clientId}/${use_flg}/`);
             const data = await res.json()
             currentSegmentOptions = data.segments.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            currentSegmentOptions.unshift({id: null, value: ""});
 
             return currentSegmentOptions;
 
@@ -874,17 +860,12 @@
     async function fetchAllSegments() {
         try {
             use_flg = "9"
-            const res = await fetch(`/api/segment-options/${client_id}/${use_flg}/`);
+            const res = await fetch(`/api/segment-options/${clientId}/${use_flg}/`);
             const data = await res.json()
             allSegmentOptions = data.segments.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            //allSegmentOptions.unshift({id: null, value: ""});
-
-            const segmentNameCombo = form.getItem("segment").getWidget();
-            segmentNameCombo.data.parse(allSegmentOptions);
 
             const q_segmentNameCombo = sidebarForm.getItem("q_segment").getWidget();
             q_segmentNameCombo.data.parse(allSegmentOptions);
@@ -898,7 +879,7 @@
 
     async function fetchConstructions() {
         try {
-            const res = await fetch(`/api/construction-options/${client_id}/`);
+            const res = await fetch(`/api/construction-options/${clientId}/`);
             const data = await res.json()
             constructionOptions = data.constructions.map(item => ({
                 id: Number(item.id),
@@ -906,6 +887,10 @@
             }));
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
             constructionOptions.unshift({id: null, value: ""});
+
+            const constructionNameCombo = form.getItem("construction").getWidget();
+            constructionNameCombo.data.parse(constructionOptions)
+
             const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
             q_constructionNameCombo.data.parse(constructionOptions)
 
@@ -919,37 +904,37 @@
 
     // // 年度のデータセット
     // const fiscalYearCombo = form.getItem("fiscalyear").getWidget();
-    // fiscalYearCombo.data.load(`/api/fiscalyears/${client_id}/`);
+    // fiscalYearCombo.data.load(`/api/fiscalyears/${clientId}/`);
     // // --入力系--
     //
     // // --出力系--
     // let use_flg = "9";
     // // 得意先のデータセット
     // const q_customerNameCombo = sidebarForm.getItem("q_customer").getWidget();
-    // q_customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
+    // q_customerNameCombo.data.load(`/api/customers/${clientId}/${use_flg}/`);
     // const customerNameCombo = form.getItem("customer").getWidget();
-    // customerNameCombo.data.load(`/api/customers/${client_id}/${use_flg}/`);
+    // customerNameCombo.data.load(`/api/customers/${clientId}/${use_flg}/`);
     // // 部門のデータセット
     // const q_ConstructionNameCombo = sidebarForm.getItem("q_segment").getWidget();
-    // q_segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
+    // q_segmentNameCombo.data.load(`/api/segments/${clientId}/${use_flg}/`);
     // const segmentNameCombo = form.getItem("segment").getWidget();
-    // segmentNameCombo.data.load(`/api/segments/${client_id}/${use_flg}/`);
+    // segmentNameCombo.data.load(`/api/segments/${clientId}/${use_flg}/`);
     // // 利用者のデータセット
     // const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
-    // q_userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+    // q_userNameCombo.data.load(`/api/users/${clientId}/${use_flg}/`);
     // const userNameCombo = form.getItem("estimate_person").getWidget();
-    // userNameCombo.data.load(`/api/users/${client_id}/${use_flg}/`);
+    // userNameCombo.data.load(`/api/users/${clientId}/${use_flg}/`);
     // // --共通-- 工事区分のデータセット
     // const constructionNameCombo = form.getItem("construction").getWidget();
-    // constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
+    // constructionNameCombo.data.load(`/api/constructions/${clientId}/`);
     // const q_constructionNameCombo = sidebarForm.getItem("q_construction").getWidget();
-    // q_constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
+    // q_constructionNameCombo.data.load(`/api/constructions/${clientId}/`);
 
     //use_flg = "9";
     // reloadCombo(use_flg)
     // combo の場合は getWidget() でオブジェクトを取得して parse する
     // const comboWidget = form.getItem("q_customer").getWidget();
-    // fetch(`/api/customers/${client_id}/`)
+    // fetch(`/api/customers/${clientId}/`)
     //     .then(response => response.json())
     //     .then(data => {
     //         // comboに適合するフォーマット [{ id: "値", value: "表示名" }] に変換
@@ -964,15 +949,15 @@
 
     async function fetchEstimateLists() {
         try {
-            const res = await fetch(`/estimate/lists/${client_id}/${sql}/`);
+            const res = await fetch(`/estimate/lists/${clientId}/${sql}/`);
             const data = await res.json();
             grid.data.parse(data);
         } catch (err) {
 
             console.error("Estimateデータ取得失敗:", err);
             // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
-            // if (client_id && form) {
-            //     form.setValue({client: String(client_id)});
+            // if (clientId && form) {
+            //     form.setValue({client: String(clientId)});
             // }
 
             // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
@@ -996,7 +981,7 @@
 
     // 4.2 新規作成のウインドウを表示する
     function addRow() {
-        //console.log('client_id', client_id)
+        //console.log('clientId', clientId)
         // 新規時は「利用中のみ（フラグ: 1）」でコンボを更新
         let use_flg = "0";
 
@@ -1006,7 +991,7 @@
         if (form) {
             form.clear({});
             form.setValue({markup_rate: client_markup_rate});
-            form.setValue({client: client_id})
+            form.setValue({client: clientId})
             reloadCombo(use_flg)
             //form.setValue({client_no:client_no})
             //form.setValue({client_name:client_name})
@@ -1059,8 +1044,8 @@
             // ※ もし task アプリケーション内なら /task/lists/1/、直下なら /lists/1/ に調整してください
             const targetUrl = `/task/lists/${rawId}/`;
 
-            if (window.parent && typeof window.parent.changeMainContent === "function") {
-                window.parent.changeMainContent(targetUrl);
+            if (window.parent && typeof window.parent["changeMainContent"] === "function") {
+                window.parent["changeMainContent"](targetUrl);
             } else {
                 window.top.location.href = targetUrl;
             }
@@ -1114,7 +1099,7 @@
         //console.log("送信データdesu:", formData, 'sql',sql);
         //const sql = "nonSQL"
         // 6.3.3. 新規(POST)か更新(PUT)の判定
-        const url = isNew ? `/estimate/lists/${client_id}/${sql}/` : `/estimate/detail/${formData.id}/`;
+        const url = isNew ? `/estimate/lists/${clientId}/${sql}/` : `/estimate/detail/${formData.id}/`;
         const method = isNew ? "POST" : "PUT";
         // 6.3.4. 通信開始
         fetch(url, {
@@ -1145,7 +1130,7 @@
                 // 3. 古いグリッドデータをクリア
                 grid.data.removeAll();
                 // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
-                return fetch(`/estimate/lists/${client_id}/${sql}/`);
+                return fetch(`/estimate/lists/${clientId}/${sql}/`);
             })
             .then(res => {
                 if (!res || !res.ok) {
@@ -1215,7 +1200,7 @@
 
             const sql = JSON.stringify(data);
             // console.log("検索条件:", sql);
-            fetch(`/estimate/lists/${client_id}/${sql}/`)
+            fetch(`/estimate/lists/${clientId}/${sql}/`)
                 .then(response => response.json())
                 .then(result => {
                     grid.data.removeAll();
@@ -1234,31 +1219,49 @@
     });
 
     // 得意先コンボのデータを状況に応じて読み直す共通関数
-    // 得意先コンボのデータを状況に応じて読み直す共通関数
     function reloadCombo(useFlgValue) {
         const promises = []; // 各通信の完了を監視するための配列
+        let customerOptions;
+        let segmentOptions;
+        let userOptions;
+
+        if (useFlgValue === "0") {
+            customerOptions = currentCustomerOptions;
+            segmentOptions = currentSegmentOptions;
+            userOptions = currentUserOptions;
+        } else {
+            customerOptions = allCustomerOptions;
+            segmentOptions = allSegmentOptions;
+            userOptions = allUserOptions;
+        }
+        console.log("currentUserOptions",currentUserOptions)
 
         // 1. まず現在のCombo（またはDataCollection）のデータをすべてクリアする
+        // ★ 先頭に「未選択用」の空の選択肢を差し込む
+        // customerOptions.unshift({id: null, value: ""});
+        // segmentOptions.unshift({id: null, value: ""});
+        // userOptions.unshift({id: null, value: ""});
+
         const customerNameCombo = form.getItem("customer").getWidget();
-        console.log("currentUserOptions",currentUserOptions)
+        console.log("userOptions", userOptions)
         if (customerNameCombo) {
             customerNameCombo.clear();
             customerNameCombo.data.removeAll();
-            promises.push(customerNameCombo.data.parse(currentCustomerOptions));
+            promises.push(customerNameCombo.data.parse(customerOptions));
         }
 
         const segmentNameCombo = form.getItem("segment").getWidget();
         if (segmentNameCombo) {
             segmentNameCombo.clear();
             segmentNameCombo.data.removeAll();
-            promises.push(segmentNameCombo.data.parse(currentSegmentOptions));
+            promises.push(segmentNameCombo.data.parse(segmentOptions));
         }
 
         const userNameCombo = form.getItem("estimate_person").getWidget();
         if (userNameCombo) {
             userNameCombo.clear();
             userNameCombo.data.removeAll();
-            promises.push(userNameCombo.data.parse(currentUserOptions));
+            promises.push(userNameCombo.data.parse(userOptions));
         }
 
         // すべてのコンボボックスのデータロード（通信）が完了したら通知する
