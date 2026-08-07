@@ -48,7 +48,7 @@
     ]);
 
 
-    //  2. 2 モーダルウインドウの準備
+    // 2.2 モーダルウインドウの準備
     dhxWindow = new dhx.Window({
         width: 1200,
         height: 1200,
@@ -705,7 +705,7 @@
     let constructionOptions = [];
 
 
-    // CONNECT: 3.1 DRFからデータの読み込み
+    // 3.1 DRFからデータを一括で読み込み
     async function loadInitialData() {
         try {
             // 3.2 現在のクライアントデータを取得（全ての基盤）
@@ -720,12 +720,14 @@
             const client_name = currentClient['client_name'];
 
 
-            // 💡 今回追加した「ヘッダー」の要素に文字をセット
+            // ヘッダー要素への文字セット
             const headerNoElem = document.getElementById("header_client_no");
-            const headerNameElem = document.getElementById("header_client_name");
-            const headerReportTitleElem = document.getElementById("header_report_title");
             if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
+
+            const headerNameElem = document.getElementById("header_client_name");
             if (headerNameElem) headerNameElem.textContent = client_name || '';
+
+            const headerReportTitleElem = document.getElementById("header_report_title");
             if (headerReportTitleElem) headerReportTitleElem.textContent = "見積一覧表";
 
             await Promise.all([
@@ -738,10 +740,7 @@
                 fetchAllSegments(),
                 fetchConstructions(),
                 fetchEstimateLists()
-
             ]);
-
-
         } catch (err) {
             console.error("get_current_clientロードエラーが発生しました:", err);
         }
@@ -794,7 +793,7 @@
             // 3. 【修正点】FormアイテムのsetOptionsを使用して選択肢を一括更新する
             const q_userNameCombo = sidebarForm.getItem("q_user").getWidget();
             q_userNameCombo.data.parse(allUserOptions);
-            console.log("allUserOptions",allUserOptions)
+            console.log("allUserOptions", allUserOptions)
 
             return allUserOptions;
 
@@ -1013,8 +1012,21 @@
             reloadCombo(use_flg).then(() => {
 
                 // 2. 通信が【すべて完了した後に】データをフォームにセットする
+                console.log("row", row)
+                // nullのあるデータをグレンジングする
+                // --- 【追加】rowデータ内のnull/undefinedを空文字に安全に変換 ---
+                const safeRow = {...row};
+                Object.keys(safeRow).forEach(key => {
+                    if (safeRow[key] === null || safeRow[key] === undefined) {
+                        safeRow[key] = "";
+                    }
+                });
+                // -------------------------------------------------------------
 
-                form.setValue(row);
+                // 修正：クレンジング済みのオブジェクトをセットする
+                form.setValue(safeRow);
+
+                //form.setValue(row);
 
                 dhxWindow.header.data.update("title", {value: "編集"});
                 dhxWindow.paint();
@@ -1234,13 +1246,18 @@
             segmentOptions = allSegmentOptions;
             userOptions = allUserOptions;
         }
-        console.log("currentUserOptions",currentUserOptions)
+        console.log("currentUserOptions", currentUserOptions)
 
         // 1. まず現在のCombo（またはDataCollection）のデータをすべてクリアする
         // ★ 先頭に「未選択用」の空の選択肢を差し込む
-        // customerOptions.unshift({id: null, value: ""});
-        // segmentOptions.unshift({id: null, value: ""});
-        // userOptions.unshift({id: null, value: ""});
+        const hasEmptyOption = customerOptions.some(option => option.value === "");
+
+        if (!hasEmptyOption) {
+            customerOptions.unshift({id: null, value: ""});
+            segmentOptions.unshift({id: null, value: ""});
+            userOptions.unshift({id: null, value: ""});
+            console.log("未選択（空文字）が選ばれました");
+        }
 
         const customerNameCombo = form.getItem("customer").getWidget();
         console.log("userOptions", userOptions)

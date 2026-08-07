@@ -19,7 +19,7 @@
     layout.getCell("sidebar_container").hide();
     let toolbar;
     let treeGrid = null;
-    let estimateName = "";
+    // let estimateName = "";
     let globalUnitOptions = [];
     let globalAggregationOptions = [];
 
@@ -129,8 +129,6 @@
             {
                 id: "amount",
                 header: [{text: "見積金額", align: "center"}], type: "string",
-
-                numberMask: {groupSeparator: ","},
                 footer: [{text: ({sum}) => sum, align: "right"}],
                 summary: "sum",
                 numberMask: {customFormat: "#,##0"}, align: "right",
@@ -161,7 +159,7 @@
 
         },
         rootParent: null,
-        selection: "col",
+        selection: "complex",
         multiselection: true,
         //dragMode: "both",// 他のgridからデータをドラグできる
         dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
@@ -177,15 +175,15 @@
     // 編集を不可にする
     //treeGrid.selection.disable();
 
-    // 2.4 ワンクリックで入力ができる ---　
-    // treeGrid.events.on("cellClick", function (row, column) {
-    //     setTimeout(() => {
-    //         treeGrid.editCell(row.id, column.id);
-    //     }, 50);
-    // });
+    // ワンクリックで入力ができる ---　
+    treeGrid.events.on("cellClick", function (row, column) {
+        setTimeout(() => {
+            treeGrid.editCell(row.id, column.id);
+        }, 50);
+    });
 
-    // 2.5 Enterで移動する
-    // enableGridEnterNavigation(treeGrid);
+    // Enterで移動する
+    enableGridEnterNavigation(treeGrid);
 
     // 💡 修正した「grid_cell」にGridをアタッチ
     layout.getCell("grid_cell").attach(treeGrid);
@@ -195,7 +193,7 @@
     let editGrid = null;
     let currentParentId = null;
 
-    // 2.6 ページネーションの作成
+    // 2.4 ページネーションの作成
     const paginationConfig = {};
     paginationConfig["css"] = "dhx_widget--bordered dhx_widget--no-border_top";
     paginationConfig["data"] = treeGrid.data; // 💡 文字列で代入するため、型不一致エラーは絶対に起きません
@@ -209,22 +207,24 @@
     // ===================================================
 
     // 他の関数やeditGridからも参照できるように外側で定義（グローバル/モジュールスコープ）
-    let clientId = 0;
-    let estimateNo = "";
+    let clientId;
+    let use_flg;
+    let client_markup_rate;
+    let currentUnitOptions;
+    let allUnitOptions;
 
     // URLの末尾から estimateNo を安全に取得して即座に代入
     const pathSegments = window.location.pathname.split('/').filter(Boolean);
-    estimateNo = pathSegments[pathSegments.length - 1] || "";
+    const estimateNo = pathSegments[pathSegments.length - 1] || "";
 
     const dataset = new dhx.TreeCollection()
 
-    // 3.1 メインのデータ読み込み関数
+    // 3.1 DRFからデータを一括で読み込み
     async function loadInitialData() {
         try {
             // 3.1 現在のクライアントデータを取得（全ての基盤）
             const clientRes = await fetch("/api/get_current_client/");
             const clientData = await clientRes.json();
-
             const currentClient = clientData['current-client'] || {};
 
             // 外側の変数にデータを格納（editGrid等で利用可能になる）
@@ -246,15 +246,13 @@
             // clientId が確定したため、依存するAPIリクエストを並列で実行
             await Promise.all([
                 fetchEstimateInfo(),
-                fetchUnitOptions(),
+                fetchCurrentUnits(),
+                fetchAllUnits(),
                 fetchAggregationOptions(),
                 fetchTaskLists()
             ]);
-            // 3. データをGridに流し込む
-            //treeGrid.data.parse(estimateInfo);
-
         } catch (err) {
-            console.error("初期データロード中にエラーが発生しました:", err);
+            console.error("get_current_clientロードエラーが発生しました:", err);
         }
     }
 
@@ -277,33 +275,53 @@
 
     // 3.3 Unit一覧を取得してGridおよびeditGridのプルダウンに反映
 
-    async function fetchUnitOptions() {
+    async function fetchCurrentUnits() {
         try {
-            const unitFields = ["budget_unit", "unit"]
-            const res = await fetch(`/api/unit-options/${clientId}/`);
+            use_flg = "0"
+            //const unitFields = ["budget_unit", "unit"]
+            const res = await fetch(`/api/unit-options/${clientId}/${use_flg}/`);
             const data = await res.json();
-            const formattedUnits = data.units.map(item => ({
+            currentUnitOptions = data.units.map(item => ({
                 id: Number(item.id),
                 value: item.value
             }));
+
+            return currentUnitOptions
             // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            formattedUnits.unshift({id: "", value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
-            const currentColumns = treeGrid.config.columns.map(col => {
-                if (unitFields.includes(col.id)) {
-                    return {...col, options: formattedUnits};
-                }
-                // console.log("col", col)
-                return col;
-            });
-
-            treeGrid.setColumns(currentColumns);
-
-            // 2. データを変数にキャッシュしておく
-            globalUnitOptions = formattedUnits;
-            console.log("globalUnitOptions", globalUnitOptions)
+            // formattedUnits.unshift({id: "", value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
+            // const currentColumns = treeGrid.config.columns.map(col => {
+            //     if (unitFields.includes(col.id)) {
+            //         return {...col, options: formattedUnits};
+            //     }
+            //     // console.log("col", col)
+            //     return col;
+            // });
+            //
+            // treeGrid.setColumns(currentColumns);
+            //
+            // // 2. データを変数にキャッシュしておく
+            // globalUnitOptions = formattedUnits;
+            // console.log("globalUnitOptions", globalUnitOptions)
 
         } catch (err) {
-            console.error("unitデータ取得失敗:", err);
+            console.error("currentUnitデータ取得失敗:", err);
+        }
+    }
+
+    async function fetchAllUnits() {
+        try {
+            use_flg = "0"
+            //const unitFields = ["budget_unit", "unit"]
+            const res = await fetch(`/api/unit-options/${clientId}/${use_flg}/`);
+            const data = await res.json();
+            allUnitOptions = data.units.map(item => ({
+                id: Number(item.id),
+                value: item.value
+            }));
+
+            return allUnitOptions
+        } catch (err) {
+            console.error("allUnitデータ取得失敗:", err);
         }
     }
 
@@ -1241,7 +1259,35 @@
         // editWindow.destructor();
         // editWindow = null;
 
+
     });
+
+    function reloadCombo(useFlgValue) {
+        let unitOptions;
+
+        if (useFlgValue === "0") {
+            unitOptions = currentUnitOptions;
+
+        }else{
+            unitOptions = allUnitOptions;
+        }
+        const hasEmptyOption = unitOptions.some(option => option.value === "");
+        if (!hasEmptyOption) {
+            unitOptions.unshift({id: null, value: ""});
+        }
+
+        const unitFields = ["budget_unit", "unit"]
+        const currentColumns = treeGrid.config.columns.map(col => {
+            if (unitFields.includes(col.id)) {
+                return {...col, options: unitOptions};
+            }
+            // console.log("col", col)
+            return col;
+        });
+
+        treeGrid.setColumns(currentColumns);
+    }
+
 </script>
 </body>
 {% endblock %}

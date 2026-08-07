@@ -14,14 +14,18 @@ def index(request):
 
 
 @api_view(['GET'])
-def get_unit_options(_request, client_id):
+def get_unit_options(_request, client_id, use_flg):
     # combobox の場合はid,valueでselectは使えない
+    if use_flg == "0":
+        units = Unit.objects.all().filter(client_id=client_id, use_flg=use_flg).order_by('unit_no')
+    else:
+        units = Unit.objects.all().filter(client_id=client_id).order_by('unit_no')
     unit_options = [
         {
             "id": unit.id,  # 文字型として代入
             "value": unit.unit_name  # 文字列型（表示名）
         }
-        for unit in Unit.objects.order_by("unit_no").filter(client_id=client_id).all()
+        for unit in units
     ]
     return Response({"units": unit_options})
 
@@ -74,7 +78,7 @@ def get_current_client(self):
     return JsonResponse({'current-client': result}, status=404)
 
 
-def get_estimate_name(request, client_id, estimate_no):
+def get_estimate_name(_request, client_id, estimate_no):
     # GETパラメータから 'estimate_no' を取得
     # est_no = request.GET.get(estimate_no, client_id, None)
 
