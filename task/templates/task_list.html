@@ -80,7 +80,7 @@
                 header: [{text: "予算単位", align: "center"}],
                 editorType: "combobox",
                 width: 100,
-                options: globalUnitOptions,
+                // options: globalUnitOptions,
                 align: "center",
             },
             {id: "budget_price", header: [{text: "予算単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
@@ -131,7 +131,7 @@
 
         },
         rootParent: null,
-        selection: "cell",
+        selection: "row",
         multiselection: true,
         //dragMode: "both",// 他のgridからデータをドラグできる
         dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
@@ -347,6 +347,8 @@
         try {
             const res = await fetch(`/task/lists/${estimateNo}/`);
             const data = await res.json();
+            use_flg = "9";
+            reloadCombo(use_flg);
             treeGrid.data.parse(data);
         } catch (err) {
             console.error("タスクデータ取得失敗:", err);
@@ -355,9 +357,6 @@
 
     // 3.6 実行
     loadInitialData();
-
-    use_flg = "9";
-    reloadCombo(use_flg);
 
 
     // ===================================================
@@ -422,21 +421,26 @@
             //parent: rowParent            // 親階層（任意）
             type: "parent",
             isNew: true,
+
         };
         use_flg = "0";
         reloadCombo(use_flg);
         // 2. グリッドのデータストアに直接追加
         treeGrid.data.add(newRowData);
+        console.log("newRowData", newRowData, "globalUnitOptions", globalUnitOptions)
         // 3. (オプション) 追加した行を自動でフォーカスしてスクロール
         // treeGrid.selection.setCell(newRowData.id, "estimate_no");
     }
 
 
     // 4.1.2 自動で行を追加する処理
+    treeGrid.events.on("cellClick", function (row, col, e) {
+        console.log("1. cellClickが発生:", row.id, col.id);
+    });
     treeGrid.events.on("beforeKeyDown", function (event, e) {
 
         if (e.keyCode === 13) {
-             // console.log('event', e.keyCode)
+            // console.log('event', e.keyCode)
 
             // 現在選択（編集）されているセル情報を取得
             const selection = treeGrid.selection.getCell();
@@ -796,7 +800,7 @@
 
     function reloadCombo(useFlgValue) {
         //let unitOptions = [];
-        //console.log("currentUnitOptions", currentUnitOptions, "allUnitOptions", allUnitOptions, "useFlgValue", useFlgValue)
+        console.log("currentUnitOptions", currentUnitOptions, "allUnitOptions", allUnitOptions, "useFlgValue", useFlgValue)
         globalUnitOptions = []
         if (useFlgValue === "0") {
             globalUnitOptions = currentUnitOptions;
@@ -813,25 +817,68 @@
         const unitFields = ["budget_unit", "unit"]
         const currentColumns = treeGrid.config.columns.map(col => {
             if (unitFields.includes(col.id)) {
-                return {...col, options: globalUnitOptions};
+                return {
+                    ...col,
+                    options: globalUnitOptions,
+
+                    // 【追加】クリック前（非編集時）の表示をIDではなくvalueにするテンプレート
+                    options: function () {
+                        return globalUnitOptions;
+                    }
+                };
             }
             // console.log("col", col)
             return col;
         });
-        console.log("globalUnitOptions",globalUnitOptions, "useFlgValue",useFlgValue)
+        console.log("globalUnitOptions", globalUnitOptions, "useFlgValue", useFlgValue)
 
+        treeGrid.setColumns([]);
         treeGrid.setColumns(currentColumns);
+
+        // editGrid.setColumns([]);
+        // editGrid.setColumns(currentColumns);
+        // treeGrid.paint()
+
+
     }
 
-    //     const editGridColumns = editGrid.config.columns.map(col => {
-    //         if (unitFields.includes(col.id)) {
-    //             return {...col, options: unitOptions};
-    //         }
-    //         // console.log("col", col)
-    //         return col;
-    //     });
-    //     editGrid.setColumns(editGridColumns);
-    // }
+    function reloadEditCombo(useFlgValue) {
+        let editUnitOptions = []
+        if (useFlgValue === "0") {
+            editUnitOptions = currentUnitOptions;
+
+        } else {
+            editUnitOptions = allUnitOptions;
+            // console.log("allUnitOptions", allUnitOptions)
+        }
+        const hasEmptyOption = editUnitOptions.some(option => option.value === "");
+        if (!hasEmptyOption) {
+            editUnitOptions.unshift({id: null, value: ""});
+        }
+
+        const unitFields = ["budget_unit", "unit"]
+        const editGridColumns = editGrid.config.columns.map(col => {
+            if (unitFields.includes(col.id)) {
+                return {
+                    ...col,
+                    options: editUnitOptions,
+
+                    // 【追加】クリック前（非編集時）の表示をIDではなくvalueにするテンプレート
+                    options: function () {
+                        return editUnitOptions;
+                    }
+                };
+            }
+            // console.log("col", col)
+            return col;
+        });
+
+                editGrid.setColumns([]);
+        editGrid.setColumns(editGridColumns);
+
+
+
+    }
 
     // const unitFields = ["budget_unit"]
     // fetch("/api/unit-options/")
@@ -875,8 +922,8 @@
 
     // 5 子要素のGridを表示
     treeGrid.events.on("cellClick", function (row, col,) {
-        use_flg = "9"
-        reloadCombo(use_flg)
+        // use_flg = "9"
+        // reloadCombo(use_flg)
         // クリックされた列のIDが "actions" の場合は処理を終了する
         if (col.id !== "detail") {
             return;
@@ -1087,14 +1134,16 @@
 
         // 6.1 editGridに新たな行を追加
         function addRow() {
-            use_flg = "0"
-            reloadCombo(use_flg)
+
             const newId = "u" + Date.now();
+            use_flg = "0";
+            reloadEditCombo(use_flg);
             editGrid.data.add({
                 id: newId,
                 parent: currentParent,
                 task_name: "",
-                estimate_no: row.estimate_no || ""
+                estimate_no: row.estimate_no || "",
+
             });
         }
 
