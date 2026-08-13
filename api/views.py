@@ -85,7 +85,7 @@ def get_estimate_name(_request, client_id, estimate_no):
     # if est_no:
     estimate = Estimate.objects.filter(estimate_no=estimate_no, client_id=client_id).first()
     if estimate:
-        return JsonResponse({'estimate_name': estimate.estimate_name})
+        return JsonResponse({'estimate_name': estimate.estimate_name, 'estimateId': estimate.pk})
 
     else:
         return JsonResponse({'estimate_name': ''}, status=404)

@@ -135,7 +135,7 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
 
-        fields = ('id', 'estimate_no',
+        fields = ('id', 'estimate',
                   'estimate_no_display',
                   'task_name',
                   'material_dimensions',

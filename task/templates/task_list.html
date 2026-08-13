@@ -180,6 +180,7 @@
 
     // 他の関数やeditGridからも参照できるように外側で定義（グローバル/モジュールスコープ）
     let clientId;
+    let estimateId;
     let use_flg;
     let client_markup_rate;
     let currentUnitOptions = [];
@@ -215,9 +216,21 @@
             const headerReportTitleElem = document.getElementById("header_report_title");
             if (headerReportTitleElem) headerReportTitleElem.textContent = "見積明細一覧";
 
+            // estimateIdの取得
+            const estimateRes = await fetch(`/api/get_estimate_name/${clientId}/${estimateNo}/`);
+            const estimateData = await estimateRes.json();
+            estimateId = estimateData['estimateId']
+            const estimateName = estimateData['estimate_name'];
+
+            const headerEstimateNameElem = document.getElementById("header_estimate_name");
+            if (headerEstimateNameElem) headerEstimateNameElem.textContent = estimateName;
+
+            const headerEstimateNoElem = document.getElementById("header_estimate_no");
+            if (headerEstimateNoElem) headerEstimateNoElem.textContent = estimateNo ? `(${estimateNo})` : '';
+
             // clientId が確定したため、依存するAPIリクエストを並列で実行
             await Promise.all([
-                fetchEstimateInfo(),
+                //fetchEstimateInfo(),
                 fetchCurrentUnits(),
                 fetchAllUnits(),
                 fetchAggregationOptions(),
@@ -234,6 +247,8 @@
             const res = await fetch(`/api/get_estimate_name/${clientId}/${estimateNo}/`);
             const data = await res.json();
             const estimateName = data['estimate_name'];
+            const estimateId = data['estimateId'];
+            console.log("estimateId", estimateId)
 
             const headerEstimateNameElem = document.getElementById("header_estimate_name");
             if (headerEstimateNameElem) headerEstimateNameElem.textContent = estimateName;
@@ -345,7 +360,8 @@
     // 3.5 タスク一覧の取得
     async function fetchTaskLists() {
         try {
-            const res = await fetch(`/task/lists/${estimateNo}/`);
+            console.log("estimateId", estimateId)
+            const res = await fetch(`/task/lists/${estimateId}/`);
             const data = await res.json();
             treeGrid.data.parse(data);
         } catch (err) {
@@ -436,7 +452,7 @@
     treeGrid.events.on("beforeKeyDown", function (event, e) {
 
         if (e.keyCode === 13) {
-             // console.log('event', e.keyCode)
+            // console.log('event', e.keyCode)
 
             // 現在選択（編集）されているセル情報を取得
             const selection = treeGrid.selection.getCell();
@@ -818,7 +834,7 @@
             // console.log("col", col)
             return col;
         });
-        console.log("globalUnitOptions",globalUnitOptions, "useFlgValue",useFlgValue)
+        // console.log("globalUnitOptions",globalUnitOptions, "useFlgValue",useFlgValue)
 
         treeGrid.setColumns(currentColumns);
     }

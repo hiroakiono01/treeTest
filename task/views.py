@@ -65,13 +65,14 @@ def tree_detail_test(request, pk):
 
 
 @api_view(['GET', 'POST'])
-def task_list(request, estimate_no):
+def task_list(request, estimateId):
     # estimate_no = request.query_params.get('estimate_no')
     # estimate_no = 1
+
     if request.method == 'GET':
         if 'text/html' in request.headers.get('Accept', ''):
-            return render(request, 'task_list.html', {'estimate_no': estimate_no})
-        tasks = Task.objects.filter(estimate_no=estimate_no).order_by("sort_order").all()
+            return render(request, 'task_list.html', {'estimate': estimateId})
+        tasks = Task.objects.filter(estimate=estimateId).order_by("sort_order").all()
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
@@ -125,6 +126,9 @@ def bulk_sync_tasks(request):
     id_map = {}
 
     for item in data_list:
+        # 1. 破壊的変更を防ぐため、アイテムのコピーを作成
+        item_copy = item.copy()
+
         temp_id = item.get('id')
         parent_val = item.get('parent')
 

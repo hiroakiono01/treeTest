@@ -564,7 +564,7 @@ class Task(models.Model):
         db_table = 'task'
 
     id = models.AutoField(primary_key=True)
-    estimate_no = models.ForeignKey(Estimate, null=True, blank=True, on_delete=models.PROTECT)
+    estimate = models.ForeignKey(Estimate, null=True, blank=True, on_delete=models.PROTECT)
     task_name = models.CharField(max_length=50, null=True, blank=True, verbose_name='明細名称')
     material_dimensions = models.CharField(max_length=50, null=True, blank=True, verbose_name='材質・寸法')
     budget_quantity = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='予算数量')

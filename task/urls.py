@@ -9,7 +9,7 @@ urlpatterns = [
     path('task_tree_test/', views.task_tree_test, name='task_tree_test'),
     # path('tasks_test/', views.tree_list_test),
     # path('tasks/<int:pk>/', views.tree_detail),
-    path('lists/<int:estimate_no>/', views.task_list),
+    path('lists/<int:estimateId>/', views.task_list),
     path('detail/<int:pk>/', views.task_detail),
     path('bulk_sync/', views.bulk_sync_tasks, name='task-bulk-sync'),
 ]
