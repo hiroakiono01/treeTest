@@ -578,6 +578,7 @@ class Task(models.Model):
     markup_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='掛率')
     # calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分', default='0')
     aggregation = models.ForeignKey(Aggregation, null=True, blank=True, verbose_name='計算区分', on_delete=models.PROTECT)
+    note = models.CharField(max_length=100, blank=True, null=True, verbose_name='備考')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     sort_order = models.IntegerField(default=0)
 

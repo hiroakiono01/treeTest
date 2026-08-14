@@ -32,6 +32,7 @@ urlpatterns = [
     path('aggregation/', include('aggregation.urls')),
     path('construction/', include('construction.urls')),
     path('estimate/', include('estimate.urls')),
+    path('importEstimate/', include('importEstimate.urls')),
     # path('api/', include('unit.urls')),  # api call
     # re_path(r'', include('unit.urls')),
     path('unit/', include('unit.urls')),

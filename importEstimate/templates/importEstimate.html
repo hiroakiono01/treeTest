@@ -4,11 +4,25 @@
 <div class="my-div-style">
     <div class="container">
         <div class="row">
-            <h3 class="my-3 text-center">得意先CSVインポート</h3>
+            <h3 class="my-3 text-center">見積書インポート(EXCEL)</h3>
         </div>
         <div clas="col-md-3 col-lg-6 text-center">
             <div class="dropzone" id="dropzone">Drop files here</div>
         </div>
+        <form method="POST">
+            {% csrf_token %}
+            <div id="flexselect">
+                <div class="select-item">
+                    {{ form.q_client_name }}
+                    {{ form.q_estimate_no }}
+                </div>
+            </div>
+            <div id="flexbutton">
+                <div class="button-item">
+                    <input class="btn btn-success btn-sm my-3" type="submit" id="search-button" name="submit" value="実行">
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}

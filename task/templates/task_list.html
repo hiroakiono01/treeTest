@@ -105,6 +105,7 @@
                 summary: "sum",
                 numberMask: {customFormat: "#,##0"}, align: "right",
             },
+            {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
             {id: "parent", header: [{text: "parent"}], hidden: false},
             {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
             {id: "detail", header: [{text: "階層", align: "center"}], editable: false},
@@ -888,9 +889,8 @@
             return col;
         });
 
-                editGrid.setColumns([]);
+        editGrid.setColumns([]);
         editGrid.setColumns(editGridColumns);
-
 
 
     }
@@ -1077,6 +1077,7 @@
                     summary: "sum",
                     numberMask: {customFormat: "#,##0"},
                 },
+                {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
                 {id: "parent", header: [{text: "parent"}], hidden: false},
                 {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
                 {
@@ -1158,6 +1159,7 @@
                 parent: currentParent,
                 task_name: "",
                 estimate_no: row.estimate_no || "",
+                estimate: estimateId,
 
             });
         }

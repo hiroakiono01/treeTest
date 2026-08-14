@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'construction',
     'process',
     'task',
+    'importEstimate',
     'django_bootstrap5',
     'django_filters',
     # 認証機能
