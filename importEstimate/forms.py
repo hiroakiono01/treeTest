@@ -2,14 +2,17 @@ import os
 
 from django import forms
 
-from app.models import Estimate
+from app.models import Estimate, Client, Fiscalyear, Customer
 
-VALID_EXTENSIONS_excel = ['.xls', '.xlsx']
+VALID_EXTENSIONS_excel = ['.xlsx']
 
 
 class ImportEstimateForm(forms.Form):
     client_name = forms.CharField(label='事業者名')
-    estimate_no = forms.CharField(label='見積書番号', max_length=8, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    client = forms.ModelChoiceField(queryset=Client.objects.all(), )
+    fiscalyear = forms.ModelChoiceField(label="年度", queryset=Fiscalyear.objects.all(), )
+    estimate_no = forms.CharField(label='見積書番号', max_length=8, required=True)
+    customer = forms.ModelChoiceField(label="得意先", queryset=Customer.objects.all(), )
 
     def clean_estimate_no(self):
         estimate_no = self.cleaned_data.get('estimate_no')
@@ -27,11 +30,11 @@ class ImportEstimateForm(forms.Form):
 
         # 重複チェック
         if Estimate.objects.filter(estimate_no=estimate_no).exists():
-            raise forms.ValidationError("この見積もり番号はすでに登録されています。")
+            raise forms.ValidationError("この見積書番号はすでに登録されています。")
 
         return estimate_no
 
-    file = forms.FileField(label='索引ファイルを選択してください')
+    file = forms.FileField(label='見積書のExcelファイルを選択してください')
 
     def clean_file(self):
         file = self.cleaned_data['file']

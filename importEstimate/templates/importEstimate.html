@@ -9,21 +9,6 @@
         <div clas="col-md-3 col-lg-6 text-center">
             <div class="dropzone" id="dropzone">Drop files here</div>
         </div>
-        <form method="POST">
-            {% csrf_token %}
-            <div id="flexselect">
-                <div class="select-item">
-                    {{ form.q_client_name }}
-                    {{ form.q_estimate_no }}
-                </div>
-            </div>
-            <div id="flexbutton">
-                <div class="button-item">
-                    <input class="btn btn-success btn-sm my-3" type="submit" id="search-button" name="submit" value="実行">
-                </div>
-            </div>
-        </form>
-    </div>
 </div>
 {% endblock %}
 {% block contents %}
@@ -33,8 +18,8 @@
             <table class="my-3 mb-2 bg-light text-black table-bordered">
                 <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <input type="file" name="csv_file" accept=".csv" required>
-                    <button type="submit">アップロード</button>
+                    {{ form }}
+                    <input class="btn btn-success col-md-2" type="submit" id="button" name="button" value="インポート">
                 </form>
             </table>
         </div>
