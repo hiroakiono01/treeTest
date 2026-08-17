@@ -46,8 +46,7 @@ class ImportEstimateForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['client_name'].widget.attrs['readonly'] = True
 
-        # フォームのパーツにBootstrapの見た目と、検索用クラスを追加します
-        for field_name in ['client', 'fiscalyear', 'customer']:
+        for field_name in ['customer']:
             self.fields[field_name].widget.attrs.update({
-                'class': 'form-control searchable-select'  # searchable-select クラスを付与
+                'class': 'form-control searchable-select',
             })
