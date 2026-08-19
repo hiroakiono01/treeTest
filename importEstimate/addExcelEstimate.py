@@ -20,54 +20,6 @@ def upload_excel_estimate(excel_file, form):
 
 
 def first_sheet(worksheet, form):
-    row_counter = worksheet.max_row
-    for i in range(row_counter - 26):
-
-        material_dimensions = worksheet.cell(row=i + 27, column=10).value
-        if material_dimensions is None:
-            material_dimensions = ""
-        task_obj["material_dimensions"] = material_dimensions
-
-        quantity = worksheet.cell(row=i + 27, column=17).value
-        if quantity is None:
-            quantity = None
-        task_obj["quantity"] = quantity
-
-        unit = worksheet.cell(row=i + 27, column=20).value
-        if unit is None:
-            unit = ""
-        task_obj["unit"] = unit
-
-        price = worksheet.cell(row=i + 27, column=22).value
-        if price is None:
-            price = None
-        task_obj["price"] = price
-
-        amount = worksheet.cell(row=i + 27, column=26).value
-        if amount is None:
-            amount = None
-        task_obj["amount"] = amount
-
-        note = worksheet.cell(row=i + 27, column=30).value
-        if note is None:
-            note = ""
-        task_obj["note"] = note
-
-        aggregation = worksheet.cell(row=i + 27, column=36).value
-        if aggregation is None:
-            aggregation = ""
-        task_obj["aggregation"] = aggregation
-
-        task_name = worksheet.cell(row=i + 27, column=2).value
-        if task_name == '消費税':
-            estimate_tax_amount = amount
-        if task_name is None:
-            task_name = ""
-        task_obj["task_name"] = task_name
-
-        write_task(task_obj)
-        # print(task_name, material_dimensions, quantity, unit, price, amount, note, aggregation)
-
     # --- Estimate情報 ---
     # Formから取得
     client = form.cleaned_data['client_pk']
@@ -100,7 +52,7 @@ def first_sheet(worksheet, form):
     estimate_amount = worksheet['F9'].value
     estimate_obj["estimate_amount"] = estimate_amount
 
-    estimate_obj["estimate_tax_amount"] = estimate_tax_amount
+    # estimate_obj["estimate_tax_amount"] = estimate_tax_amount
 
     # estimate_tax_amount　明細を先に読んで消費税の金額をセットする
     consumption_cls = worksheet['AN5'].value
@@ -148,11 +100,61 @@ def first_sheet(worksheet, form):
     customer = form.cleaned_data['customer']
     estimate_obj["customer"] = customer.pk
 
-    write_estimate(estimate_obj)
+    estimate_new_id = write_estimate(estimate_obj)
+
+    row_counter = worksheet.max_row
+
+    for i in range(row_counter - 26):
+        task_obj["estimate_id"] = estimate_new_id
+
+        material_dimensions = worksheet.cell(row=i + 27, column=10).value
+        if material_dimensions is None:
+            material_dimensions = ""
+        task_obj["material_dimensions"] = material_dimensions
+
+        quantity = worksheet.cell(row=i + 27, column=17).value
+        if quantity is None:
+            quantity = None
+        task_obj["quantity"] = quantity
+
+        unit = worksheet.cell(row=i + 27, column=20).value
+        if unit is None:
+            unit = ""
+        task_obj["unit"] = unit
+
+        price = worksheet.cell(row=i + 27, column=22).value
+        if price is None:
+            price = None
+        task_obj["price"] = price
+
+        amount = worksheet.cell(row=i + 27, column=26).value
+        if amount is None:
+            amount = None
+        task_obj["amount"] = amount
+
+        note = worksheet.cell(row=i + 27, column=30).value
+        if note is None:
+            note = ""
+        task_obj["note"] = note
+
+        aggregation = worksheet.cell(row=i + 27, column=36).value
+        if aggregation is None:
+            aggregation = ""
+        task_obj["aggregation"] = aggregation
+
+        task_name = worksheet.cell(row=i + 27, column=2).value
+        if task_name == '消費税':
+            estimate_tax_amount = amount
+        if task_name is None:
+            task_name = ""
+        task_obj["task_name"] = task_name
+
+        write_task(task_obj)
+        # print(task_name, material_dimensions, quantity, unit, price, amount, note, aggregation)
 
 
 def write_estimate(estimate_obj):
-    Estimate(
+    estimate = Estimate(
         client_id=estimate_obj["client"],
         fiscalyear_id=estimate_obj["fiscalyear"],
         estimate_date=estimate_obj["estimate_date"],
@@ -161,7 +163,7 @@ def write_estimate(estimate_obj):
         orderer_name1=estimate_obj["orderer_name1"],
         orderer_name2=estimate_obj["orderer_name2"],
         estimate_amount=estimate_obj["estimate_amount"],
-        estimate_tax_amount=estimate_obj["estimate_tax_amount"],
+        # estimate_tax_amount=estimate_obj["estimate_tax_amount"],
         consumption_cls=estimate_obj["consumption_cls"],
         estimate_name=estimate_obj["estimate_name"],
         contract_address1=estimate_obj["contract_address1"],
@@ -173,12 +175,15 @@ def write_estimate(estimate_obj):
         # estimate_person=estimate_obj["estimate_person"],
         customer_id=estimate_obj["customer"],
 
-    ).save()
+    )
+    estimate.save()
+
+    return estimate.id
 
 
 def write_task(task_obj):
     Task(
-        # estimate_id=task_obj["estimate"],
+        estimate_id=task_obj["estimate_id"],
         task_name=task_obj["task_name"],
         material_dimensions=task_obj["material_dimensions"],
         # budget_quantity=task_obj["budget_quantity"],
