@@ -14,17 +14,10 @@
 
     {% endblock %}
     {% block contents %}
-    <!-- Select2の見た目を整えるCSSを読み込み -->
-    <link href="https://jsdelivr.net" rel="stylesheet" />
-    <!-- Bootstrapと競合しないようにする着せ替え用CSS（これを入れると見た目が綺麗になります） -->
-    <link href="https://jsdelivr.net" rel="stylesheet" />
-
     <div class="container">
             <!-- 3. フォーム全体を中央寄せ -->
     <div class="row justify-content-center">
         <div class="col-md-8 d-flex flex-column align-items-center">
-
-
                <form method="POST" enctype="multipart/form-data" class="w-100 text-center">
                     {% csrf_token %}
                     <table class="my-3 mb-4 bg-light text-black table-bordered mx-auto">
@@ -39,18 +32,5 @@
 
     <script src='{% static "js/dropzone.js" %}' defer></script>
 
-    <!-- 💡 ここから下に「検索コンボボックス」用のスクリプトを追加します -->
-    <script src="https://jquery.com"></script>
-    <script src="https://jsdelivr.net"></script>
-    <script>
-        $(document).ready(function() {
-            // searchable-select クラスがついたコンボボックスを検索可能にする
-            $('.searchable-select').select2({
-                theme: 'bootstrap-5', // Bootstrap5に合わせた綺麗な見た目にする
-                placeholder: '選択してください',
-                allowClear: true,
-                width: '100%' // 横幅をいっぱいに広げる
-            });
-        });
-    </script>
+
 {% endblock %}
