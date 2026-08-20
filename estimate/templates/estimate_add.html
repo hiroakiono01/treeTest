@@ -11,15 +11,15 @@
 <script>
 
     // 1. 日本語のロケールデータを定義
-    const localeJa = {
-        monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
-        months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
-        daysShort: ["日", "月", "火", "水", "木", "金", "土"],
-        days: ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
-    };
+    // const localeJa = {
+    //     monthsShort: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+    //     months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+    //     daysShort: ["日", "月", "火", "水", "木", "金", "土"],
+    //     days: ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
+    // };
 
     // 2. フォーム初期化前にロケールを適用
-    dhx.i18n.setLocale("calendar", localeJa);
+    // dhx.i18n.setLocale("calendar", localeJa);
 
     //  2. --- モーダルウインドウの準備 ---
     dhxWindow = new dhx.Window({
@@ -55,7 +55,7 @@
                         name: "estimate_date",
                         type: "datepicker",
                         label: "見積年月日",
-                        dateFormat: "%Y年%m月%d日",
+                        dateFormat: "%Y-%m-%d",
                         required: true,
                         labelPosition: "left",
                         labelWidth: "130px",
@@ -66,7 +66,7 @@
                     {
                         name: "estimate_print_date",
                         type: "datepicker",
-                        dateFormat: "%Y年%m月%d日",
+                        dateFormat: "%Y-%m-%d",
                         label: "見積書作成日",
                         labelPosition: "left",
                         labelWidth: "130px",
@@ -348,7 +348,7 @@
 
                                         name: "estimate_limit_date",
                                         type: "datepicker",
-                                        dateFormat: "%Y年%m月%d日",
+                                        dateFormat: "%Y-%m-%d",
                                         label: "見積有効期限",
                                         labelPosition: "left",
                                         labelWidth: "130px",
@@ -367,7 +367,7 @@
                                         name: "estimate_start_date",
                                         type: "datepicker",
                                         label: "工事開始予定日",
-                                        dateFormat: "%Y年%m月%d日",
+                                        dateFormat: "%Y-%m-%d",
                                         labelPosition: "left",
                                         labelWidth: "130px",
                                         width: 300,
@@ -375,7 +375,7 @@
                                     {
                                         name: "estimate_end_date",
                                         type: "datepicker",
-                                        dateFormat: "%Y年%m月%d日",
+                                        dateFormat: "%Y-%m-%d",
                                         label: "工事完成予定日",
                                         labelPosition: "left",
                                         labelWidth: "130px",
