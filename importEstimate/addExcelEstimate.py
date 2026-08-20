@@ -1,7 +1,8 @@
 import openpyxl
 
+from api.views import get_unit_pk, get_user_pk
 from app.models import Estimate, Task
-
+from datetime import datetime
 estimate_obj = {}
 task_obj = {}
 
@@ -30,10 +31,12 @@ def first_sheet(worksheet, form):
     estimate_obj["fiscalyear"] = fiscalyear.pk
 
     estimate_date = worksheet['AA7'].value
-    estimate_obj["estimate_date"] = estimate_date
+    formatted_date = estimate_date.strftime("%Y年%m月%d日")
+    estimate_obj["estimate_date"] = formatted_date
 
     estimate_print_date = worksheet['AA7'].value
-    estimate_obj["estimate_print_date"] = estimate_print_date
+    formatted_date = estimate_print_date.strftime("%Y年%m月%d日")
+    estimate_obj["estimate_print_date"] = formatted_date
 
     # Formから取得
     estimate_no = form.cleaned_data['estimate_no']
@@ -93,8 +96,10 @@ def first_sheet(worksheet, form):
     # construction 取れない
     # estimate_status 取れない
     # segment 取れない
-    estimate_person = worksheet['V16'].value
-    estimate_obj["estimate_person"] = estimate_person
+    estimate_person_name = worksheet['V16'].value
+    clientPk = form.cleaned_data['client_pk']
+    estimate_personPk = get_user_pk(clientPk, estimate_person_name)
+    estimate_obj["estimate_person"] = estimate_personPk
 
     # customer Formから
     customer = form.cleaned_data['customer']
@@ -117,10 +122,10 @@ def first_sheet(worksheet, form):
             quantity = None
         task_obj["quantity"] = quantity
 
-        unit = worksheet.cell(row=i + 27, column=20).value
-        if unit is None:
-            unit = ""
-        task_obj["unit"] = unit
+        unit_name = worksheet.cell(row=i + 27, column=20).value
+        clientPk = form.cleaned_data['client_pk']
+        unitPk = get_unit_pk(clientPk, unit_name)
+        task_obj["unit"] = unitPk
 
         price = worksheet.cell(row=i + 27, column=22).value
         if price is None:

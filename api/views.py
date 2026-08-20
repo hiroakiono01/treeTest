@@ -30,6 +30,16 @@ def get_unit_options(_request, client_id, use_flg):
     return Response({"units": unit_options})
 
 
+def get_unit_pk(client_id, unit_name):
+    unit = Unit.objects.filter(client_id=client_id, unit_name=unit_name).first()
+    return unit.id if unit else None
+
+
+def get_user_pk(client_id, user_name):
+    user = User.objects.filter(client_id=client_id, user_name__icontains=user_name).first()
+    return user.id if user else None
+
+
 @api_view(['GET'])
 def get_aggr_options(_request, client_id):
     # combobox の場合はid,valueでselectは使えない
