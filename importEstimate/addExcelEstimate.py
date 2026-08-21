@@ -2,14 +2,17 @@ import openpyxl
 
 from api.views import get_unit_pk, get_user_pk
 from app.models import Estimate, Task
-from datetime import datetime
-estimate_obj = {}
-task_obj = {}
+
+
+
+# parent = None
+
 
 
 def upload_excel_estimate(excel_file, form):
+    Task.objects.all().delete()
+
     wb = openpyxl.load_workbook(excel_file)
-    # sheet = wb["1-吹上ＤＭ外壁その他大規模修繕工事"]
 
     for i, worksheet in enumerate(wb.worksheets):
         if i == 0:
@@ -22,94 +25,103 @@ def upload_excel_estimate(excel_file, form):
 
 def first_sheet(worksheet, form):
     # --- Estimate情報 ---
-    # Formから取得
+    estimate_obj = {}
+    task_obj = {}
+    estimate_new_id = ""
+    # 事業者PK
     client = form.cleaned_data['client_pk']
     estimate_obj["client"] = client
 
-    # Formから取得
+    # Formで選択した年度
     fiscalyear = form.cleaned_data['fiscalyear']
     estimate_obj["fiscalyear"] = fiscalyear.pk
 
+    # 見積年月日
     estimate_date = worksheet['AA7'].value
     formatted_date = estimate_date.strftime("%Y年%m月%d日")
     estimate_obj["estimate_date"] = formatted_date
 
+    # 見積書印刷年月日
     estimate_print_date = worksheet['AA7'].value
     formatted_date = estimate_print_date.strftime("%Y年%m月%d日")
     estimate_obj["estimate_print_date"] = formatted_date
 
-    # Formから取得
+    # Formから新規に登録した見積書番号
     estimate_no = form.cleaned_data['estimate_no']
     estimate_obj["estimate_no"] = estimate_no
 
-    # estimate_branch_no 取れない
+    # 発注者名１
     orderer_name1 = worksheet['AN9'].value
     estimate_obj["orderer_name1"] = orderer_name1
 
+    # 発注者名２
     orderer_name2 = worksheet['AO9'].value
     estimate_obj["orderer_name2"] = orderer_name2
 
-    # estimate_branch_no 取れない
-    # orderer_representative 取れない
-    # orderer_person 取れない
+    # 税込請負金額
     estimate_amount = worksheet['F9'].value
     estimate_obj["estimate_amount"] = estimate_amount
 
-    # estimate_obj["estimate_tax_amount"] = estimate_tax_amount
-
-    # estimate_tax_amount　明細を先に読んで消費税の金額をセットする
+    # 税区分
     consumption_cls = worksheet['AN5'].value
     estimate_obj["consumption_cls"] = consumption_cls
 
+    # 工事件名
     estimate_name = worksheet['F12'].value
     estimate_obj["estimate_name"] = estimate_name
 
-    # estimate_branch_name 取れない
-    # contract_zip_code 取れない
+    # 工事現場住所１
     contract_address1 = worksheet['AN11'].value
     estimate_obj["contract_address1"] = contract_address1
 
+    # 工事現場住所２
     contract_address2 = worksheet['AO11'].value
     estimate_obj["contract_address2"] = contract_address2
 
+    # 工事現場住所３
     contract_address3 = worksheet['AP11'].value
     estimate_obj["contract_address3"] = contract_address3
 
+    # 見積有効期限
     estimate_limit_date = worksheet['F16'].value
+    if estimate_limit_date == '0000/00/00':
+        estimate_limit_date = None
     estimate_obj["estimate_limit_date"] = estimate_limit_date
 
+    # 支払条件
     payment_term = worksheet['F18'].value
     estimate_obj["payment_term"] = payment_term
 
-    # estimate_start_date 取れない
+    # 工期又は納期
     estimate_end_date = worksheet['F20'].value
+    if estimate_end_date == '0000/00/00':
+        estimate_end_date = None
     estimate_obj["estimate_end_date"] = estimate_end_date
 
+    # 受渡場所
     delivery_location = worksheet['F22'].value
     estimate_obj["delivery_location"] = delivery_location
-    # summary 取れない
-    # estimate_budget 取れない
-    # estimate_profit 取れない
-    # consumption_rate 取れない
-    # markup_rate 取れない
-    # estimate_cls 取れない
-    # construction 取れない
-    # estimate_status 取れない
-    # segment 取れない
+
+    # markup_rate ?  取れない 100にするか検討
+
+    # 工事担当者
     estimate_person_name = worksheet['V16'].value
     clientPk = form.cleaned_data['client_pk']
     estimate_personPk = get_user_pk(clientPk, estimate_person_name)
     estimate_obj["estimate_person"] = estimate_personPk
 
-    # customer Formから
+    # Formから選択した得意先
     customer = form.cleaned_data['customer']
     estimate_obj["customer"] = customer.pk
 
+    # Estimateに書き込み
     estimate_new_id = write_estimate(estimate_obj)
 
+    # --- Taskの取得 ---
     row_counter = worksheet.max_row
 
-    for i in range(row_counter - 26):
+    for i in range(row_counter - 28):
+
         task_obj["estimate_id"] = estimate_new_id
 
         material_dimensions = worksheet.cell(row=i + 27, column=10).value
@@ -154,8 +166,16 @@ def first_sheet(worksheet, form):
             task_name = ""
         task_obj["task_name"] = task_name
 
-        write_task(task_obj)
-        # print(task_name, material_dimensions, quantity, unit, price, amount, note, aggregation)
+        task_obj["parent"] = parent
+
+        parent = write_task(task_obj)
+
+        # estimate_tax_amount　明細を先に読んで消費税の金額をセットする
+        estimate_obj["estimate_tax_amount"] = estimate_tax_amount
+
+        print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation)
+
+        # return parent
 
 
 def write_estimate(estimate_obj):
@@ -177,7 +197,7 @@ def write_estimate(estimate_obj):
         payment_term=estimate_obj["payment_term"],
         estimate_end_date=estimate_obj["estimate_end_date"],
         delivery_location=estimate_obj["delivery_location"],
-        # estimate_person=estimate_obj["estimate_person"],
+        estimate_person_id=estimate_obj["estimate_person"],
         customer_id=estimate_obj["customer"],
 
     )
@@ -187,7 +207,7 @@ def write_estimate(estimate_obj):
 
 
 def write_task(task_obj):
-    Task(
+    task = Task(
         estimate_id=task_obj["estimate_id"],
         task_name=task_obj["task_name"],
         material_dimensions=task_obj["material_dimensions"],
@@ -202,45 +222,58 @@ def write_task(task_obj):
         # markup_rate=task_obj["markup_rate"],
         # aggregation=task_obj["aggregation"],
         note=task_obj["note"],
-        # parent=task_obj["parent"],
+        parent=task_obj["parent"],
         # sort_order=task_obj["sort_order"],
-    ).save()
+    )
+    task.save()
+
+    return task.id
 
 
 def after_sheet(worksheet, form):
     row_counter = worksheet.max_row
-    for i in range(row_counter - 3):
+    for i in range(row_counter - 5):
 
+        task_obj["estimate_id"] = estimate_new_id
         task_name = worksheet.cell(row=i + 4, column=2).value
         if task_name is None:
             task_name = ""
+        task_obj["task_name"] = task_name
 
         material_dimensions = worksheet.cell(row=i + 4, column=3).value
         if material_dimensions is None:
             material_dimensions = ""
+        task_obj["material_dimensions"] = material_dimensions
 
         quantity = worksheet.cell(row=i + 4, column=4).value
         if quantity is None:
             quantity = ""
+        task_obj["quantity"] = quantity
 
-        unit = worksheet.cell(row=i + 4, column=5).value
-        if unit is None:
-            unit = ""
+        unit_name = worksheet.cell(row=i + 4, column=5).value
+        clientPk = form.cleaned_data['client_pk']
+        unitPk = get_unit_pk(clientPk, unit_name)
+        task_obj["unit"] = unitPk
 
         price = worksheet.cell(row=i + 4, column=6).value
         if price is None:
             price = ""
+        task_obj["price"] = price
 
         amount = worksheet.cell(row=i + 4, column=7).value
         if amount is None:
             amount = ""
+        task_obj["amount"] = amount
 
         note = worksheet.cell(row=i + 4, column=8).value
         if note is None:
             note = ""
+        task_obj["note"] = note
 
         aggregation = worksheet.cell(row=i + 4, column=10).value
         if aggregation is None:
             aggregation = ""
+        task_obj["aggregation"] = aggregation
 
-        print(task_name, material_dimensions, quantity, unit, price, amount, note, aggregation)
+        write_task(task_obj)
+        print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation)
