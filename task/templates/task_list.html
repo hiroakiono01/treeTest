@@ -61,14 +61,14 @@
     treeGrid = new dhx.Grid(null, {
         type: "tree",
         columns: [
-            {id: "id", header: [{text: "ID"}], hidden: false, isTreeColumn: false},
-            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: false,},
-            {id: "estimate_no", header: [{text: "工事番号"}], hidden: false,},
+            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColumn: false},
+            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
+            {id: "estimate_no", header: [{text: "工事番号"}], hidden: true,},
             {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
-            {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}]},
+            {id: "material_dimensions", width: 250, header: [{text: "材質・寸法", align: "center"}]},
             {
                 id: "aggregation",
-                width: 100,
+                //width: 100,
                 header: [{text: "計算区分", align: "center"}],
                 editorType: "combobox",
                 options: [],
@@ -79,7 +79,7 @@
                 id: "budget_unit",
                 header: [{text: "予算単位", align: "center"}],
                 editorType: "combobox",
-                width: 100,
+                //width: 100,
                 // options: globalUnitOptions,
                 align: "center",
             },
@@ -96,7 +96,7 @@
             {id: "markup_rate", width: 70, header: [{text: "掛率", align: "center"}], align: "right"},
             {id: "quantity", header: [{text: "見積数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             // {id: "unit_display", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: [], align: "center"},
-            {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, align: "center"},
+            {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox",  align: "center"},
             {id: "price", header: [{text: "見積単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             {
                 id: "amount",
@@ -104,9 +104,10 @@
                 footer: [{text: ({sum}) => sum, align: "right"}],
                 summary: "sum",
                 numberMask: {customFormat: "#,##0"}, align: "right",
+                width: 150,
             },
             {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
-            {id: "parent", header: [{text: "parent"}], hidden: false},
+            {id: "parent", header: [{text: "parent"}], hidden: true},
             {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
             {id: "detail", header: [{text: "階層", align: "center"}], editable: false},
             {
@@ -138,8 +139,8 @@
         dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
         dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
         editable: false, // 全体として編集は有効にしておく
-        tooltip: false // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
-
+        tooltip: false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
+        autoWidth: true
         // autoEmptyRow: true
         //data: dataset // 階層構造を持つデータ
     });
@@ -1016,9 +1017,9 @@
         // 5.5 --- ④ 下段に 編集用の通常Grid を配置 ---
         editGrid = new dhx.Grid(null, {
             columns: [
-                {id: "id", header: [{text: "ID"}], hidden: false},
-                {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: false,},
-                {id: "estimate_no", header: [{text: "工事番号"}], editable: false},
+                {id: "id", header: [{text: "ID"}], hidden: true},
+                {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
+                {id: "estimate_no", header: [{text: "工事番号"}], editable: true, hidden: true},
                 {id: "task_name", header: [{text: "名称"}], editable: true, width: 200, footer: [{text: "合計"}]},
                 {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}], editable: true,},
                 {
@@ -1078,7 +1079,7 @@
                     numberMask: {customFormat: "#,##0"},
                 },
                 {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
-                {id: "parent", header: [{text: "parent"}], hidden: false},
+                {id: "parent", header: [{text: "parent"}], hidden: true},
                 {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
                 {
                     id: "actions",

@@ -51,7 +51,7 @@
     // 2.2 モーダルウインドウの準備
     dhxWindow = new dhx.Window({
         width: 1200,
-        height: 1200,
+        height: 1000,
         title: "新規",
         modal: true,
         closable: true, // 閉じられるように設定
@@ -73,7 +73,7 @@
                 type: "input",
                 label: "事業者",
                 required: false,
-                hidden: false
+                hidden: true
             },
             {type: "input", name: "id", hidden: true}, // 見えないが値は保持される
             {
@@ -513,7 +513,7 @@
     // 2.4 Gridの初期化
     grid = new dhx.Grid("grid_container", {
         columns: [
-            {id: "id", header: [{text: "ID"}], hidden: false, isTreeColum: true},
+            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColum: true},
             {
                 id: "detail",
                 width: 100,

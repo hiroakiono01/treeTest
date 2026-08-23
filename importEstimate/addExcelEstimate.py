@@ -1,33 +1,35 @@
 import openpyxl
+from django.db import transaction
 
 from api.views import get_unit_pk, get_user_pk
 from app.models import Estimate, Task
 
+parent_id = {}
 
 
-# parent = None
-
-
-
+@transaction.atomic
 def upload_excel_estimate(excel_file, form):
     Task.objects.all().delete()
 
     wb = openpyxl.load_workbook(excel_file)
-
+    estimate_new_id = None
     for i, worksheet in enumerate(wb.worksheets):
+
         if i == 0:
             # 1枚目のシート（インデックス 0）の処理
-            first_sheet(worksheet, form)
+            estimate_new_id = first_sheet(worksheet, form)
         else:
             # 2枚目以降のシートの処理
-            after_sheet(worksheet, form)
+            after_sheet(worksheet, form, estimate_new_id)
+            print(i)
+    # 関数の最後にIDを返してあげる（これで警告が消えます）
+    # return estimate_new_id
 
 
 def first_sheet(worksheet, form):
     # --- Estimate情報 ---
     estimate_obj = {}
     task_obj = {}
-    estimate_new_id = ""
     # 事業者PK
     client = form.cleaned_data['client_pk']
     estimate_obj["client"] = client
@@ -114,12 +116,12 @@ def first_sheet(worksheet, form):
     customer = form.cleaned_data['customer']
     estimate_obj["customer"] = customer.pk
 
-    # Estimateに書き込み
+    # Estimateに書き込み親のIDを取得
     estimate_new_id = write_estimate(estimate_obj)
 
     # --- Taskの取得 ---
     row_counter = worksheet.max_row
-
+    estimate_tax_amount = None
     for i in range(row_counter - 28):
 
         task_obj["estimate_id"] = estimate_new_id
@@ -166,16 +168,23 @@ def first_sheet(worksheet, form):
             task_name = ""
         task_obj["task_name"] = task_name
 
-        task_obj["parent"] = parent
+        task_obj["parent"] = None
 
         parent = write_task(task_obj)
+        parent_id[task_name] = parent
+
+        print(parent_id)
+
+        estimate = Estimate.objects.get(pk=estimate_new_id)
+        estimate.estimate_tax_amount = estimate_tax_amount
+        estimate.save()
 
         # estimate_tax_amount　明細を先に読んで消費税の金額をセットする
-        estimate_obj["estimate_tax_amount"] = estimate_tax_amount
+        # estimate_obj["estimate_tax_amount"] = estimate_tax_amount
 
-        print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation)
+        # print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation, parent)
 
-        # return parent
+    return estimate_new_id
 
 
 def write_estimate(estimate_obj):
@@ -215,14 +224,14 @@ def write_task(task_obj):
         # budget_unit=task_obj["budget_unit"],
         # budget_name=task_obj["budget_name"],
         # budget_amount=task_obj["budget_amount"],
-        # quantity=task_obj["quantity"],
-        # unit=task_obj["unit"],
-        # price=task_obj["price"],
+        quantity=task_obj["quantity"],
+        unit_id=task_obj["unit"],
+        price=task_obj["price"],
         amount=task_obj["amount"],
         # markup_rate=task_obj["markup_rate"],
         # aggregation=task_obj["aggregation"],
         note=task_obj["note"],
-        parent=task_obj["parent"],
+        parent_id=task_obj["parent"],
         # sort_order=task_obj["sort_order"],
     )
     task.save()
@@ -230,8 +239,9 @@ def write_task(task_obj):
     return task.id
 
 
-def after_sheet(worksheet, form):
+def after_sheet(worksheet, form, estimate_new_id):
     row_counter = worksheet.max_row
+    task_obj = {}
     for i in range(row_counter - 5):
 
         task_obj["estimate_id"] = estimate_new_id
@@ -246,8 +256,8 @@ def after_sheet(worksheet, form):
         task_obj["material_dimensions"] = material_dimensions
 
         quantity = worksheet.cell(row=i + 4, column=4).value
-        if quantity is None:
-            quantity = ""
+        # if quantity is None:
+        #     quantity = ""
         task_obj["quantity"] = quantity
 
         unit_name = worksheet.cell(row=i + 4, column=5).value
@@ -256,13 +266,13 @@ def after_sheet(worksheet, form):
         task_obj["unit"] = unitPk
 
         price = worksheet.cell(row=i + 4, column=6).value
-        if price is None:
-            price = ""
+        # if price is None:
+        #     price = ""
         task_obj["price"] = price
 
         amount = worksheet.cell(row=i + 4, column=7).value
-        if amount is None:
-            amount = ""
+        # if amount is None:
+        #     amount = ""
         task_obj["amount"] = amount
 
         note = worksheet.cell(row=i + 4, column=8).value
@@ -275,5 +285,10 @@ def after_sheet(worksheet, form):
             aggregation = ""
         task_obj["aggregation"] = aggregation
 
+        parent_task_name = worksheet.cell(row=2, column=2).value
+        parent_task_id = parent_id.get(parent_task_name)
+
+        task_obj["parent"] = parent_task_id
+
         write_task(task_obj)
-        print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation)
+        # print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation)
