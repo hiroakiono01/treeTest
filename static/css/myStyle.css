@@ -80,3 +80,8 @@ font-size:70%}
         display:inline-block;
     }
 
+    /*!* 入力要素内のテキストを右寄せにする *!*/
+    /*.dhx_form-element input {*/
+    /*    text-align: right;*/
+    /*}*/
+

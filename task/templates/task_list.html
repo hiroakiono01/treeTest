@@ -96,7 +96,7 @@
             {id: "markup_rate", width: 70, header: [{text: "掛率", align: "center"}], align: "right"},
             {id: "quantity", header: [{text: "見積数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             // {id: "unit_display", header: [{text: "見積単位", align: "center"}], editorType: "combobox", width: 100, options: [], align: "center"},
-            {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox",  align: "center"},
+            {id: "unit", header: [{text: "見積単位", align: "center"}], editorType: "combobox", align: "center"},
             {id: "price", header: [{text: "見積単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             {
                 id: "amount",
@@ -140,7 +140,8 @@
         dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
         editable: false, // 全体として編集は有効にしておく
         tooltip: false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
-        autoWidth: true
+        autoWidth: true,
+        resizable: true // すべての列をマウス操作でリサイズ可能にする
         // autoEmptyRow: true
         //data: dataset // 階層構造を持つデータ
     });
@@ -238,6 +239,8 @@
                 fetchAggregationOptions(),
                 fetchTaskLists()
             ]);
+            treeGrid.collapseAll();
+
         } catch (err) {
             console.error("get_current_clientロードエラーが発生しました:", err);
         }
@@ -263,7 +266,6 @@
     }
 
     // 3.3 Unit一覧を取得してGridおよびeditGridのプルダウンに反映
-
     async function fetchCurrentUnits() {
         try {
             use_flg = "0"
@@ -274,23 +276,8 @@
                 id: Number(item.id),
                 value: item.value
             }));
-            // console.log("currentUnitOptions", currentUnitOptions)
+
             return currentUnitOptions
-            // ★ 先頭に「未選択用」の空の選択肢を差し込む
-            // formattedUnits.unshift({id: "", value: "（選択解除）"}); // 「未選択」などの文字にしても親切です
-            // const currentColumns = treeGrid.config.columns.map(col => {
-            //     if (unitFields.includes(col.id)) {
-            //         return {...col, options: formattedUnits};
-            //     }
-            //     // console.log("col", col)
-            //     return col;
-            // });
-            //
-            // treeGrid.setColumns(currentColumns);
-            //
-            // // 2. データを変数にキャッシュしておく
-            // globalUnitOptions = formattedUnits;
-            // console.log("globalUnitOptions", globalUnitOptions)
 
         } catch (err) {
             console.error("currentUnitデータ取得失敗:", err);
@@ -338,21 +325,6 @@
             treeGrid.setColumns(currentColumns);
             // 2. データを変数にキャッシュしておく
             globalAggregationOptions = formattedAggregations;
-            //editGrid.setColumns(currentColumns);
-            //treeGrid.paint();
-
-            // 💡 子Grid（editGrid）が存在する場合、そちらのカラムにも選択肢をセットする
-            // if (typeof editGrid !== 'undefined' && editGrid) {
-            //     // treeGridと同様に setColumns を使って安全に反映させます
-            //     const currentChildColumns = editGrid.config.columns.map(col => {
-            //         if (aggrFields.includes(col.id)) {
-            //             return {...col, options: formattedAggregations}; // ★ 共通のフォーマット済データをセット
-            //         }
-            //         return col;
-            //     });
-            //     editGrid.setColumns(currentChildColumns);
-            // }
-
 
         } catch (err) {
             console.error("aggregationデータ取得失敗:", err);
@@ -381,7 +353,7 @@
     // 4.  TREE GRID EVENT FUNCTION
     // ===================================================
 
-    // 4.1 toolbar 処理
+    // 4.1 treeGridのtoolbar 処理
     toolbar.events.on("click", function (id) {
         if (id === "historyBack") {
             window.history.back();
@@ -412,9 +384,8 @@
         }
     })
 
-    // 4.1.1 新規作成のウインドウを表する
+    // 4.2 treeGridにrootの新規行を作成する
     function addRow() {
-        // .log("estimateNo", estimateNo)
         // rootの階層の処理するため階層を閉じる。
         collapseAll();
 
@@ -451,7 +422,7 @@
     }
 
 
-    // 4.1.2 自動で行を追加する処理
+    // 4.3 treeGridに自動で行を追加する処理
     treeGrid.events.on("cellClick", function (row, col, e) {
         console.log("1. cellClickが発生:", row.id, col.id);
     });
@@ -496,7 +467,7 @@
         return true
     })
 
-    // 4.1.3 rowを上に移動させる
+    // 4.4 treeGridの行を上に移動させる
     function moveRowUp() {
         // console.log("moveRowUp");
         const selectedCell = treeGrid.selection.getCell();
@@ -520,7 +491,7 @@
         treeGrid.selection.setCell(targetId, selectedCell.column.id);
     }
 
-    // 4.1.4 rowを下に移動させる
+    // 4.5 treeGridの行を下に移動させる
     function moveRowDown() {
         const selectedCell = treeGrid.selection.getCell();
         //console.log("moveRowDown", selectedCell);
@@ -545,29 +516,30 @@
         treeGrid.selection.setCell(targetId, selectedCell.column.id);
     }
 
-    // 4.1.5 展開する
+    // 4.6 treeGridを展開する
     function expandAll() {
         treeGrid.expandAll();
     }
 
-    // 4.1.6 折りたたむ
+    // 4.7 treeGridを折りたたむ
     function collapseAll() {
         treeGrid.collapseAll();
     }
 
-    // 4.1.7 リセット処理
+    // 4.8 treeGridのリセット処理
     function resetGrid() {
         // ユーザーに確認（キャンセルされたら処理を中断）
         // if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
 
         // 1. サーバーから最新のデータを再取得
-        fetch(`/task/lists/${estimateNo}/`)
+        fetch(`/task/lists/${estimateId}/`)
             .then(res => res.json())
             .then(result => {
                 // 2. treeGridデータを削除
                 treeGrid.data.removeAll();
                 // 3. 取得したデータを再読み込み
                 treeGrid.data.parse(result);
+                collapseAll()
                 dhx.message({text: "変更をリセットしました", expire: 2000});
             })
             .catch(err => {
@@ -576,15 +548,15 @@
             });
     }
 
-    // 4.2 コンテキストメニュー
-    // 4.2.1 行を右クリックでコンテキストメニューを表示する
+    // 4.9 treeGridのコンテキストメニュー処理
+    // 4.9.1 行を右クリックでコンテキストメニューを表示する
     treeGrid.events.on("cellRightClick", (row, column, event) => {
         event.preventDefault();
         treeGrid.selection.setCell(row, column);
         rowMenu.showAt(event);
     });
 
-    // 4.2.2 コンテキストメニューの処理
+    // 4.9.2 コンテキストメニューの処理
     rowMenu.events.on("click", id => {
         const row = treeGrid.selection.getCell()?.row;
         // const rowIndex = treeGrid.data.getIndex(row.id);
@@ -597,35 +569,9 @@
 
     });
 
-    // // 4.2.3 リセット処理
-    // function resetGrid() {
-    //     // ユーザーに確認（キャンセルされたら処理を中断）
-    //     // if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
-    //
-    //     // 1. サーバーから最新のデータを再取得
-    //     fetch(`/task/lists/${estimateNo}/`)
-    //         .then(res => res.json())
-    //         .then(result => {
-    //             // 2. 現在のgridデータをすべてクリア
-    //             treeGrid.data.removeAll();
-    //
-    //             // 3. 取得したデータを再読み込み
-    //             treeGrid.data.parse(result);
-    //
-    //             // ボタンを活性化（クリック可能にする）
-    //             toolbar.enable("editRow");
-    //
-    //             // 💡 必須チェック等で付いたエラーの赤枠CSSも自動で消えます
-    //
-    //             // dhx.message({ text: "変更をリセットしました", expire: 2000 });
-    //         })
-    //         .catch(err => {
-    //             console.error("リセット失敗:", err);
-    //             dhx.message({text: "データの再取得に失敗しました", css: "dhx_message--error"});
-    //         });
-    // }
 
-    // 4.2.3 一括保存ボタンの処理
+
+    // 4.10 treeGridの一括保存処理
     function updateAll() {
 
         // 1.1 自動追加された行のうち、何も入力されていない行を抽出して削除
@@ -685,7 +631,7 @@
 
     }
 
-    // 4.2.4 削除処理
+    // 4.11 treeGridの行削除処理
     function deleteRow(rowId) {
         if (confirm("即時に削除しますか？")) {
             // サーバーへ削除リクエスト
@@ -706,7 +652,7 @@
                 .then(result => {
                     treeGrid.data.remove(rowId);
                     // console.log('estimateNo',estimateNo)
-                    data.load(`/task/lists/${estimateNo}/`).then(() => {
+                    data.load(`/task/lists/${estimateId}/`).then(() => {
                         dhx.message({
                             text: "削除しました",
                             css: "dhx_widget--bg_success",
@@ -743,7 +689,7 @@
 
     }
 
-    // 4.2.6 値の自動計算
+    // 4.12.treeGridの値の自動計算
     treeGrid.events.on("afterEditEnd", function (value, row, column) {
 
         // 1. 数量（budget_quantity=>quantity）のコピー処理
@@ -814,7 +760,7 @@
         }
     });
 
-    // 4.3 reloadCombo
+    // 4.12 参照データのreloadCombo処理
 
     function reloadCombo(useFlgValue) {
         //let unitOptions = [];
@@ -893,7 +839,6 @@
         editGrid.setColumns([]);
         editGrid.setColumns(editGridColumns);
 
-
     }
 
     // const unitFields = ["budget_unit"]
@@ -936,7 +881,7 @@
     // 5. editGridの処理
     // ==========================================
 
-    // 5 子要素のGridを表示
+    // 5 子要素のeditGridの処理
     treeGrid.events.on("cellClick", function (row, col,) {
         // use_flg = "9"
         // reloadCombo(use_flg)
@@ -956,7 +901,7 @@
             editWindow.destructor();
         }
 
-        // 5.1 --- ① ウィンドウ（Window）の初期化 ---
+        // 5.1 --- editGrid ① ウィンドウ（Window）の初期化 ---
         editWindow = new dhx.Window({
             title: `「${row.task_name || row.id}」を編集`,
             width: 1800,
@@ -967,7 +912,7 @@
             resizable: true // サイズ変更可能
         });
 
-        // 5.2 --- ② ウィンドウ内部を「上（ボタン）」「下（Grid）」の2行に分割するレイアウトを作る ---
+        // 5.2 --- editGrid ② ウィンドウ内部を「上覧（ボタン）」「下覧（Grid）」の2行に分割するレイアウトを作る ---
         // HTML文字列（<div id="...">）を使わず、DHTMLXの機能で枠を組むためエラーが起きません
         const layout = new dhx.Layout(null, {
             rows: [
@@ -980,7 +925,7 @@
         editWindow.attach(layout);
         editWindow.show();
 
-        // 5.3 --- ③ 上段に Toolbar（ボタン群）を配置 ---
+        // 5.3 --- editGrid ③ 上段に Toolbar（ボタン群）を配置 ---
         const toolbar = new dhx.Toolbar(null, {
             css: "dhx_widget--bg-white",
             data: [
@@ -995,7 +940,7 @@
         });
         layout.getCell("toolbar_cell").attach(toolbar);
 
-        // 5.4 toolbar
+        // 5.4 --- editGridのtoolbar ---
         toolbar.events.on("click", function (id) {
             if (id === "add") {
                 addRow();
@@ -1014,7 +959,7 @@
             }
         })
 
-        // 5.5 --- ④ 下段に 編集用の通常Grid を配置 ---
+        // 5.5 --- editGrid ④ 下段に 編集用の通常Grid を配置 ---
         editGrid = new dhx.Grid(null, {
             columns: [
                 {id: "id", header: [{text: "ID"}], hidden: true},
@@ -1101,17 +1046,18 @@
             dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
             dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
             multiselection: true,
+            resizable: true // すべての列をマウス操作でリサイズ可能にする
             // autoEmptyRow: true
         });
 
-        // 5.6 ワンクリックで入力ができる ---　
+        // 5.6 --- ワンクリックで入力ができる ---　
         editGrid.events.on("cellClick", function (row, column) {
             setTimeout(() => {
                 editGrid.editCell(row.id, column.id);
             }, 50);
         });
 
-        // 5.7 ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+        // 5.7 --- 外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります） ---
         enableGridEnterNavigation(editGrid);
 
         layout.getCell("grid_cell").attach(editGrid);
@@ -1149,7 +1095,7 @@
         // 6. editGridのボタンイベントの実装（DHTMLX Toolbarのイベント機能を使用）
         // ==========================================
 
-        // 6.1 editGridに新たな行を追加
+        // 6.1 --- editGridに新たな行を追加 ---
         function addRow() {
 
             const newId = "u" + Date.now();
@@ -1165,7 +1111,7 @@
             });
         }
 
-        // 6.1.1 自動で行を追加する処理
+        // 6.2 --- editGrigに自動で行を追加する処理 ---
         editGrid.events.on("beforeKeyDown", function (event, e) {
 
             if (e.keyCode === 13) {
@@ -1207,7 +1153,7 @@
             return true
         });
 
-        // 6.2 editGridの行を上に移動
+        // 6.3 --- editGridの行を上に移動 ---
         function moveRowUp() {
             // console.log("moveRowUp");
             const selectedCell = editGrid.selection.getCell();
@@ -1231,7 +1177,7 @@
             editGrid.selection.setCell(targetId, selectedCell.column.id);
         }
 
-        // 6.3 editGridの行を下に移動
+        // 6.4 --- editGridの行を下に移動 ---
         function moveRowDown() {
             const selectedCell = editGrid.selection.getCell();
             //console.log("moveRowDown", selectedCell);
@@ -1256,7 +1202,7 @@
             editGrid.selection.setCell(targetId, selectedCell.column.id);
         }
 
-        // 6.4 editGridの変更をtreeGridに反映させる
+        // 6.5 --- editGridの変更をtreeGridに反映させる ---
         function saveRow() {
             editGrid.editEnd();
 
@@ -1275,9 +1221,14 @@
             });
             // 4. 親のTreeGridを明示的に再描画（念のため追加）
             treeGrid.paint();
+
+            // === 【修正】エラーの起きていた行を削除し、ウィンドウを閉じる処理を追加 ===
+            if (typeof editWindow !== "undefined" && editWindow) {
+                editWindow.hide();
+            }
         }
 
-        // 6.5 リセット処理
+        // 6.6 --- editGridのリセット処理 ---
         function resetGrid() {
             // ユーザーに確認（キャンセルされたら処理を中断）
             if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
@@ -1300,7 +1251,7 @@
             editGrid.paint();
         }
 
-        // 6.6 値の自動計算
+        // 6.7 --- editGridの値の自動計算
         editGrid.events.on("afterEditEnd", function (value, row, column) {
 
             // 1. 数量（budget_quantity=>quantity）のコピー処理
@@ -1371,7 +1322,7 @@
             }
         });
 
-        // 6.7 editGridを解放
+        // 6.8 --- editGridを解放 ---
         editWindow.events.on("afterHide", function () {
             editWindow.destructor(); // ウィンドウと内包するレイアウト・グリッドを一括破棄
             editWindow = null;       // 変数をクリア

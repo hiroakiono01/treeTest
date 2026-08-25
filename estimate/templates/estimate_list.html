@@ -296,14 +296,20 @@
                                                 labelWidth: "120px",
                                                 css: "my-custom-required", // 任意のクラス名を追加
                                                 width: "100%",
-                                                // 組み込みの "integer" の代わりにカスタム関数を指定
+                                                // 1. Suite 9 正しいカンマ区切りのマスク設定
+                                                numberMask: {
+                                                    groupSeparator: ",", // 3桁区切りのカンマを指定
+                                                    maxDecLength: 0      // 整数のみ（小数を許可しない）
+                                                },
+
+                                                // 2. マスクを使用する場合、値は「カンマを含んだ文字列」になるためバリデーションを変更
                                                 validation: function (value) {
-                                                    // 未入力（空文字）の場合はバリデーションをパスさせる
                                                     if (value === "") {
                                                         return true;
                                                     }
-                                                    // 入力がある場合は、整数かどうかのチェックを行う（正規表現など）
-                                                    return /^-?\d+$/.test(value);
+                                                    // カンマを除去した状態で数値（整数）かどうかをチェック
+                                                    const rawValue = value.replace(/,/g, "");
+                                                    return /^-?\d+$/.test(rawValue);
                                                 },
                                                 errorMessage: "有効な整数を入力してください"
                                             },
@@ -314,11 +320,20 @@
                                                 labelPosition: "left",
                                                 labelWidth: "120px",
                                                 tooltip: false, // ★ ここに記述してツールチップを無効化します
+                                                 // 1. Suite 9 正しいカンマ区切りのマスク設定
+                                                numberMask: {
+                                                    groupSeparator: ",", // 3桁区切りのカンマを指定
+                                                    maxDecLength: 0      // 整数のみ（小数を許可しない）
+                                                },
+
+                                                // 2. マスクを使用する場合、値は「カンマを含んだ文字列」になるためバリデーションを変更
                                                 validation: function (value) {
                                                     if (value === "") {
                                                         return true;
                                                     }
-                                                    return /^-?\d+$/.test(value);
+                                                    // カンマを除去した状態で数値（整数）かどうかをチェック
+                                                    const rawValue = value.replace(/,/g, "");
+                                                    return /^-?\d+$/.test(rawValue);
                                                 },
                                                 errorMessage: "有効な整数を入力してください",
                                                 width: "100%"
@@ -346,11 +361,20 @@
                                                 labelPosition: "left",
                                                 labelWidth: "120px",
                                                 tooltip: false, // ★ ここに記述してツールチップを無効化します
+                                                    // 1. Suite 9 正しいカンマ区切りのマスク設定
+                                                numberMask: {
+                                                    groupSeparator: ",", // 3桁区切りのカンマを指定
+                                                    maxDecLength: 0      // 整数のみ（小数を許可しない）
+                                                },
+
+                                                // 2. マスクを使用する場合、値は「カンマを含んだ文字列」になるためバリデーションを変更
                                                 validation: function (value) {
-                                                    if (!value && value !== 0) {
+                                                    if (value === "") {
                                                         return true;
                                                     }
-                                                    return /^-?\d+$/.test(value);
+                                                    // カンマを除去した状態で数値（整数）かどうかをチェック
+                                                    const rawValue = value.replace(/,/g, "");
+                                                    return /^-?\d+$/.test(rawValue);
                                                 },
                                                 errorMessage: "有効な整数を入力してください",
                                                 width: "100%"
@@ -373,8 +397,6 @@
                                                 css: "my-custom-required", // 任意のクラス名を追加
                                                 width: "100%"
                                             },
-
-
                                         ]
                                     },
                                 ]
@@ -592,7 +614,8 @@
                 template: () => "<button class='dxi dxi-delete' >削除</button>"
             }
         ],
-        autoWidth: false,
+        // autoWidth: false,
+        resizable: true // すべての列をマウス操作でリサイズ可能にする
         //rootParent: null
         // data: dataset, // 作成した DataCollection を直接紐付ける
     });
@@ -1170,39 +1193,48 @@
     grid.events.on("cellClick", (row, col) => {
         if (col.id === "delete") {
             if (confirm("選択した行を削除してもよろしいですか？")) {
-                // 6.4.1. サーバー側のデータを削除
+
+
+                // 2. データベースのレコードを削除するためサーバーへ削除リクエスト
                 fetch(`/estimate/detail/${row.id}/`, {
                     method: 'DELETE',
                     headers: {
-                        'X-CSRFToken': getCookie('csrftoken') // DjangoのCSRF対策
+                        'X-CSRFToken': getCookie('csrftoken')
                     }
                 })
                     .then(res => {
-                        if (res.ok) {
-                            // 6.4.2. サーバー削除成功後、フロントエンド(Grid)から削除
-                            grid.data.remove(row.id);
-                            dhx.message({
-                                text: "削除しました",
-                                css: "dhx_widget--bg_success",
-                                expire: 3000
-                            });
-                        } else {
-                            dhx.message({
-                                text: "削除に失敗しました",
-                                css: "dhx_widget--bg_danger",
-                                expire: -1
-                            });
-                        }
+                        return res.json().then(data => {
+                            if (!res.ok) {
+                                // 💡 400エラー等の場合は、サーバーから届いたメッセージ(data.detail)をエラーとして投げる
+                                throw new Error(data.detail || "削除に失敗しました");
+                            }
+                            return data; // 200 OK の場合は次へ
+                        });
+                    })
+                    .then(() => {
+                        // 💡 削除成功時のトースト
+                        grid.data.remove(row.id);
+                        dhx.message({
+                            text: "削除しました",
+                            css: "dhx_widget--bg-success",
+                            expire: 3000
+                        });
                     })
                     .catch(err => {
-                        console.error(err);
+                        // 💡 サーバーからの「他で使われているため〜」を赤いトーストで表示
                         dhx.message({
-                            text: "システムエラーが発生しました", css: "dhx_widget--bg_danger"
+                            text: err.message,
+                            css: "dhx_message--error", // 実績のあるエラー用CSSクラス
+                            icon: "dxi dxi-delete-forever",
+                            expire: 6000
                         });
                     });
+
+
             }
         }
     });
+
 
     // 4.7 サイドバーを開くイベント
     sidebarForm.events.on("click", function (name) {

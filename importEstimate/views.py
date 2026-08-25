@@ -28,7 +28,7 @@ class import_estimate(generic.FormView):
         excel_file = self.request.FILES.get("file")
         result = upload_excel_estimate(excel_file, form)
 
-        return render(result, 'complete.html')
+        return render(self.request, 'complete.html')
 
 
 # 変換処理完了

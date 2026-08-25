@@ -273,7 +273,25 @@
                                                 required: true,
                                                 labelWidth: "120px",
                                                 css: "my-custom-required", // 任意のクラス名を追加
-                                                width: "100%"
+                                                width: "100%",
+                                                // 1. マスクを設定（右寄せ、カンマ区切りの整数を指定）
+                                                // 1. Suite 9 正しいカンマ区切りのマスク設定
+                                                numberMask: {
+                                                    groupSeparator: ",", // 3桁区切りのカンマを指定
+                                                    maxDecLength: 0      // 整数のみ（小数を許可しない）
+                                                },
+
+                                                // 2. マスクを使用する場合、値は「カンマを含んだ文字列」になるためバリデーションを変更
+                                                validation: function (value) {
+                                                    if (value === "") {
+                                                        return true;
+                                                    }
+                                                    // カンマを除去した状態で数値（整数）かどうかをチェック
+                                                    const rawValue = value.replace(/,/g, "");
+                                                    return /^-?\d+$/.test(rawValue);
+                                                },
+                                                errorMessage: "有効な整数を入力してください"
+
                                             },
                                             {
                                                 name: "estimate_budget",
@@ -506,240 +524,240 @@
             const constructionNameCombo = form.getItem("construction").getWidget();
             constructionNameCombo.data.load(`/api/constructions/${client_id}/`);
 
-    // ===================================================
-    // 4. EVENTS （ボタン操作・イベントリスナー）
-    // ===================================================
+            // ===================================================
+            // 4. EVENTS （ボタン操作・イベントリスナー）
+            // ===================================================
 
-        // 6.1 新規作成のウインドウを表示する
-    function addRow() {
-        if (form) {
-            form.clear({});
-            form.setValue({markup_rate: client_markup_rate});
-            form.setValue({client_id: client_id})
-            //form.setValue({client_no:client_no})
-            //form.setValue({client_name:client_name})
+            // 6.1 新規作成のウインドウを表示する
+            function addRow() {
+                if (form) {
+                    form.clear({});
+                    form.setValue({markup_rate: client_markup_rate});
+                    form.setValue({client_id: client_id})
+                    //form.setValue({client_no:client_no})
+                    //form.setValue({client_name:client_name})
 
-        }
-        dhxWindow.header.data.update("title", {value: "新規登録"});
-        dhxWindow.setPosition(100, 50);
-        dhxWindow.paint();
-        dhxWindow.show();
-    }
-
-    //　UPDATE: 6.3. 保存ボタンの処理
-    //　UPDATE: 6.3. 保存ボタンの処理
-    form.getItem("save").events.on("click", () => {
-
-        // 6.3.1 バリデーションを実行
-        const isValid = form.validate();
-
-        if (!isValid) {
-            // フォーム全体の「現在の入力値（各キー）」を取得
-            const info = form.getValue();
-
-            // 最初のエラーアイテムのIDを特定する
-            const firstErrorId = Object.keys(info).find(itemId => {
-                const item = form.getItem(itemId);
-                if (item && typeof item.validate === "function") {
-                    // 画面表示を変えずにバリデーション結果（成否）のみ判定
-                    return item.validate(true) === false;
                 }
-                return false;
-            });
-
-            if (firstErrorId) {
-                // 【重要】Suite 9 の正しいフォーカス設定方法（フォーム本体のメソッドを使用）
-                if (typeof form.setFocus === "function") {
-                    form.setFocus(firstErrorId);
-                }
-
-                // 念のため、Comboコンポーネントなどの特殊なコントロールだった場合のフォールバック処理
-                const item = form.getItem(firstErrorId);
-                if (item && typeof item.getWidget === "function") {
-                    const widget = item.getWidget();
-                    if (widget && typeof widget.focus === "function") {
-                        widget.focus();
-                    }
-                }
+                dhxWindow.header.data.update("title", {value: "新規登録"});
+                dhxWindow.setPosition(100, 50);
+                dhxWindow.paint();
+                dhxWindow.show();
             }
 
-            console.log('firstErrorId:', firstErrorId, 'formData:', info);
-            return;
-        }
+            //　UPDATE: 6.3. 保存ボタンの処理
+            //　UPDATE: 6.3. 保存ボタンの処理
+            form.getItem("save").events.on("click", () => {
 
-        // 6.3.2. バリデーション成功後に値を取得
-        const formData = form.getValue();
-        console.log("送信データ:", formData);
-        const isNew = !formData.id || formData.id === "";
-        console.log("送信データ:", formData);
-        // 6.3.3. 新規(POST)か更新(PUT)の判定
-        const url = isNew ? `/estimate/add/${client_id}/` : `/estimate/estimates/${formData.id}/`;
-        const method = isNew ? "POST" : "PUT";
-        // 6.3.4. 通信開始
-        fetch(url, {
-            method: method,
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCookie('csrftoken')
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(res => {
-                if (!res.ok) {
-                    // DRFのバリデーションエラー(400)などをキャッチ
-                    return res.json().then(err => {
-                        throw err;
+                // 6.3.1 バリデーションを実行
+                const isValid = form.validate();
+
+                if (!isValid) {
+                    // フォーム全体の「現在の入力値（各キー）」を取得
+                    const info = form.getValue();
+
+                    // 最初のエラーアイテムのIDを特定する
+                    const firstErrorId = Object.keys(info).find(itemId => {
+                        const item = form.getItem(itemId);
+                        if (item && typeof item.validate === "function") {
+                            // 画面表示を変えずにバリデーション結果（成否）のみ判定
+                            return item.validate(true) === false;
+                        }
+                        return false;
                     });
-                }
-                return res.json();
-            })
-            .then(result => {
-                dhx.message({
-                    text: isNew ? "追加されました" : "更新されました",
-                    css: "dhx_widget--bg_success",
-                    expire: 3000
-                });
-                // 2. ウィンドウを閉じる
-                dhxWindow.hide();
-                // 3. 古いグリッドデータをクリア
-                grid.data.removeAll();
-                // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
-                return fetch(`/estimate/lists/${client_id}/${sql}/`);
-            })
-            .then(res => {
-                if (!res || !res.ok) {
-                    throw new Error("データの再読み込みに失敗しました");
-                }
-                return res.json();
-            })
-            .then(data => {
-                if (data) grid.data.parse(data);
-                // grid.data.forEach(row => {
-                //     if (row.estimate_year) years.push(Number(row.estimate_year));
-                // });
 
-                // if (years.length > 0) {
-                //     const maxYear = Math.max(...years);
-                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
-                // }
-            })
-            .catch(err => {
-                console.error(err);
-                // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
-                let msg = "エラーが発生しました";
-                if (typeof err === 'object') {
-                    // 最初のエラー内容を抽出して表示
-                    const firstKey = Object.keys(err)[0];
-                    msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
+                    if (firstErrorId) {
+                        // 【重要】Suite 9 の正しいフォーカス設定方法（フォーム本体のメソッドを使用）
+                        if (typeof form.setFocus === "function") {
+                            form.setFocus(firstErrorId);
+                        }
+
+                        // 念のため、Comboコンポーネントなどの特殊なコントロールだった場合のフォールバック処理
+                        const item = form.getItem(firstErrorId);
+                        if (item && typeof item.getWidget === "function") {
+                            const widget = item.getWidget();
+                            if (widget && typeof widget.focus === "function") {
+                                widget.focus();
+                            }
+                        }
+                    }
+
+                    console.log('firstErrorId:', firstErrorId, 'formData:', info);
+                    return;
                 }
-                dhx.message({text: msg, css: "dhx_widget--bg_danger"});
+
+                // 6.3.2. バリデーション成功後に値を取得
+                const formData = form.getValue();
+                console.log("送信データ:", formData);
+                const isNew = !formData.id || formData.id === "";
+                console.log("送信データ:", formData);
+                // 6.3.3. 新規(POST)か更新(PUT)の判定
+                const url = isNew ? `/estimate/add/${client_id}/` : `/estimate/estimates/${formData.id}/`;
+                const method = isNew ? "POST" : "PUT";
+                // 6.3.4. 通信開始
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(formData)
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            // DRFのバリデーションエラー(400)などをキャッチ
+                            return res.json().then(err => {
+                                throw err;
+                            });
+                        }
+                        return res.json();
+                    })
+                    .then(result => {
+                        dhx.message({
+                            text: isNew ? "追加されました" : "更新されました",
+                            css: "dhx_widget--bg_success",
+                            expire: 3000
+                        });
+                        // 2. ウィンドウを閉じる
+                        dhxWindow.hide();
+                        // 3. 古いグリッドデータをクリア
+                        grid.data.removeAll();
+                        // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
+                        return fetch(`/estimate/lists/${client_id}/${sql}/`);
+                    })
+                    .then(res => {
+                        if (!res || !res.ok) {
+                            throw new Error("データの再読み込みに失敗しました");
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data) grid.data.parse(data);
+                        // grid.data.forEach(row => {
+                        //     if (row.estimate_year) years.push(Number(row.estimate_year));
+                        // });
+
+                        // if (years.length > 0) {
+                        //     const maxYear = Math.max(...years);
+                        //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
+                        // }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
+                        let msg = "エラーが発生しました";
+                        if (typeof err === 'object') {
+                            // 最初のエラー内容を抽出して表示
+                            const firstKey = Object.keys(err)[0];
+                            msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
+                        }
+                        dhx.message({text: msg, css: "dhx_widget--bg_danger"});
+                    });
             });
-    });
 //　UPDATE: 6.3. 保存ボタンの処理
-    form.getItem("save").events.on("click", () => {
+            form.getItem("save").events.on("click", () => {
 
-        // 6.3.1 バリデーションを実行
-        const isValid = form.validate();
+                // 6.3.1 バリデーションを実行
+                const isValid = form.validate();
 
-        if (!isValid) {
-            // フォーム全体の「現在の入力値（各キー）」を取得
-            const info = form.getValue();
+                if (!isValid) {
+                    // フォーム全体の「現在の入力値（各キー）」を取得
+                    const info = form.getValue();
 
-            // 最初のエラーアイテムのIDを特定する
-            const firstErrorId = Object.keys(info).find(itemId => {
-                const item = form.getItem(itemId);
-                if (item && typeof item.validate === "function") {
-                    // 画面表示を変えずにバリデーション結果（成否）のみ判定
-                    return item.validate(true) === false;
-                }
-                return false;
-            });
-
-            if (firstErrorId) {
-                // 【重要】Suite 9 の正しいフォーカス設定方法（フォーム本体のメソッドを使用）
-                if (typeof form.setFocus === "function") {
-                    form.setFocus(firstErrorId);
-                }
-
-                // 念のため、Comboコンポーネントなどの特殊なコントロールだった場合のフォールバック処理
-                const item = form.getItem(firstErrorId);
-                if (item && typeof item.getWidget === "function") {
-                    const widget = item.getWidget();
-                    if (widget && typeof widget.focus === "function") {
-                        widget.focus();
-                    }
-                }
-            }
-
-            console.log('firstErrorId:', firstErrorId, 'formData:', info);
-            return;
-        }
-
-        // 6.3.2. バリデーション成功後に値を取得
-        const formData = form.getValue();
-        console.log("送信データ:", formData);
-        const isNew = !formData.id || formData.id === "";
-        console.log("送信データ:", formData);
-        // 6.3.3. 新規(POST)か更新(PUT)の判定
-        const url = isNew ? `/estimate/add/${client_id}/` : `/estimate/estimates/${formData.id}/`;
-        const method = isNew ? "POST" : "PUT";
-        // 6.3.4. 通信開始
-        fetch(url, {
-            method: method,
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCookie('csrftoken')
-            },
-            body: JSON.stringify(formData)
-        })
-            .then(res => {
-                if (!res.ok) {
-                    // DRFのバリデーションエラー(400)などをキャッチ
-                    return res.json().then(err => {
-                        throw err;
+                    // 最初のエラーアイテムのIDを特定する
+                    const firstErrorId = Object.keys(info).find(itemId => {
+                        const item = form.getItem(itemId);
+                        if (item && typeof item.validate === "function") {
+                            // 画面表示を変えずにバリデーション結果（成否）のみ判定
+                            return item.validate(true) === false;
+                        }
+                        return false;
                     });
-                }
-                return res.json();
-            })
-            .then(result => {
-                dhx.message({
-                    text: isNew ? "追加されました" : "更新されました",
-                    css: "dhx_widget--bg_success",
-                    expire: 3000
-                });
-                // 2. ウィンドウを閉じる
-                dhxWindow.hide();
-                // 3. 古いグリッドデータをクリア
-                grid.data.removeAll();
-                // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
-                return fetch(`/estimate/lists/${client_id}/${sql}/`);
-            })
-            .then(res => {
-                if (!res || !res.ok) {
-                    throw new Error("データの再読み込みに失敗しました");
-                }
-                return res.json();
-            })
-            .then(data => {
-                if (data) grid.data.parse(data);
-                // grid.data.forEach(row => {
-                //     if (row.estimate_year) years.push(Number(row.estimate_year));
-                // });
 
-                // if (years.length > 0) {
-                //     const maxYear = Math.max(...years);
-                //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
-                // }
-            })
-            .catch(err => {
-                console.error(err);
-                // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
-                let msg = "エラーが発生しました";
-                if (typeof err === 'object') {
-                    // 最初のエラー内容を抽出して表示
-                    const firstKey = Object.keys(err)[0];
-                    msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
+                    if (firstErrorId) {
+                        // 【重要】Suite 9 の正しいフォーカス設定方法（フォーム本体のメソッドを使用）
+                        if (typeof form.setFocus === "function") {
+                            form.setFocus(firstErrorId);
+                        }
+
+                        // 念のため、Comboコンポーネントなどの特殊なコントロールだった場合のフォールバック処理
+                        const item = form.getItem(firstErrorId);
+                        if (item && typeof item.getWidget === "function") {
+                            const widget = item.getWidget();
+                            if (widget && typeof widget.focus === "function") {
+                                widget.focus();
+                            }
+                        }
+                    }
+
+                    console.log('firstErrorId:', firstErrorId, 'formData:', info);
+                    return;
                 }
-                dhx.message({text: msg, css: "dhx_widget--bg_danger"});
+
+                // 6.3.2. バリデーション成功後に値を取得
+                const formData = form.getValue();
+                console.log("送信データ:", formData);
+                const isNew = !formData.id || formData.id === "";
+                console.log("送信データ:", formData);
+                // 6.3.3. 新規(POST)か更新(PUT)の判定
+                const url = isNew ? `/estimate/add/${client_id}/` : `/estimate/estimates/${formData.id}/`;
+                const method = isNew ? "POST" : "PUT";
+                // 6.3.4. 通信開始
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie('csrftoken')
+                    },
+                    body: JSON.stringify(formData)
+                })
+                    .then(res => {
+                        if (!res.ok) {
+                            // DRFのバリデーションエラー(400)などをキャッチ
+                            return res.json().then(err => {
+                                throw err;
+                            });
+                        }
+                        return res.json();
+                    })
+                    .then(result => {
+                        dhx.message({
+                            text: isNew ? "追加されました" : "更新されました",
+                            css: "dhx_widget--bg_success",
+                            expire: 3000
+                        });
+                        // 2. ウィンドウを閉じる
+                        dhxWindow.hide();
+                        // 3. 古いグリッドデータをクリア
+                        grid.data.removeAll();
+                        // fetchの連鎖（async/awaitを使うともっと綺麗に書けます）
+                        return fetch(`/estimate/lists/${client_id}/${sql}/`);
+                    })
+                    .then(res => {
+                        if (!res || !res.ok) {
+                            throw new Error("データの再読み込みに失敗しました");
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data) grid.data.parse(data);
+                        // grid.data.forEach(row => {
+                        //     if (row.estimate_year) years.push(Number(row.estimate_year));
+                        // });
+
+                        // if (years.length > 0) {
+                        //     const maxYear = Math.max(...years);
+                        //     grid.getHeaderFilter("estimate_year").setValue(String(maxYear));
+                        // }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        // Django(DRF)のエラーは {"field_name": ["error message"]} の形式で来ることが多いです
+                        let msg = "エラーが発生しました";
+                        if (typeof err === 'object') {
+                            // 最初のエラー内容を抽出して表示
+                            const firstKey = Object.keys(err)[0];
+                            msg = Array.isArray(err[firstKey]) ? err[firstKey][0] : (err.detail || msg);
+                        }
+                        dhx.message({text: msg, css: "dhx_widget--bg_danger"});
+                    });
             });
-    });

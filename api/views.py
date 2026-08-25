@@ -40,6 +40,16 @@ def get_user_pk(client_id, user_name):
     return user.id if user else None
 
 
+def get_aggr_pk(client_id, aggregation_no, task_name):
+    aggregation = None
+    if aggregation_no:
+        aggregation = Aggregation.objects.filter(client_id=client_id, aggregation_no=aggregation_no).first()
+    if task_name:
+        aggregation = Aggregation.objects.filter(client_id=client_id, aggregation_name__icontains=task_name).first()
+
+    return aggregation.id if aggregation else None
+
+
 @api_view(['GET'])
 def get_aggr_options(_request, client_id):
     # combobox の場合はid,valueでselectは使えない
