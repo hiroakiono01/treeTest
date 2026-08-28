@@ -13,48 +13,18 @@
  * DHTMLX GridでEnterキーをTabキーのように動作させる共通関数
  * @param {dhx.Grid} grid - 初期化済みのDHTMLX Gridインスタンス
  */
-// let isJapaneseComposing = false;
-//
-// // ネイティブのイベントリスナーでページ全体のIME状態をキャッチする
-// window.addEventListener("compositionstart", () => {
-//     isJapaneseComposing = true;
-// });
-//
-// window.addEventListener("compositionend", () => {
-//     // 確定直後のEnterキーのkeydownイベントが先に走る場合があるため、
-//     // わずかに遅らせてフラグを戻す
-//     setTimeout(() => {
-//         isJapaneseComposing = false;
-//     }, 50);
-// });
-
 function enableGridEnterNavigation(grid) {
-    // 💡【追加】エディタ起動時に、日本語変換確定のEnterキーがGrid本体に伝播するのを防ぐ
-    grid.events.on("beforeEditStart", (rowId, colId) => {
 
-
-
-        // エディタの要素が生成されるのをわずかに待つ
-        setTimeout(() => {
-            // 現在アクティブなグリッド内の入力要素を取得
-            const editorInput = grid.getContainer().querySelector(".dhx_grid-editor, input, textarea");
-            if (!editorInput) return;
-
-            // 入力要素に直接イベントリスナーを付与
-            editorInput.addEventListener("keydown", (e) => {
-                // IME変換中、または変換確定直後のEnter（keyCode: 229 または isComposing）を完全にブロック
-                if (e.isComposing || e.keyCode === 229) {
-                    // Grid本体の beforeKeyDown イベントに到達させない
-                    e.stopPropagation();
-                }
-            });
-        }, 10);
-    });
 
     // メインのキーナビゲーション処理
     grid.events.on("beforeKeyDown", event => {
+        // 💡 IME（日本語）変換中のEnterキー入力を完全に無視する
+        if (event.isComposing || event.keyCode === 229) {
+            return true; // イベントを通常通り通過させ、Gridの移動処理をスキップ
+        }
+
         // 1. 基本的な修飾キーやEnter/Tab以外のキーは無視
-        if ((event.key !== "Enter" && event.key !== "Tab" ) || event.ctrlKey || event.altKey || event.metaKey) {
+        if ((event.key !== "Enter" && event.key !== "Tab") || event.ctrlKey || event.altKey || event.metaKey) {
             return;
         }
 
@@ -73,9 +43,13 @@ function enableGridEnterNavigation(grid) {
                 return false;
             }
         }
-
+        // シフトキーの状態によって移動方向を決定 (三項演算子を使わず安全に記述)
+        let direction = 1;
+        if (event.shiftKey) {
+            direction = -1;
+        }
         // 3. 次のセルへ移動
-        moveSelectionLikeTab(grid, currentCell, event.shiftKey ? -1 : 1);
+        moveSelectionLikeTab(grid, currentCell, direction);
 
         // 4. 移動完了後のセルを取得して自動編集モードにする
         const nextCell = grid.selection.getCell();
