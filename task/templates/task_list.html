@@ -1346,98 +1346,74 @@
     // 7. 共通掛率入力用のウィンドウとフォームの作成
     // =================================================================
 
-    // 7.1 ポップアップウィンドウの初期化
+    // ==========================================
+    // 7.1 〜 7.2 ポップアップウィンドウとフォームの定義（変更なし）
+    // ==========================================
     const calcWindow = new dhx.Window({
         title: "一括計算パラメーター設定",
-        width: 1000,
-        height: 550,
+        width: 1400,
+        height: 1000,
         modal: true,
-        closable: true // 右上のバツボタンを有効化
+        closable: true
     });
 
-    // 7.2 ウィンドウ内に配置するフォームの定義
     const calcForm = new dhx.Form(null, {
         padding: 20,
         rows: [
             {
-                // 💡 1行目にすべてを横並び（cols）で配置します
-                // type: "cols",
-                // align: "end", // ボタンを下に揃えて配置します
-                // gutter: 15,   // 項目同士の間隔
                 cols: [
-
                     {
                         type: "input",
                         name: "common_markup",
-                        label: "一括適用する掛率 (例: 1.2)",
+                        label: "掛率 (例: 1.2)",
                         value: "1.0",
                         required: true,
-                        width: 350,          // 💡ラベルが横に来る分、全体の幅を少し広げて調整します（300〜400等）
-                        labelPosition: "left", // 💡ラベルを左側（横）に配置
-                        labelWidth: 160      // 💡ラベルの横幅を指定（文字がはみ出さない太さに調整してください）
-
+                        width: 350,
+                        labelPosition: "left",
+                        labelWidth: 160
                     },
                     {
-                        // 💡 確実に表示させるため、colsを排除して縦並び（rows）に配置します
                         type: "button",
                         name: "submit_btn",
-                        id: "submit_btn", // idを追加
+                        id: "submit_btn",
                         value: "計算を実行",
                         submit: true,
                         view: "flat",
                         color: "primary",
-                        width: 120 // ボタンの幅を指定
-                        //fullWidth: true // 横幅いっぱいに広げて押しやすくします
+                        width: 120
                     },
                     {
                         type: "button",
                         name: "cancel_btn",
-                        id: "cancel_btn", // idを追加
+                        id: "cancel_btn",
                         value: "キャンセル",
                         view: "flat",
                         color: "secondary",
-                        width: 100 // ボタンの幅を指定
-                        //fullWidth: true
+                        width: 100
                     }
                 ]
             },
             {
-                // Suite 9 仕様: HTMLを内包するためのコンテナ型
                 type: "container",
                 name: "grid_preview_container",
                 id: "grid_preview_container",
                 label: "選択された行データ一覧",
-                height: 250 // スクロールエリアの高さを確保
+                height: 800
             }
         ]
     });
 
-    // ウィンドウにフォームをアタッチ
     calcWindow.attach(calcForm);
-    // =================================================================
-    // 8. イベント処理（計算・キャンセル・バツボタン）
-    // =================================================================
 
-    // 8.1 右上のバツ（×）ボタンで終了した時
-    calcWindow.events.on("beforeHide", () => {
-        // 💡 Suite 9 仕様: attachHTMLに空文字を渡してコンテナ内を安全にクリア
-        const containerItem = calcForm.getItem("grid_preview_container");
-        if (containerItem) {
-            containerItem.attachHTML("");
-        }
-        return true; // 計算を行わずに閉じる
-    });
+    // ==========================================
+    // プレビュー用Grid（previewGrid）のグローバル保持
+    // ==========================================
+    let previewGrid = null; // 重複初期化を防ぐための変数
 
-    // 8.2 キャンセルボタンが押されたとき
-    calcForm.events.on("click", (name) => {
-        if (name === "cancel_btn") {
-            calcWindow.hide(); // 計算せずに終了
-        }
-    });
-
-    // 8.3 フォームがサブミット（計算を実行がクリック）されたとき
+    // ==========================================
+    // 8.3 フォームがサブミットされたとき
+    // ==========================================
     calcForm.events.on("submit", () => {
-        // フォームから入力された共通掛率を取得
         const formValues = calcForm.getValue();
         const commonMarkup = parseFloat(formValues.common_markup);
 
@@ -1446,48 +1422,80 @@
             return;
         }
 
-        // Gridから選択されているセルを取得し、重複のない行IDリストを作る
-        const selectedCells = editGrid.selection.getCells();
-        if (selectedCells.length === 0) return;
+        // 💡 プレビューGrid内の「最初の1行」をサンプリングして、
+        // 現在どの見出しチェックボックス（列フラグ）がONになっているかを判定します
+        const firstRow = previewGrid.data.getItem(previewGrid.data.getId(0));
+        if (!firstRow) {
+            alert("計算対象のデータがありません。");
+            return;
+        }
 
-        const selectedRowIds = [...new Set(selectedCells.map(cell => cell.row.id))];
+        const isTargetBudgetPrice = firstRow.calc_budget_price;
+        const isTargetPrice = firstRow.calc_price;
+        const isTargetQuantity = firstRow.calc_quantity;
 
-        // 選択行に対してループ処理
-        selectedRowIds.forEach(rowId => {
+        if (!isTargetBudgetPrice && !isTargetPrice && !isTargetQuantity) {
+            alert("見出し行のチェックボックスを少なくとも1つ選択してください。");
+            return;
+        }
+
+        let updatedCount = 0;
+
+        // プレビューGrid内の全行に対して処理
+        // 選択された全行をループ
+        previewGrid.data.forEach(previewRow => {
+            const rowId = previewRow.id; // 元のeditGridと同じID
             const rowData = editGrid.data.getItem(rowId);
+            if (!rowData) return;
 
-            // 各数値をパース（未入力時は0）
-            const budgetPrice = parseFloat(rowData.budget_price) || 0;
-            const budgetQuantity = parseFloat(rowData.budget_quantity) || 0;
+            // 各数値をパース
+            let budgetPrice = parseFloat(rowData.budget_price) || 0;
+            let budgetQuantity = parseFloat(rowData.budget_quantity) || 0;
+            let price = parseFloat(rowData.price) || 0;
+            let quantity = parseFloat(rowData.quantity) || 0;
 
-            // 💡 計算ロジック
-            // 1. 見積数量 ＝ 予算数量
-            const newQuantity = budgetQuantity;
-            // 2. 見積単価 ＝ 予算単価 × 共通掛率
-            const newPrice = budgetPrice * commonMarkup;
-            // 3. 見積金額 ＝ 見積数量 × 見積単価
-            const newAmount = newQuantity * newPrice;
+            // 💡 見出しのチェック状態に応じて、該当する列だけ掛率を適用
+            if (isTargetBudgetPrice) {
+                budgetPrice = budgetPrice * commonMarkup;
+            }
+            if (isTargetPrice) {
+                price = price * commonMarkup;
+            }
+            if (isTargetQuantity) {
+                quantity = quantity * commonMarkup;
+            }
 
-            // Gridの行データを一括更新（画面上の掛率列も一緒に書き換える場合）
+            // 金額（単価×数量）の再計算
+            const budgetAmount = budgetPrice * budgetQuantity;
+            const amount = price * quantity;
+
+            // メインGrid（editGrid）の行データを一括更新
             editGrid.data.update(rowId, {
-                markup_rate: commonMarkup, // 入力された共通掛率をセット
-                quantity: newQuantity,
-                price: newPrice,
-                amount: newAmount
+                markup_rate: commonMarkup,
+                budget_price: budgetPrice,
+                budget_amount: budgetAmount,
+                price: price,
+                quantity: quantity,
+                amount: amount
             });
+
+            updatedCount++;
         });
 
-        // 処理が終わったらウィンドウを閉じる
+        // ウィンドウを閉じてメインをリフレッシュ
         calcWindow.hide();
-        // フッター合計などの表示をリフレッシュ
         editGrid.paint();
+    });
+
+    // キャンセルボタンで閉じるイベントも追加
+    calcForm.getItem("cancel_btn").events.on("click", () => {
+        calcWindow.hide();
     });
 
 
     // =================================================================
-    // 9. ツールバーボタンのイベント連携
+    // 9. ツールバーボタンのイベント連携（ポップアップ表示ルーチン）
     // =================================================================
-    // 9.1
     function calc_btn() {
         const selectedCells = editGrid.selection.getCells();
 
@@ -1498,59 +1506,129 @@
 
         const selectedRowIds = [...new Set(selectedCells.map(cell => cell.row.id))];
 
-        // 先にウィンドウを表示してDOMを生成
+        // プレビュー用にデータをディープコピー
+        // 初回表示時は「予算単価」「見積単価」の列チェックボックスを初期値でON(true)にしておきます
+        const previewData = selectedRowIds.map(rowId => {
+            const original = editGrid.data.getItem(rowId);
+            return {
+                ...original,
+                id: rowId,
+                calc_budget_price: true,  // 予算単価列の初期状態 (ON)
+                calc_price: true,         // 見積単価列の初期状態 (ON)
+                calc_quantity: false       // 見積数量列の初期状態 (OFF)
+            };
+        });
+
         calcWindow.show();
 
-        // 💡 Suite 9 正式仕様: 「attachHTML」を使ってコンテナにテーブル構造を流し込みます
-        const containerItem = calcForm.getItem("grid_preview_container");
-        if (containerItem) {
-            let htmlRows = "";
-            selectedRowIds.forEach(rowId => {
-                const rowData = editGrid.data.getItem(rowId);
+        if (!previewGrid) {
+            previewGrid = new dhx.Grid(null, {
+                columns: [
+                    {id: "task_name", header: [{text: "名称"}], width: 180},
+                    {id: "material_dimensions", width: 200, header: [{text: "材質・寸法", align: "center"}], editable: true,},
+                    // 💡 予算数量列（1段のみでテキストとチェックボックスを縦並びにする）
+                    {
+                        id: "budget_quantity",
+                        header: [{
+                            text: "<label style='display:flex; flex-direction:row; align-items:center; justify-content:center; height:100%; cursor:pointer;'><span>見積数量</span><input type='checkbox' data-col='calc_budget_price' checked style='margin-left:6px;'></label>"
+                        }],
+                        type: "number",
+                        numberMask: {maxDecLength: 2},
+                        width: 120,
+                        htmlEnable: true, // ヘッダーのHTMLを有効化
+                        editable: true
+                    },
 
-                const bQty = rowData.budget_quantity ?? "";
-                const bPrice = rowData.budget_price ?? "";
-                const bAmount = rowData.budget_amount ?? "";
-                const qty = rowData.quantity ?? "";
-                const price = rowData.price ?? "";
-                const amount = rowData.amount ?? "";
+                    // 💡 予算単価列（1段のみでテキストとチェックボックスを縦並びにする）
+                    {
+                        id: "budget_price",
+                        header: [{
+                            text: "<label style='display:flex; flex-direction:row; align-items:center; justify-content:center; height:100%; cursor:pointer;'><span>予算単価</span><input type='checkbox' data-col='calc_budget_price' checked style='margin-left:6px;'></label>"
+                        }],
+                        type: "number",
+                        numberMask: {maxDecLength: 2},
+                        width: 150,
+                        htmlEnable: true, // ヘッダーのHTMLを有効化
+                        editable: true
+                    },
+                    {id: "budget_amount", header: [{text: "見積金額", align: "center"}], type: "number", numberMask: {customFormat: "#,##0"}, width: 150},
 
-                htmlRows += `
-                <tr style="border-bottom:1px solid #dee2e6;">
-                    <td style="padding:8px;">${bQty}</td>
-                    <td style="padding:8px;">${bPrice}</td>
-                    <td style="padding:8px;">${bAmount}</td>
-                    <td style="padding:8px;">${qty}</td>
-                    <td style="padding:8px;">${price}</td>
-                    <td style="padding:8px;">${amount}</td>
-                </tr>
-            `;
+
+                    // 💡 見積数量列
+                    {
+                        id: "quantity",
+                        header: [{
+                            text: "<label style='display:flex; flex-direction:row; align-items:center; justify-content:center; height:100%; cursor:pointer;'><span>見積数量</span><input type='checkbox' data-col='calc_quantity' checked style='margin-left:6px;'></label>"
+                        }],
+                        type: "number",
+                        numberMask: {maxDecLength: 2},
+                        width: 120,
+                        htmlEnable: true,
+                        editable: true
+                    },
+                    // 💡 見積単価列
+                    {
+                        id: "price",
+                        header: [{
+                            text: "<label style='display:flex; flex-direction:row; align-items:center; justify-content:center; height:100%; cursor:pointer;'><span>見積単価</span><input type='checkbox' data-col='calc_price' checked style='margin-left:6px;'></label>"
+                        }],
+                        type: "number",
+                        numberMask: {maxDecLength: 2},
+                        width: 150,
+                        htmlEnable: true,
+                        editable: true
+                    },
+
+                    {id: "amount", header: [{text: "見積金額", align: "center"}], type: "number", numberMask: {customFormat: "#,##0"}, width: 150},
+
+                ],
+                editable: true,
+                data: previewData,
+                // 💡 Suite 9：見出し（ヘッダー行）の高さを70pxに設定します
+                // headerRowHeight: 70
             });
 
-            // スクロール可能なコンテナ用HTML全体
-            const fullTableHtml = `
-            <div style="overflow-y:auto; max-height:100%; border:1px solid #cccccc; box-sizing:border-box;">
-                <table style="width:100%; border-collapse:collapse; font-size:13px; font-family:sans-serif;">
-                    <thead>
-                        <tr style="background:#f4f5f7; text-align:left; position:sticky; top:0; z-index:10;">
-                            <th style="padding:8px; border-bottom:1px solid #dee2e6;">予算数量</th>
-                            <th style="padding:8px; border-bottom:1px solid #dee2e6;">予算単価</th>
-                            <th style="padding:8px; border-bottom:1px solid #dee2e6;">予算金額</th>
-                            <th style="padding:8px; border-bottom:1px solid #dee2e6;">数量</th>
-                            <th style="padding:8px; border-bottom:1px solid #dee2e6;">単価</th>
-                            <th style="padding:8px; border-bottom:1px solid #dee2e6;">金額</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${htmlRows}
-                    </tbody>
-                </table>
-            </div>
-        `;
+            // 💡 見出し行のチェックボックスがクリックされた際の全行連動イベント
+            previewGrid.events.on("headerCellClick", (col, row, e) => {
+                // クリックされた要素がinput[type=checkbox]の場合、またはlabel内の場合
+                const checkbox = e.target.closest("input[type='checkbox']");
+                if (checkbox) {
+                    const targetColId = checkbox.getAttribute("data-col");
+                    const isChecked = checkbox.checked;
 
-            // フォームコントロールオブジェクトに対してHTMLをアタッチ
-            containerItem.attachHTML(fullTableHtml);
+                    // プレビューGrid内の全データ行の該当フラグを一括更新
+                    previewGrid.data.forEach(item => {
+                        previewGrid.data.update(item.id, {[targetColId]: isChecked});
+                    });
+
+                    previewGrid.paint();
+                }
+            });
+
+            calcForm.getItem("grid_preview_container").attach(previewGrid);
+        } else {
+            previewGrid.data.removeAll();
+            previewGrid.data.parse(previewData);
+
+            // 再表示時に初期のチェック状態を見出しHTMLに反映
+            setTimeout(() => {
+                const container = previewGrid.getRoot();
+                if (container) {
+                    const cbBudget = container.querySelector("input[data-col='calc_budget_price']");
+                    const cbPrice = container.querySelector("input[data-col='calc_price']");
+                    const cbQty = container.querySelector("input[data-col='calc_quantity']");
+                    if (cbBudget) cbBudget.checked = true;
+                    if (cbPrice) cbPrice.checked = true;
+                    if (cbQty) cbQty.checked = false;
+                }
+            }, 60);
         }
+
+        setTimeout(() => {
+            if (previewGrid) previewGrid.paint();
+        }, 50);
+
+        calcForm.setValue({common_markup: "1.0"});
     }
 
 </script>

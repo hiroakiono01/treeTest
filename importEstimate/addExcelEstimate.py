@@ -21,7 +21,7 @@ def upload_excel_estimate(excel_file, form):
         else:
             # 2枚目以降のシートの処理
             after_sheet(worksheet, form, estimate_new_id)
-            print(i)
+            # print(i)
     # 関数の最後にIDを返してあげる（これで警告が消えます）
     # return estimate_new_id
 
@@ -176,7 +176,7 @@ def first_sheet(worksheet, form):
         parent = write_task(task_obj)
         parent_id[task_name] = parent
 
-        print(parent_id)
+        print("parent_id", parent_id)
 
         estimate = Estimate.objects.get(pk=estimate_new_id)
         estimate.estimate_tax_amount = estimate_tax_amount
@@ -185,7 +185,7 @@ def first_sheet(worksheet, form):
         # estimate_tax_amount　明細を先に読んで消費税の金額をセットする
         # estimate_obj["estimate_tax_amount"] = estimate_tax_amount
 
-        # print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation, parent)
+        # print(task_name, material_dimensions, quantity, unitPk, price, amount, note, parent)
 
     return estimate_new_id
 
@@ -223,10 +223,10 @@ def write_task(task_obj):
         estimate_id=task_obj["estimate_id"],
         task_name=task_obj["task_name"],
         material_dimensions=task_obj["material_dimensions"],
-        # budget_quantity=task_obj["budget_quantity"],
-        # budget_unit=task_obj["budget_unit"],
-        # budget_name=task_obj["budget_name"],
-        # budget_amount=task_obj["budget_amount"],
+        budget_quantity=task_obj["quantity"],
+        budget_unit_id=task_obj["unit"],
+        budget_price=task_obj["price"],
+        budget_amount=task_obj["amount"],
         quantity=task_obj["quantity"],
         unit_id=task_obj["unit"],
         price=task_obj["price"],
@@ -239,13 +239,17 @@ def write_task(task_obj):
     )
     task.save()
 
-    return task.id
+    return task.id, task.task_name
 
 
 def after_sheet(worksheet, form, estimate_new_id):
     row_counter = worksheet.max_row
     task_obj = {}
-    for i in range(row_counter - 5):
+
+    for i in range(row_counter - 3):
+
+        parent_name = worksheet.cell(row=i + 4, column=2).value
+        print('parent_name', parent_name)
 
         task_obj["estimate_id"] = estimate_new_id
         task_name = worksheet.cell(row=i + 4, column=2).value
@@ -285,13 +289,19 @@ def after_sheet(worksheet, form, estimate_new_id):
 
         aggregation_no = worksheet.cell(row=i + 4, column=10).value
         clientPk = form.cleaned_data['client_pk']
-        aggregationPk = get_aggr_pk(clientPk, aggregation_no,None)
+        aggregationPk = get_aggr_pk(clientPk, aggregation_no, None)
         task_obj["aggregation"] = aggregationPk
 
         parent_task_name = worksheet.cell(row=2, column=2).value
+        print('parent_task_name', parent_task_name)
         parent_task_id = parent_id.get(parent_task_name)
+        print('parent_task_id', parent_task_id)
+        print('parent_id', parent_id)
 
         task_obj["parent"] = parent_task_id
 
-        write_task(task_obj)
-        # print(task_name, material_dimensions, quantity, unitPk, price, amount, note, aggregation)
+        result = write_task(task_obj)
+        task_name = str(result[1])
+        task_id = result[0]
+        parent_id[task_name] = task_id
+        # print(task_name, material_dimensions, quantity, unitPk, price, amount, note)
