@@ -61,7 +61,7 @@
     treeGrid = new dhx.Grid(null, {
         type: "tree",
         columns: [
-            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColumn: false},
+            {id: "id", header: [{text: "ID"}], hidden: false, isTreeColumn: false},
             {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
             {id: "estimate_no", header: [{text: "工事番号"}], hidden: true,},
             {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
@@ -107,7 +107,7 @@
                 width: 150,
             },
             {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
-            {id: "parent", header: [{text: "parent"}], hidden: true},
+            {id: "parent", header: [{text: "parent"}], hidden: false},
             {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
             {id: "detail", header: [{text: "階層", align: "center"}], editable: false},
             {
@@ -962,10 +962,10 @@
             }
         })
 
-        // 5.5 --- editGrid ④ 下段に 編集用の通常Grid を配置 ---
+        // 5.5 --- editGrid ④ 下段に 編集用の通常editGrid を配置 ---
         editGrid = new dhx.Grid(null, {
             columns: [
-                {id: "id", header: [{text: "ID"}], hidden: true},
+                {id: "id", header: [{text: "ID"}], hidden: false},
                 {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
                 {id: "estimate_no", header: [{text: "工事番号"}], editable: true, hidden: true},
                 {id: "task_name", header: [{text: "名称"}], editable: true, width: 200, footer: [{text: "合計"}]},
@@ -1027,7 +1027,7 @@
                     numberMask: {customFormat: "#,##0"},
                 },
                 {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
-                {id: "parent", header: [{text: "parent"}], hidden: true},
+                {id: "parent", header: [{text: "parent"}], hidden: false},
                 {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
                 {
                     id: "actions",

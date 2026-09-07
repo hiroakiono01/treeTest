@@ -4,7 +4,7 @@ from django.db import transaction
 from api.views import get_unit_pk, get_user_pk, get_aggr_pk
 from app.models import Estimate, Task
 
-parent_id = {}
+parentDic = {}
 
 
 @transaction.atomic
@@ -173,10 +173,12 @@ def first_sheet(worksheet, form):
 
         task_obj["parent"] = None
 
-        parent = write_task(task_obj)
-        parent_id[task_name] = parent
+        # Taskに書き込んだときのparentになるIDを取得する
+        result = write_task(task_obj)
+        # parent_id辞書に書き込む
+        parentDic[result[1]] = result[0]
 
-        print("parent_id", parent_id)
+        print("parentDic", parentDic)
 
         estimate = Estimate.objects.get(pk=estimate_new_id)
         estimate.estimate_tax_amount = estimate_tax_amount
@@ -238,7 +240,6 @@ def write_task(task_obj):
         # sort_order=task_obj["sort_order"],
     )
     task.save()
-
     return task.id, task.task_name
 
 
@@ -246,7 +247,11 @@ def after_sheet(worksheet, form, estimate_new_id):
     row_counter = worksheet.max_row
     task_obj = {}
 
-    for i in range(row_counter - 3):
+    # このTabの名称を取得してparent_id辞書からparentIdを取得する
+    task_name = worksheet.cell(row=2, column=2).value
+    parent_id = parentDic[task_name]
+
+    for i in range(row_counter - 5):
 
         parent_name = worksheet.cell(row=i + 4, column=2).value
         print('parent_name', parent_name)
@@ -292,16 +297,19 @@ def after_sheet(worksheet, form, estimate_new_id):
         aggregationPk = get_aggr_pk(clientPk, aggregation_no, None)
         task_obj["aggregation"] = aggregationPk
 
-        parent_task_name = worksheet.cell(row=2, column=2).value
-        print('parent_task_name', parent_task_name)
-        parent_task_id = parent_id.get(parent_task_name)
-        print('parent_task_id', parent_task_id)
-        print('parent_id', parent_id)
+        # parent_task_name = worksheet.cell(row=2, column=2).value
+        # print('parent_task_name', parent_task_name)
+        # parent_task_id = parent_id.get(parent_task_name)
+        # print('parent_task_id', parent_task_id)
+        # print('parent_id', parent_id)
 
-        task_obj["parent"] = parent_task_id
+        task_obj["parent"] = parent_id
 
         result = write_task(task_obj)
+
         task_name = str(result[1])
         task_id = result[0]
-        parent_id[task_name] = task_id
-        # print(task_name, material_dimensions, quantity, unitPk, price, amount, note)
+        parentDic[task_name] = task_id
+        print("parentDic", parentDic)
+        task_obj["estimate_id"] = estimate_new_id
+        # # print(task_name, material_dimensions, quantity, unitPk, price, amount, note)
