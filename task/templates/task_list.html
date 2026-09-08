@@ -61,7 +61,7 @@
     treeGrid = new dhx.Grid(null, {
         type: "tree",
         columns: [
-            {id: "id", header: [{text: "ID"}], hidden: false, isTreeColumn: false},
+            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColumn: false},
             {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
             {id: "estimate_no", header: [{text: "工事番号"}], hidden: true,},
             {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
@@ -107,7 +107,7 @@
                 width: 150,
             },
             {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
-            {id: "parent", header: [{text: "parent"}], hidden: false},
+            {id: "parent", header: [{text: "parent"}], hidden: true},
             {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
             {id: "detail", header: [{text: "階層", align: "center"}], editable: false},
             {
@@ -133,7 +133,7 @@
 
         },
         rootParent: null,
-        selection: "row",
+        selection: "complex",
         multiselection: true,
         //dragMode: "both",// 他のgridからデータをドラグできる
         dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
@@ -1052,8 +1052,9 @@
                 // ▽▽▽ ここから：子供を持たない行だけにチェックボックスを表示する列 ▽▽▽
                 {
                     id: "checked",
-                    header: [{text: "選択"}],
+                    header: [{text: "選択", align: "center"}],
                     width: 100,
+                    align: "center",
                     htmlEnable: true, // HTMLテンプレートを有効にする
                     template: function (cellValue, row, column) {
                         // editGridのデータから、この行が子要素を持っているか判定
@@ -1077,7 +1078,7 @@
 
             // 元のツリーデータを汚さないように複製してロード
             data: JSON.parse(JSON.stringify(childItems)),
-            selection: "row",
+            selection: "complex",
             keyNavigation: true, // ★必ずtrueに設定してください
             editable: true,
             tooltip: false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ

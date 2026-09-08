@@ -9,7 +9,7 @@ parentDic = {}
 
 @transaction.atomic
 def upload_excel_estimate(excel_file, form):
-    Task.objects.all().delete()
+    # Task.objects.all().delete()
 
     wb = openpyxl.load_workbook(excel_file)
     estimate_new_id = None
