@@ -253,7 +253,7 @@
             const data = await res.json();
             const estimateName = data['estimate_name'];
             const estimateId = data['estimateId'];
-            console.log("estimateId", estimateId)
+            // console.log("estimateId", estimateId)
 
             const headerEstimateNameElem = document.getElementById("header_estimate_name");
             if (headerEstimateNameElem) headerEstimateNameElem.textContent = estimateName;
@@ -334,7 +334,7 @@
     // 3.5 タスク一覧の取得
     async function fetchTaskLists() {
         try {
-            console.log("estimateId", estimateId)
+            // console.log("estimateId", estimateId)
             const res = await fetch(`/task/lists/${estimateId}/`);
             const data = await res.json();
             use_flg = "9";
@@ -416,7 +416,7 @@
         reloadCombo(use_flg);
         // 2. グリッドのデータストアに直接追加
         treeGrid.data.add(newRowData);
-        console.log("newRowData", newRowData, "globalUnitOptions", globalUnitOptions)
+        // console.log("newRowData", newRowData, "globalUnitOptions", globalUnitOptions)
         // 3. (オプション) 追加した行を自動でフォーカスしてスクロール
         // treeGrid.selection.setCell(newRowData.id, "estimate_no");
     }
@@ -424,7 +424,7 @@
 
     // 4.3 treeGridに自動で行を追加する処理
     treeGrid.events.on("cellClick", function (row, col, e) {
-        console.log("1. cellClickが発生:", row.id, col.id);
+        // console.log("1. cellClickが発生:", row.id, col.id);
     });
     treeGrid.events.on("beforeKeyDown", function (event, e) {
 
@@ -759,11 +759,12 @@
         }
     });
 
+
     // 4.13 参照データのreloadCombo処理
 
     function reloadCombo(useFlgValue) {
         //let unitOptions = [];
-        console.log("currentUnitOptions", currentUnitOptions, "allUnitOptions", allUnitOptions, "useFlgValue", useFlgValue)
+        // console.log("currentUnitOptions", currentUnitOptions, "allUnitOptions", allUnitOptions, "useFlgValue", useFlgValue)
         globalUnitOptions = []
         if (useFlgValue === "0") {
             globalUnitOptions = currentUnitOptions;
@@ -840,6 +841,21 @@
 
     }
 
+    /**
+     * 💡 追加：現在の並び順（インデックス）に基づいて sort_order を一括更新する共通関数
+     */
+    function updateAllSortOrders() {
+        // 変更通知を一時停止してパフォーマンスを最適化
+        treeGrid.data.map((item, index) => {
+            const newOrder = index + 1; // 1始まりの連番にする場合
+
+            // 値が変わっている場合のみ更新
+            if (item.sort_order !== newOrder) {
+                treeGrid.data.update(item.id, {sort_order: newOrder});
+            }
+        });
+    }
+
     // const unitFields = ["budget_unit"]
     // fetch("/api/unit-options/")
     //     .then(res => res.json())
@@ -893,6 +909,24 @@
 
         // 選択された行の直下にある子要素（配列）を取得
         const childItems = treeGrid.data.getItems(currentParentId);
+
+        // childItems.forEach((childRow) => {
+        //     // 子要素を持っている（親行である）か判定
+        //     const parentFlg = treeGrid.data.haveItems(childRow.id)
+        //
+        //     if (treeGrid.data.haveItems(childRow.id)) {
+        //         // "checked"列のセルに対して、作成したCSSクラスを適用する
+        //         console.log("parentFlg", parentFlg, "childRow.id", childRow.id)
+        //         // 確実に描画に反映させるため requestAnimationFrame を使用
+        //         requestAnimationFrame(() => {
+        //             // 【重要】操作対象が treeGrid なら treeGrid.addCellCss を使う
+        //             treeGrid.addCellCss(childRow.id, "checked", "hide-parent-checkbox");
+        //
+        //             // 必要に応じて再描画を強制
+        //             treeGrid.paint();
+        //         });
+        //     }
+        // });
         // console.log('childItems', childItems)
 
         // 既にWindowが開いている場合は重複防止のため一度破棄する
@@ -978,28 +1012,6 @@
                     options: globalAggregationOptions,
                     align: "center"
                 },
-                // {
-                //     id: "calcu_cls",
-                //     width: 100,
-                //     header: [{text: "計算区分", align: "center"}],
-                //     editable: true,
-                //     editorType: "select", // セレクトボックス形式
-                //     options: [
-                //         {id: "0", value: "加算対象"},
-                //         {id: "1", value: "加算しない"},
-                //         {id: "2", value: "税抜合計"},
-                //         {id: "3", value: "消費税"}
-                //     ],
-                //     // 💡 セルにカスタムCSSクラスを適用するための関数
-                //     htmlEnable: true,
-                //     css: function (value, row, col) {
-                //         // 区分が "2" または "3" の場合はグレーにするクラスを返す
-                //         if (row.calcu_cls === "2" || row.calcu_cls === "3") {
-                //             return "cell-disabled";
-                //         }
-                //         return "";
-                //     }
-                // },
                 {id: "budget_quantity", header: [{text: "予算数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right", editable: true},
                 {
                     id: "budget_unit",
@@ -1036,7 +1048,31 @@
                     template: () => `<i class="dxi dxi-dots-vertical row-menu"></i>`,
                     align: "center",
                     tooltip: false, editable: false, sortable: false, htmlEnable: true,
-                }
+                },
+                // ▽▽▽ ここから：子供を持たない行だけにチェックボックスを表示する列 ▽▽▽
+                {
+                    id: "checked",
+                    header: [{text: "選択"}],
+                    width: 100,
+                    htmlEnable: true, // HTMLテンプレートを有効にする
+                    template: function (cellValue, row, column) {
+                        // editGridのデータから、この行が子要素を持っているか判定
+                        // ※初期化時にまだ editGrid 変数が定義されていない場合は、
+                        //   直接データのコレクション(例: dataset)や判定ロジックを用いるか、後述の方法を使います。
+                        const hasChildren = treeGrid.data.haveItems(row.id);
+
+                        if (hasChildren) {
+                            // 子（配下タスク）がいる「親行」には何も表示しない
+                            return "";
+                        } else {
+                            // 子がいない「最下層の行」にだけチェックボックスを表示する
+                            // row.checked の値（true/false または 1/0）によって checked 属性を切り替え
+                            const isChecked = row.checked ? "checked" : "";
+                            return `<input type="checkbox" ${isChecked} onclick="toggleRowCheck('${row.id}')" />`;
+                        }
+                    }
+                },
+                // △△△ ここまで △△△
             ],
 
             // 元のツリーデータを汚さないように複製してロード
@@ -1064,6 +1100,13 @@
         enableGridEnterNavigation(editGrid);
 
         layout.getCell("grid_cell").attach(editGrid);
+
+        // チェックボックスがクリックされた時のカスタム処理
+        window.toggleRowCheck = function (rowId) {
+            const rowData = editGrid.data.getItem(rowId);
+            // 現在の値を反転させて更新
+            editGrid.data.update(rowId, {checked: !rowData.checked});
+        };
 // 💡 5. 【データ消失防止のダメ押し】描画を強制リフレッシュする
 
         editGrid.paint();
@@ -1167,6 +1210,7 @@
                 return;
             }
             const targetId = selectedCell.row.id;
+            console.log("row", row)
             const currentIndex = editGrid.data.getIndex(targetId);
             // 最上行の制御
             if (currentIndex <= 0) {
@@ -1349,6 +1393,7 @@
     // ==========================================
     // 7.1 〜 7.2 ポップアップウィンドウとフォームの定義（変更なし）
     // ==========================================
+    // 7.1 計算のウインドウを準備
     const calcWindow = new dhx.Window({
         title: "一括計算パラメーター設定",
         width: 1400,
@@ -1413,6 +1458,7 @@
     // ==========================================
     // 8.3 フォームがサブミットされたとき
     // ==========================================
+    // 7.2 サブミットの処理
     calcForm.events.on("submit", () => {
         const formValues = calcForm.getValue();
         const commonMarkup = parseFloat(formValues.common_markup);
@@ -1496,6 +1542,7 @@
     // =================================================================
     // 9. ツールバーボタンのイベント連携（ポップアップ表示ルーチン）
     // =================================================================
+    // 7.3 イベントの処理
     function calc_btn() {
         const selectedCells = editGrid.selection.getCells();
 
