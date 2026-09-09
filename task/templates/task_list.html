@@ -34,8 +34,8 @@
         {id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true,},
         {id: "historyBack", type: "button", value: "戻る", icon: "dxi dxi-arrow-left", color: "secondary", circle: true},
         {type: "spacer"},
-        {id: "moveRowUp", type: "button", value: "上へ移動", icon: "dxi dxi-arrow-up", color: "primary",},
-        {id: "moveRowDown", type: "button", value: "下へ移動", icon: "dxi dxi-arrow-down", color: "primary",},
+        {id: "moveRowUp", type: "button", value: "上へ移動(親)", icon: "dxi dxi-arrow-up", color: "primary",},
+        {id: "moveRowDown", type: "button", value: "下へ移動(親)", icon: "dxi dxi-arrow-down", color: "primary",},
         {id: "expandAll", type: "button", value: "展開する", icon: "dxi dxi-folder-open"},
         {id: "collapseAll", type: "button", value: "折りたたむ", icon: "dxi dxi-folder"},
         {type: "spacer"},
@@ -134,10 +134,10 @@
         },
         rootParent: null,
         selection: "complex",
-        multiselection: true,
+        multiselection: false,
         //dragMode: "both",// 他のgridからデータをドラグできる
         dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
-        dropBehaviour: "complex", // 階層の移動（子要素へのドロップなど）を許可
+        dropBehaviour: "sibling", // 階層の移動（同じ階層へのドロップなど）を許可
         editable: false, // 全体として編集は有効にしておく
         tooltip: false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
         autoWidth: true,
@@ -964,8 +964,8 @@
             data: [
                 {id: "add", value: "明細の追加", type: "button", icon: "dxi dxi-plus", color: "primary", circle: true},
                 {type: "spacer"},
-                {id: "moveRowUp", type: "button", value: "上へ移動", icon: "dxi dxi-arrow-up", color: "primary",},
-                {id: "moveRowDown", type: "button", value: "下へ移動", icon: "dxi dxi-arrow-down", color: "primary",},
+                {id: "moveRowsUp", type: "button", value: "上へ移動", icon: "dxi dxi-arrow-up", color: "primary",},
+                {id: "moveRowsDown", type: "button", value: "下へ移動", icon: "dxi dxi-arrow-down", color: "primary",},
                 {id: "calc_btn", type: "button", value: "一括計算", icon: "dxi dxi-function-variant", color: "primary",},
                 {type: "spacer"},
                 {id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true,},
@@ -982,11 +982,11 @@
             if (id === "save") {
                 saveRow();
             }
-            if (id === "moveRowUp") {
-                moveRowUp();
+            if (id === "moveRowsUp") {
+                moveRowsUp();
             }
-            if (id === "moveRowDown") {
-                moveRowDown();
+            if (id === "moveRowsDown") {
+                moveRowsDown();
             }
             if (id === "resetGrid") {
                 resetGrid();
@@ -1202,55 +1202,109 @@
             return true
         });
 
-        // 6.3 --- editGridの行を上に移動 ---
-        function moveRowUp() {
-            // console.log("moveRowUp");
-            const selectedCell = editGrid.selection.getCell();
-            if (!selectedCell || !selectedCell.row) {
+        // 6.3 --- editGridの複数行を上に移動 ---
+        function moveRowsUp() {
+            // 1. 選択されているすべてのセルの情報を取得
+            const selectedCells = editGrid.selection.getCells();
+            if (!selectedCells || selectedCells.length === 0) {
                 alert("移動する行を選択してください。");
                 return;
             }
-            const targetId = selectedCell.row.id;
-            console.log("row", row)
-            const currentIndex = editGrid.data.getIndex(targetId);
-            // 最上行の制御
-            if (currentIndex <= 0) {
+
+            // 2. 重複のない選択行のIDリストを作成
+            const rowIds = [...new Set(selectedCells.map(cell => cell.row.id))];
+
+            // 列IDを退避（最初に見つかったセルの列IDを使用）
+            const targetColumnId = selectedCells[0].column.id;
+
+            // 3. 行を現在のインデックス（並び順）でソートする
+            rowIds.sort((a, b) => {
+                return editGrid.data.getIndex(a) - editGrid.data.getIndex(b);
+            });
+
+            // 4. 最上行が選択されている場合は処理をスキップ
+            const firstRowId = rowIds[0];
+            if (editGrid.data.getIndex(firstRowId) <= 0) {
                 return;
             }
-            // 1. 位置を移動
-            editGrid.data.move(targetId, currentIndex - 1);
-            // 2. すべての行の sort_order を再配分
+
+            // 5. 上にある行から順番に「一つ上」へ移動させる（正順ループ）
+            for (let i = 0; i < rowIds.length; i++) {
+                const targetId = rowIds[i];
+                const currentIndex = editGrid.data.getIndex(targetId);
+                editGrid.data.move(targetId, currentIndex - 1);
+            }
+
+            // 6. すべての行の sort_order を再配分
             updateAllSortOrders();
-            // 💡 3. グリッドを強制的に再描画（画面を動かす）
+
+            // 7. グリッドを強制的に再描画
             editGrid.paint();
-            // 移動後も選択状態をキープ
-            editGrid.selection.setCell(targetId, selectedCell.column.id);
+
+            // 💡 8. 移動後に選択された状態をキープする
+            // 一度現在の選択をクリア
+            editGrid.selection.removeCell();
+
+            // ループで各行を選択状態に追加していく
+            rowIds.forEach(rowId => {
+                // 第4引数を true にすることで、Ctrlを押しながら選択した時のように「追加選択」になります
+                editGrid.selection.setCell(rowId, targetColumnId, true, true);
+            });
         }
 
-        // 6.4 --- editGridの行を下に移動 ---
-        function moveRowDown() {
-            const selectedCell = editGrid.selection.getCell();
-            //console.log("moveRowDown", selectedCell);
-            if (!selectedCell || !selectedCell.row) {
+
+        // 6.4 --- editGridの複数行を下に移動 ---
+        function moveRowsDown() {
+            // 1. 選択されているすべてのセルの情報を取得
+            const selectedCells = editGrid.selection.getCells();
+            if (!selectedCells || selectedCells.length === 0) {
                 alert("移動する行を選択してください。");
                 return;
             }
-            const targetId = selectedCell.row.id;
-            const currentIndex = editGrid.data.getIndex(targetId);
+
+            // 2. 重複のない選択行のIDリストを作成
+            const rowIds = [...new Set(selectedCells.map(cell => cell.row.id))];
+
+            // 列IDを退避（最初に見つかったセルの列IDを使用）
+            const targetColumnId = selectedCells[0].column.id;
+
+            // 3. 行を現在のインデックス（並び順）でソートする
+            // ※ 選択順ではなく、画面上の上から順に並べるため
+            rowIds.sort((a, b) => {
+                return editGrid.data.getIndex(a) - editGrid.data.getIndex(b);
+            });
+
             const totalCount = editGrid.data.getLength();
-            // 最下行の制御
-            if (currentIndex >= totalCount - 1) {
+
+            // 4. 最下行が選択されている場合は、移動処理全体をスキップ（または末尾の行だけ残す）
+            const lastRowId = rowIds[rowIds.length - 1];
+            if (editGrid.data.getIndex(lastRowId) >= totalCount - 1) {
                 return;
             }
-            // 1. 位置を移動
-            editGrid.data.move(targetId, currentIndex + 1);
-            // 2. すべての行の sort_order を再配分
+
+            // 5. 💡ポイント：下にある行から順番に「一つ下」へ移動させる（逆ループ）
+            for (let i = rowIds.length - 1; i >= 0; i--) {
+                const targetId = rowIds[i];
+                const currentIndex = editGrid.data.getIndex(targetId);
+
+                // 一つ下の位置へ移動
+                editGrid.data.move(targetId, currentIndex + 1);
+            }
+
+            // 6. すべての行の sort_order を再配分
             updateAllSortOrders();
-            // 💡 3. グリッドを強制的に再描画（画面を動かす）
+
+            // 7. グリッドを強制的に再描画
             editGrid.paint();
-            // 移動後も選択状態をキープ
-            editGrid.selection.setCell(targetId, selectedCell.column.id);
+
+            // 8. 移動後も選択状態をキープ（最初に選択されていた列のIDを引き継ぐ）
+            // 一度現在の選択をクリア
+            editGrid.selection.removeCell();
+            rowIds.forEach(rowId => {
+                editGrid.selection.setCell(rowId, targetColumnId, true, true);
+            });
         }
+
 
         // 6.5 --- editGridの変更をtreeGridに反映させる ---
         function saveRow() {
@@ -1385,7 +1439,8 @@
         // editWindow = null;
 
 
-    });
+    })
+    ;
 
     // =================================================================
     // 7. 共通掛率入力用のウィンドウとフォームの作成
