@@ -476,8 +476,20 @@
             return;
         }
         const targetId = selectedCell.row.id;
-        const currentIndex = treeGrid.data.getIndex(targetId);
+
+        // 対象の行の親IDを取得
+        const parentId = treeGrid.data.getParent(targetId);
+        // コン组件全体のルート（マスター）IDを取得
+        const rootId = treeGrid.data.getRoot();
+
+        // 親IDがルートIDと一致しない場合 ＝ 第一階層ではない（子や孫の階層）
+        if (parentId !== rootId) {
+            alert("第一階層（ルート要素）の行のみ移動できます。");
+            return;
+        }
+
         // 最上行の制御
+        const currentIndex = treeGrid.data.getIndex(targetId);
         if (currentIndex <= 0) {
             return;
         }
@@ -500,6 +512,17 @@
             return;
         }
         const targetId = selectedCell.row.id;
+        
+        // 対象の行の親IDを取得
+        const parentId = treeGrid.data.getParent(targetId);
+        // コン组件全体のルート（マスター）IDを取得
+        const rootId = treeGrid.data.getRoot();
+
+        // 親IDがルートIDと一致しない場合 ＝ 第一階層ではない（子や孫の階層）
+        if (parentId !== rootId) {
+            alert("第一階層（ルート要素）の行のみ移動できます。");
+            return;
+        }
         const currentIndex = treeGrid.data.getIndex(targetId);
         const totalCount = treeGrid.data.getLength();
         // 最下行の制御
