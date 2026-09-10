@@ -7,17 +7,21 @@ window.MySharedLayoutConfig = {
             height: "40px",
             css: "my-layout-header",
             html: `
-        <div style="display: flex; width: 100%; height: 100%; align-items: center;">
-             <div class="header-left" style="flex: 1; width: 20%; text-align: left; margin-left: 10px;">
-                <span id="header_client_no"></span>
-                <span id="header_client_name"></span>
+            <div style="display: flex; width: 100%; height: 100%; align-items: center;">
+                <!-- flex: 1 で残りのスペースをすべて占有させます -->
+                <div class="header-left" style="flex: 1; text-align: left; margin-left: 10px;">
+                    <span id="header_client_no"></span>
+                    <span id="header_client_name"></span>
+                </div>
+                <!-- flex: 0 0 auto で幅を自動（コンテンツ幅）にし、margin: 0 auto で中央に寄せます -->
+                <div class="header-center" style="flex: 0 0 auto; margin: 0 auto; text-align: center;">
+                    <span id="header_report_title"></span>
+                    <span id="header_estimate_no"></span>
+                    <span id="header_estimate_name"></span>
+                </div>
+                <!-- 完全に中央に揃えるため、右側にも見えない等幅のスペース（ダミー）を置くと完璧に中央揃えになります -->
+                <div class="header-right" style="flex: 1;"></div>
             </div>
-            <div class="header-center" style="flex: 1; width: 80%; text-align: left;">
-                <span id="header_report_title"></span>
-                <span id="header_estimate_no"></span>
-                <span id="header_estimate_name"></span>
-            </div>
-        </div>
     `
 
         },

@@ -60,7 +60,7 @@ class ConstructionSerializer(serializers.ModelSerializer):
 
 
 class UnitSerializer(serializers.ModelSerializer):
-    client_id = serializers.CharField(write_only=True, required=False)
+    # client_id = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = Unit

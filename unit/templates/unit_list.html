@@ -26,7 +26,7 @@
     // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
     // ===================================================
 
-    // TOOLBAR: 2.1 ツールバーの作成
+    // 2.1 ツールバーの作成
     toolbar = new dhx.Toolbar("toolbar_container", {css: "dhx_toolbar--bordered"});
     toolbar.data.add([
         {id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true,},
@@ -35,7 +35,7 @@
         {id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true,}
     ]);
 
-    // GRID: 2.2 dhx.Gridの作成
+    // 2.2 Gridの作成
     grid = new dhx.Grid(null, {
         columns: [
             {id: "id", header: [{text: "ID"}], hidden: true},
@@ -77,8 +77,8 @@
         ],
         autoWidth: false,
         //data: dataset, // 作成した DataCollection を直接紐付ける
-        selection: "cell",
-        editable: false,
+        selection: "complex",
+        editable: true,
         keyNavigation: true // ★必ずtrueに設定してください
     });
 
@@ -97,12 +97,13 @@
     layout.getCell("grid_cell").attach(grid);
 
 
-    // PAGINATION: 2.3 ページネーション ---
+    // 2.3 ページネーションの作成
     const paginationConfig = {};
     paginationConfig["css"] = "dhx_widget--bordered dhx_widget--no-border_top";
     paginationConfig["data"] = grid.data; // 💡 文字列で代入するため、型不一致エラーは絶対に起きません
     paginationConfig["pageSize"] = 50;
     const pagination = new dhx.Pagination("pagination", paginationConfig);
+
     //「pagination_cell」にPaginationをアタッチ
     layout.getCell("pagination_cell").attach(pagination);
 
@@ -112,7 +113,7 @@
     // ===================================================
 
 
-    // CONNECT: 3.1 DRFからデータの読み込み
+    // 3.1 DRFからデータの読み込み
     fetch("/api/get_current_client/")
         .then(res => res.json())
         .then(data => {
@@ -151,7 +152,7 @@
     // 4. EVENTS （ボタン操作・イベントリスナー）
     // ===================================================
 
-    // 4.1 toolbar
+    // 4.1 toolbarのイベント
     toolbar.events.on("click", function (id) {
         if (id === "add") {
             addRow();
@@ -165,9 +166,8 @@
     })
 
 
-    // BUTTON_ADD_ROW: 4.2  -- 新規ボタンを押した時の振る舞い ---
+    // 4.2 新規処理
     function addRow() {
-
         const newRowData = {
             client: client_id // client列にclient_idをセット
         };
@@ -179,7 +179,7 @@
     }
 
 
-    // RESET: 4.3 リセット処理 ---
+    // 4.3 リセット処理
     function resetGrid() {
         // 1. サーバーから最新のデータを取得
         fetch(`/unit/lists/${client_id}/`)
@@ -220,7 +220,7 @@
             });
     }
 
-    // UPDATE:  4.4 保存ボタンで一括更新処理 ---
+    // 4.4 一括保存処理
     function updateAll() {
 
         let hasError = false;
@@ -390,7 +390,7 @@
             })
     }
 
-    // DELETE: 4.5 削除ボタンの即時実行
+    // 4.5 削除処理
     grid.events.on("cellClick", (row, col) => {
         if (col.id === "delete") {
             if (confirm("削除しますか？")) {
