@@ -452,7 +452,7 @@ class Aggregation(models.Model):
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
     aggregation_no = models.CharField(max_length=2, null=True, blank=True, verbose_name='集計区分番号')
     aggregation_name = models.CharField(max_length=40, null=True, blank=True, verbose_name='集計区分名称')
-    calcu_cls = models.CharField(max_length=2, null=True, blank=True, verbose_name='計算区分', default='0')
+    # calcu_cls = models.CharField(max_length=2, null=True, blank=True, verbose_name='計算区分', default='0')
 
     create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
     update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')

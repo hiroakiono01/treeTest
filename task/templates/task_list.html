@@ -55,15 +55,33 @@
             {"id": "deleteRow", "value": "Delete row", "icon": "dxi dxi-delete"}
         ]
     });
-
+    // 1. カスタムファンクター（総合計用）
+    // 何階層あっても「下に子供を持たない最下層の明細（リーフ）」の金額のみを合計します。
+    // 1. カスタムファンクター（総合計用）
+    dhx.dataDrivers.json.customDrivers = {
+        leafSum: function (column, data, grid) {
+            let total = 0;
+            grid.data.forEach(item => {
+                // 【修正】hasChild ではなく haveItems を使用
+                // 子要素を持たない末端の行（リーフノード）だけを集計
+                if (!grid.data.haveItems(item.id)) {
+                    const value = parseFloat(item[column]) || 0;
+                    total += value;
+                    console.log("total", total)
+                }
+            });
+            return total;
+        }
+    };
     // 2.3 treeGridの準備
     // const dataset = new dhx.TreeCollection()
     treeGrid = new dhx.Grid(null, {
         type: "tree",
         columns: [
-            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColumn: false},
-            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
-            {id: "estimate_no", header: [{text: "工事番号"}], hidden: true,},
+            {id: "id", header: [{text: "ID"}], hidden: false, isTreeColumn: false},
+            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: false,},
+            {id: "estimate", header: [{text: "工事番号"}], hidden: false,},
+            {id: "estimate_pk", header: [{text: "工事番号Id"}], hidden: false,},
             {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
             {id: "material_dimensions", width: 250, header: [{text: "材質・寸法", align: "center"}]},
             {
@@ -100,11 +118,13 @@
             {id: "price", header: [{text: "見積単価", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             {
                 id: "amount",
-                header: [{text: "見積金額", align: "center"}], type: "string",
+                header: [{text: "見積金額", align: "center"}],
                 footer: [{text: ({sum}) => sum, align: "right"}],
                 summary: "sum",
-                numberMask: {customFormat: "#,##0"}, align: "right",
-                width: 150,
+                numberMask: {customFormat: "#,##0"},
+                align: "right"
+
+
             },
             {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
             {id: "parent", header: [{text: "parent"}], hidden: true},
@@ -124,27 +144,38 @@
         ],
         eventHandlers: {
             onclick: {
-                "row-menu": (event) => {
-                    if (event instanceof MouseEvent) {
-                        rowMenu.showAt(event);
+                "row-menu":
+                    (event) => {
+                        if (event instanceof MouseEvent) {
+                            rowMenu.showAt(event);
+                        }
                     }
-                }
             }
 
-        },
+        }
+        ,
         rootParent: null,
-        selection: "complex",
-        multiselection: false,
+        selection:
+            "complex",
+        multiselection:
+            false,
         //dragMode: "both",// 他のgridからデータをドラグできる
-        dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
-        dropBehaviour: "sibling", // 階層の移動（同じ階層へのドロップなど）を許可
-        editable: false, // 全体として編集は有効にしておく
-        tooltip: false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
-        autoWidth: true,
-        resizable: true // すべての列をマウス操作でリサイズ可能にする
+        dragItem:
+            "both", // 行のドラッグ&ドロップでの並び替えを有効化
+        dropBehaviour:
+            "sibling", // 階層の移動（同じ階層へのドロップなど）を許可
+        editable:
+            false, // 全体として編集は有効にしておく
+        tooltip:
+            false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
+        autoWidth:
+            true,
+        resizable:
+            true // すべての列をマウス操作でリサイズ可能にする
         // autoEmptyRow: true
         //data: dataset // 階層構造を持つデータ
-    });
+    })
+    ;
 
 
     // 編集を不可にする
@@ -253,7 +284,7 @@
             const data = await res.json();
             const estimateName = data['estimate_name'];
             const estimateId = data['estimateId'];
-            // console.log("estimateId", estimateId)
+
 
             const headerEstimateNameElem = document.getElementById("header_estimate_name");
             if (headerEstimateNameElem) headerEstimateNameElem.textContent = estimateName;
@@ -409,6 +440,7 @@
             task_name: "",  // 初期表示名（任意）
             //parent: rowParent            // 親階層（任意）
             type: "parent",
+            estimate: estimateId,
             isNew: true,
 
         };
@@ -512,7 +544,7 @@
             return;
         }
         const targetId = selectedCell.row.id;
-        
+
         // 対象の行の親IDを取得
         const parentId = treeGrid.data.getParent(targetId);
         // コン组件全体のルート（マスター）IDを取得
@@ -914,7 +946,82 @@
     //         // ここでloadイベントが発生し計算が走る
     //         //treeGrid.collapseAll();
     //     });
+    // 3. 親の金額をボトムアップで自動計算する関数
+    let isCalculatingAmounts = false;
 
+    function updateAllParentAmounts(treeGrid) {
+        // すでに計算中なら処理をスキップ（無限ループ防止）
+        if (isCalculatingAmounts) return;
+
+        // 計算中フラグをオンにする
+        isCalculatingAmounts = true;
+
+        try {
+            // 特定のノードの下位にある合計額を計算する再帰関数
+            function calculateNodeSum(nodeId) {
+                //console.log("★関数が呼ばれました。nodeId:", nodeId);
+
+
+                if (treeGrid.data.haveItems(nodeId)) {
+                    // 【修正】Suite 9 の正しいメソッド名 `getItems(nodeId)` に変更
+                    const children = treeGrid.data.getItems(nodeId);
+                    let sum = 0;
+
+                    if (Array.isArray(children)) {
+                        children.forEach(child => {
+                            const childId = (typeof child === "object" && child !== null) ? child.id : child;
+                            sum += calculateNodeSum(childId);
+
+                        });
+                    }
+
+                    const currentItem = treeGrid.data.getItem(nodeId);
+                    const updatedItem = {...currentItem, amount: sum};
+
+                    treeGrid.data.update(nodeId, updatedItem);
+                    console.log("sum", sum);
+                    return sum;
+                } else {
+                    const rowData = treeGrid.data.getItem(nodeId);
+                    return parseFloat(rowData?.amount) || 0;
+                }
+            }
+
+            // 全データをループ
+            treeGrid.data.forEach(item => {
+                const itemId = (typeof item === "object" && item !== null) ? item.id : item;
+                if (!itemId) return;
+
+                const parentId = treeGrid.data.getParent(itemId);
+
+                // ルートノード判定
+                if (!parentId || parentId === "0" || parentId === "" || !treeGrid.data.getItem(parentId)) {
+                    calculateNodeSum(itemId);
+                }
+            });
+            // 【追加】データが変更されたことをグリッドのフッターに明示的に通知する
+            treeGrid.data.events.fire("change");
+            treeGrid.paint();
+        } finally {
+            // すべての処理（エラー含む）が終わったらフラグを解除
+            isCalculatingAmounts = false;
+        }
+    }
+
+    // イベントハンドラーの定義
+    treeGrid.events.on("afterEditEnd", function (value, row, column) {
+        if (column.id === "amount") {
+            //console.log("★afterEditEnd イベント発生:", row.id || row);
+            updateAllParentAmounts(treeGrid);
+        }
+    });
+
+
+    // 初回データ読み込み時
+    treeGrid.data.events.on("load", function () {
+        updateAllParentAmounts(treeGrid);
+        console.log("onload")
+    });
     // ==========================================
     // 5. editGridの処理
     // ==========================================
