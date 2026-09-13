@@ -452,7 +452,7 @@ class Aggregation(models.Model):
     client = models.ForeignKey(Client, null=True, blank=True, verbose_name='事業者', on_delete=models.PROTECT)
     aggregation_no = models.CharField(max_length=2, null=True, blank=True, verbose_name='集計区分番号')
     aggregation_name = models.CharField(max_length=40, null=True, blank=True, verbose_name='集計区分名称')
-    # calcu_cls = models.CharField(max_length=2, null=True, blank=True, verbose_name='計算区分', default='0')
+    calcu_cls = models.CharField(max_length=20, null=True, blank=True, verbose_name='計算区分')
 
     create_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='作成者')
     update_user = models.CharField(max_length=150, null=True, blank=True, verbose_name='更新者')
@@ -577,7 +577,8 @@ class Task(models.Model):
     amount = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True, verbose_name='見積金額')
     markup_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='掛率')
     # calcu_cls = models.CharField(null=True, blank=True, verbose_name='計算区分', default='0')
-    aggregation = models.ForeignKey(Aggregation, null=True, blank=True, verbose_name='計算区分', on_delete=models.PROTECT)
+    calcu_cls = models.CharField(max_length=20, null=True, blank=True, verbose_name='計算区分')
+    # aggregation = models.ForeignKey(Aggregation, null=True, blank=True, verbose_name='計算区分', on_delete=models.PROTECT)
     note = models.CharField(max_length=100, blank=True, null=True, verbose_name='備考')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     sort_order = models.IntegerField(default=0)

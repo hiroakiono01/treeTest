@@ -92,6 +92,21 @@
                 options: [],
                 align: "center"
             },
+            {
+                id: "calcu_cls",
+                width: 100,
+                header: [{text: "計算区分", align: "center"}],
+                editorType: "select", // セレクトボックス形式
+                options: [
+                    {id: "null", value: ""},
+                    {id: "subTotal", value: "[小計]"},
+                    {id: "midTotal", value: "[中計]"},
+                    {id: "grandTotal", value: "[大計]"},
+                    {id: "nonTaxAmount", value: "[税抜合計]"},
+                    {id: "consumptionTax", value: "[大計]"},
+                    {id: "specialNote", value: "[特記]"},
+                ],
+            },
             {id: "budget_quantity", header: [{text: "予算数量", align: "center"}], type: "string", numberMask: {maxDecLength: 2}, align: "right"},
             {
                 id: "budget_unit",
@@ -142,6 +157,16 @@
                 htmlEnable: true,
             }
         ],
+        // ↓ ここに rowCss の設定を追加します
+        rowCss: function (row) {
+            // treeGridのデータストアから、対象ノードが子供を持つかどうかを判定
+            // ※ row.id または row オブジェクト自体から判定が可能です
+            if (treeGrid.data.haveItems(row.id)) {
+                // 子供を持つ親（編集不可の行）にはCSSクラスを適用
+                return "none-editable";
+            }
+            return ""; // 子供を持たない行（末端ノード）は通常のスタイル
+        },
         eventHandlers: {
             onclick: {
                 "row-menu":
@@ -152,30 +177,20 @@
                     }
             }
 
-        }
-        ,
+        },
         rootParent: null,
-        selection:
-            "complex",
-        multiselection:
-            false,
+        selection: "row", // complex
+        multiselection: false,
         //dragMode: "both",// 他のgridからデータをドラグできる
-        dragItem:
-            "both", // 行のドラッグ&ドロップでの並び替えを有効化
-        dropBehaviour:
-            "sibling", // 階層の移動（同じ階層へのドロップなど）を許可
-        editable:
-            false, // 全体として編集は有効にしておく
-        tooltip:
-            false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
-        autoWidth:
-            true,
-        resizable:
-            true // すべての列をマウス操作でリサイズ可能にする
+        dragItem: "both", // 行のドラッグ&ドロップでの並び替えを有効化
+        dropBehaviour: "sibling", // 階層の移動（同じ階層へのドロップなど）を許可
+        editable: false, // 全体として編集は有効にしておく
+        tooltip: false, // ★ ツールチップを無効化して .toString() エラーを完全に防ぐ
+        autoWidth: true,
+        resizable: true // すべての列をマウス操作でリサイズ可能にする
         // autoEmptyRow: true
         //data: dataset // 階層構造を持つデータ
-    })
-    ;
+    });
 
 
     // 編集を不可にする
@@ -947,6 +962,7 @@
     //         //treeGrid.collapseAll();
     //     });
     // 3. 親の金額をボトムアップで自動計算する関数
+    // updateAllParentAmounts
     let isCalculatingAmounts = false;
 
     function updateAllParentAmounts(treeGrid) {
@@ -965,25 +981,43 @@
                 if (treeGrid.data.haveItems(nodeId)) {
                     // 【修正】Suite 9 の正しいメソッド名 `getItems(nodeId)` に変更
                     const children = treeGrid.data.getItems(nodeId);
-                    let sum = 0;
+                    // let sum = 0;
+                    // 各項目の合計用カウンター
+                    let sumAmount = 0;
+                    let sumBudget = 0;
+
 
                     if (Array.isArray(children)) {
                         children.forEach(child => {
                             const childId = (typeof child === "object" && child !== null) ? child.id : child;
-                            sum += calculateNodeSum(childId);
+                            // 子ノードの計算結果（オブジェクト）を受け取る
+                            const childSums = calculateNodeSum(childId);
+
+                            sumAmount += childSums.amount;
+                            sumBudget += childSums.budget_amount;
 
                         });
                     }
 
                     const currentItem = treeGrid.data.getItem(nodeId);
-                    const updatedItem = {...currentItem, amount: sum};
+
+                    // 両方の合計値を親ノードに反映
+                    const updatedItem = {
+                        ...currentItem,
+                        amount: sumAmount,
+                        budget_amount: sumBudget
+                    };
 
                     treeGrid.data.update(nodeId, updatedItem);
-                    console.log("sum", sum);
-                    return sum;
+
+                    // 計算結果を上位（さらに上の親）に返す
+                    return {amount: sumAmount, budget_amount: sumBudget};
                 } else {
                     const rowData = treeGrid.data.getItem(nodeId);
-                    return parseFloat(rowData?.amount) || 0;
+                    return {
+                        amount: parseFloat(rowData?.amount) || 0,
+                        budget_amount: parseFloat(rowData?.budget_amount) || 0
+                    };
                 }
             }
 
@@ -1010,7 +1044,8 @@
 
     // イベントハンドラーの定義
     treeGrid.events.on("afterEditEnd", function (value, row, column) {
-        if (column.id === "amount") {
+        // 【修正】amount または budget_amount のどちらが編集されても再計算を走らせる
+        if (column.id === "amount" || column.id === "budget_amount") {
             //console.log("★afterEditEnd イベント発生:", row.id || row);
             updateAllParentAmounts(treeGrid);
         }
@@ -1022,6 +1057,19 @@
         updateAllParentAmounts(treeGrid);
         console.log("onload")
     });
+
+    // 編集が始まる直前に発生するイベント
+    treeGrid.events.on("beforeEditStart", function (row, col) {
+        // 編集しようとしている行（row.id）が子供を持っている（親である）か判定
+        if (treeGrid.data.haveItems(row.id)) {
+            // false を返すと、その行のエディタ（入力欄）が開かなくなり、編集不可になります
+            return false;
+        }
+        // 子供がいない行（末端ノード）は通常通り編集を許可
+        return true;
+    });
+
+
     // ==========================================
     // 5. editGridの処理
     // ==========================================
@@ -1204,8 +1252,19 @@
                     }
                 },
                 // △△△ ここまで △△△
-            ],
 
+
+            ],
+            // ↓ ここに rowCss の設定を追加します
+            rowCss: function (row) {
+                // treeGridのデータストアから、対象ノードが子供を持つかどうかを判定
+                // ※ row.id または row オブジェクト自体から判定が可能です
+                if (treeGrid.data.haveItems(row.id)) {
+                    // 子供を持つ親（編集不可の行）にはCSSクラスを適用
+                    return "none-editable";
+                }
+                return ""; // 子供を持たない行（末端ノード）は通常のスタイル
+            },
             // 元のツリーデータを汚さないように複製してロード
             data: JSON.parse(JSON.stringify(childItems)),
             selection: "complex",
@@ -1563,14 +1622,24 @@
             return true;             // trueを返さないと実際に閉じないので注意
         });
 
+        // 編集が始まる直前に発生するイベント
+        editGrid.events.on("beforeEditStart", function (row, col) {
+            // 編集しようとしている行（row.id）が子供を持っている（親である）か判定
+            if (treeGrid.data.haveItems(row.id)) {
+                // false を返すと、その行のエディタ（入力欄）が開かなくなり、編集不可になります
+                return false;
+            }
+            // 子供がいない行（末端ノード）は通常通り編集を許可
+            return true;
+        });
+
         // 4. ウィンドウを閉じてメモリを解放
         // editWindow.hide();
         // editWindow.destructor();
         // editWindow = null;
 
 
-    })
-    ;
+    });
 
     // =================================================================
     // 7. 共通掛率入力用のウィンドウとフォームの作成

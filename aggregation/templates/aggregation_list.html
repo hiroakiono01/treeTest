@@ -7,437 +7,440 @@
 {% block contents %}
 
 <body>
-    <div id="layout-main-container" style="margin-top: 6rem;"></div>
-    <script>
-        // ===================================================
-        // 1. VARIABLES  (変数の宣言とデータの準備）
-        // ===================================================
+<div id="layout-main-container" style="margin-top: 6rem;"></div>
+<script>
+    // ===================================================
+    // 1. VARIABLES  (変数の宣言とデータの準備）
+    // ===================================================
 
-        const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
-        layout.getCell("sidebar_container").hide();
-        let client_id = "";
-        let grid = null;
-        let form = null;
-        let toolbar = null;
-        let pagination = null;
-        let dhxWindow = null;
-        const dataset = new dhx.DataCollection();
-
-
-        // ===================================================
-        // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
-        // ===================================================
-
-        // TOOLBAR: 2.1 ツールバーの作成
-        toolbar = new dhx.Toolbar("toolbar_container", { css: "dhx_toolbar--bordered" });
-        toolbar.data.add([
-            { id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true, },
-            { type: "spacer" },
-            { id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true, },
-            { id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true, }
-        ]);
-
-        // GRID: 2.2 dhx.Gridの作成
-        grid = new dhx.Grid(null, {
-            columns: [
-                { id: "id", header: [{ text: "ID" }], hidden: true },
-                {
-                    id: "aggregation_no", width: 200,
-                    header: [{ text: "集計区分番号 <span style='color:red'>*</span>", align: "center", rowspan: 2 },], htmlEnable: true, // 赤くするため必要
-                    type: "number",
-                    keyNavigation: true,
-                    required: true, // 独自フラグとして利用
-                    maxLength: 2,
-                    editable: true
-                },
-                { id: "client", width: 100, header: [{ text: "事業者番号", align: "center" }], align: "center", htmlEnable: true, hidden: true },
-                {
-                    id: "aggregation_name",
-                    width: 200,
-                    header: [
-                        { text: "集計区分名称 <span style='color:red'>*</span>", align: "center" },
-                        { content: "inputFilter" }
-                    ],
-                    htmlEnable: true,
-                    keyNavigation: true,
-                    maxLength: 40,
-                    editable: true
-                },
-                {
-                    id: "calcu_cls",
-                    width: 100,
-                    header: [{ text: "計算区分", align: "center" }, { content: "selectFilter" }],
-                    editorType: "select", // セレクトボックス形式
-                    options: [
-                        { id: "20", value: "小計" },
-                        { id: "21", value: "中計" },
-                        { id: "22", value: "大計" },
-                        { id: "23", value: "税抜合計" },
-                        { id: "30", value: "消費税" },
-                        { id: "40", value: "特記" },
-                    ],
-                },
+    const layout = new dhx.Layout("layout-main-container", MySharedLayoutConfig);
+    layout.getCell("sidebar_container").hide();
+    let client_id = "";
+    let grid = null;
+    let form = null;
+    let toolbar = null;
+    let pagination = null;
+    let dhxWindow = null;
+    const dataset = new dhx.DataCollection();
 
 
-                { id: "delete", header: [{ text: "削除", align: "center", rowspan: 2 }], align: "center", width: 80, htmlEnable: true, template: () => "<button class='dxi dxi-delete' >削除</button>" }
-            ],
-            autoWidth: false,
-            //data: dataset, // 作成した DataCollection を直接紐付ける
-            selection: "cell",
-            editing: true,
-            keyNavigation: true // ★必ずtrueに設定してください
-        });
+    // ===================================================
+    // 2. INITIALIZE UI COMPONENTS （画面パーツの組み立て）
+    // ===================================================
 
-        // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
-        enableGridEnterNavigation(grid);
+    // TOOLBAR: 2.1 ツールバーの作成
+    toolbar = new dhx.Toolbar("toolbar_container", {css: "dhx_toolbar--bordered"});
+    toolbar.data.add([
+        {id: "add", type: "button", value: "新規追加", icon: "dxi dxi-plus", color: "primary", circle: true,},
+        {type: "spacer"},
+        {id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true,},
+        {id: "update", type: "button", value: "更新", icon: "dxi dxi-vault", color: "success", circle: true,}
+    ]);
 
-
-        // ワンクリックで入力ができる ---　
-        grid.events.on("cellClick", function (row, column) {
-            setTimeout(() => {
-                grid.editCell(row.id, column.id);
-            }, 50);
-        });
-
-
-        // レイアウトの「grid_cell」にGridをアタッチ
-        layout.getCell("grid_cell").attach(grid);
-
-
-        // PAGINATION: 2.3 ページネーション ---
-        pagination = new dhx.Pagination(null, {
-            css: "dhx_widget--bordered dhx_widget--no-border_top",
-            data: grid.data,
-            pageSize: 50
-        });
-        //「pagination_cell」にPaginationをアタッチ
-        layout.getCell("pagination_cell").attach(pagination);
-
-
-        // ===================================================
-        // 3. DATA LOADING （データ通信・サーバーとのやり取り）
-        // ===================================================
-
-
-        // CONNECT: 3.1 DRFからデータの読み込み
-        fetch("/api/get_current_client/")
-            .then(res => res.json())
-            .then(data => {
-                client_id = data['current-client'].client_id;
-                client_no = data['current-client'].client_no;
-                client_name = data['current-client'].client_name;
-
-
-                // 💡 今回追加した「ヘッダー」の要素に文字をセット
-                const headerNoElem = document.getElementById("header_client_no");
-                const headerNameElem = document.getElementById("header_client_name");
-                const headerReportTitleElem = document.getElementById("header_report_title");
-                if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
-                if (headerNameElem) headerNameElem.textContent = client_name || '';
-                if (headerReportTitleElem) headerReportTitleElem.textContent = "集計区分マスタ保守";
+    // GRID: 2.2 dhx.Gridの作成
+    grid = new dhx.Grid(null, {
+        columns: [
+            {id: "id", header: [{text: "ID"}], hidden: true},
+            {
+                id: "aggregation_no", width: 200,
+                header: [{text: "集計区分番号 <span style='color:red'>*</span>", align: "center", rowspan: 2},], htmlEnable: true, // 赤くするため必要
+                type: "number",
+                keyNavigation: true,
+                required: true, // 独自フラグとして利用
+                maxLength: 2,
+                editable: true
+            },
+            {id: "client", width: 100, header: [{text: "事業者番号", align: "center"}], align: "center", htmlEnable: true, hidden: true},
+            {
+                id: "aggregation_name",
+                width: 200,
+                header: [
+                    {text: "集計区分名称 <span style='color:red'>*</span>", align: "center"},
+                    {content: "inputFilter"}
+                ],
+                htmlEnable: true,
+                keyNavigation: true,
+                maxLength: 40,
+                editable: true
+            },
+            {
+                id: "calcu_cls",
+                width: 100,
+                header: [{text: "計算区分", align: "center"}, {content: "selectFilter"}],
+                editorType: "select", // セレクトボックス形式
+                options: [
+                    {id: "null", value: ""},
+                    {id: "subTotal", value: "小計"},
+                    {id: "midTotal", value: "中計"},
+                    {id: "grandTotal", value: "大計"},
+                    {id: "nonTaxAmount", value: "税抜合計"},
+                    {id: "consumptionTax", value: "消費税"},
+                    {id: "specialNote", value: "特記"},
+                ],
+            },
 
 
-                // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
-                if (client_id && form) {
-                    form.setValue({ client: String(client_id) });
-                }
+            {id: "delete", header: [{text: "削除", align: "center", rowspan: 2}], align: "center", width: 80, htmlEnable: true, template: () => "<button class='dxi dxi-delete' >削除</button>"}
+        ],
+        autoWidth: false,
+        //data: dataset, // 作成した DataCollection を直接紐付ける
+        selection: "cell",
+        editing: true,
+        keyNavigation: true // ★必ずtrueに設定してください
+    });
 
-                // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
-                if (client_id && grid) {
-                    fetch(`/aggregation/lists/${client_id}/`)
-                        .then(response => response.json())
-                        .then(data => { grid.data.parse(data); })
-                        .catch(err => console.error("顧客データ取得失敗:", err));
-                }
-            })
-            .catch(err => console.error("current clientデータ取得失敗:", err));
+    // ★外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります）
+    enableGridEnterNavigation(grid);
 
-        // ===================================================
-        // 4. EVENTS （ボタン操作・イベントリスナー）
-        // ===================================================
 
-        // 4.1 toolbar
-        toolbar.events.on("click", function (id) {
-            if (id === "add") {
-                addRow();
+    // ワンクリックで入力ができる ---　
+    grid.events.on("cellClick", function (row, column) {
+        setTimeout(() => {
+            grid.editCell(row.id, column.id);
+        }, 50);
+    });
+
+
+    // レイアウトの「grid_cell」にGridをアタッチ
+    layout.getCell("grid_cell").attach(grid);
+
+
+    // PAGINATION: 2.3 ページネーション ---
+    pagination = new dhx.Pagination(null, {
+        css: "dhx_widget--bordered dhx_widget--no-border_top",
+        data: grid.data,
+        pageSize: 50
+    });
+    //「pagination_cell」にPaginationをアタッチ
+    layout.getCell("pagination_cell").attach(pagination);
+
+
+    // ===================================================
+    // 3. DATA LOADING （データ通信・サーバーとのやり取り）
+    // ===================================================
+
+
+    // CONNECT: 3.1 DRFからデータの読み込み
+    fetch("/api/get_current_client/")
+        .then(res => res.json())
+        .then(data => {
+            client_id = data['current-client'].client_id;
+            client_no = data['current-client'].client_no;
+            client_name = data['current-client'].client_name;
+
+
+            // 💡 今回追加した「ヘッダー」の要素に文字をセット
+            const headerNoElem = document.getElementById("header_client_no");
+            const headerNameElem = document.getElementById("header_client_name");
+            const headerReportTitleElem = document.getElementById("header_report_title");
+            if (headerNoElem) headerNoElem.textContent = client_no ? `[${client_no}]` : '';
+            if (headerNameElem) headerNameElem.textContent = client_name || '';
+            if (headerReportTitleElem) headerReportTitleElem.textContent = "集計区分マスタ保守";
+
+
+            // 💡 フォームの初期化が終わっているので、安全に初期値をセットできる
+            if (client_id && form) {
+                form.setValue({client: String(client_id)});
             }
-            if (id === "update") {
-                updateAll();
-            }
-            if (id === "resetGrid") {
-                resetGrid();
+
+            // 💡 1つ目のデータが取れたので、2つ目のfetch（Grid用データ）を呼ぶ
+            if (client_id && grid) {
+                fetch(`/aggregation/lists/${client_id}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        grid.data.parse(data);
+                    })
+                    .catch(err => console.error("顧客データ取得失敗:", err));
             }
         })
+        .catch(err => console.error("current clientデータ取得失敗:", err));
 
+    // ===================================================
+    // 4. EVENTS （ボタン操作・イベントリスナー）
+    // ===================================================
 
-        // BUTTON_ADD_ROW: 4.2  -- 新規ボタンを押した時の振る舞い ---
-        function addRow() {
-
-            const newRowData = {
-                client: client_id // client列にclient_idをセット
-            };
-            const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
-            // 追加した行へフォーカス
-            if (newRow) {
-                grid.editCell(newRow, "aggregation_no");
-            }
+    // 4.1 toolbar
+    toolbar.events.on("click", function (id) {
+        if (id === "add") {
+            addRow();
         }
-
-
-
-        // RESET: 4.3 リセット処理 ---
-        function resetGrid() {
-            // 1. サーバーから最新のデータを取得
-            fetch(`/aggregation/lists/${client_id}/`)
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error(`サーバーレスポンス異常: ${res.status}`);
-                    }
-                    return res.json();
-                })
-                .then(result => {
-                    // 2. 新データを入れる直前に、古いデータをクリア
-                    grid.data.removeAll();
-                    // 3. 新しいデータをGridに反映
-                    grid.data.parse(result);
-                    // 実行前の赤枠をすべてクリアする
-                    const requiredFields = ["aggregation_no", "aggregation_name"];
-                    grid.data.forEach(row => {
-                        requiredFields.forEach(field => {
-                            grid.removeCellCss(row.id, field, "required-error");
-                        });
-                    });
-                    dhx.message({
-                        text: "リセットしました",
-                        status: "success",
-                        expire: 3000
-                    });
-                })
-                .catch(err => {
-                    // ユーザーに「更新には失敗したが、表示は古いデータのままであること」を伝える
-                    if (typeof dhx !== "undefined" && dhx.message) {
-                        dhx.message({
-                            text: "最新データの取得に失敗しました。直前のデータを表示しています。",
-                            css: "dhx_widget--bg_error", // Suite 9 の標準エラー背景
-                            expire: 5000
-                        });
-                    }
-                });
+        if (id === "update") {
+            updateAll();
         }
+        if (id === "resetGrid") {
+            resetGrid();
+        }
+    })
 
 
-        // UPDATE:  4.4 保存ボタンで一括更新処理 ---
-        function updateAll() {
+    // BUTTON_ADD_ROW: 4.2  -- 新規ボタンを押した時の振る舞い ---
+    function addRow() {
 
-
-            const rowsToRemove = [];
-            let hasError = false;
-            let mainMessage = "";
-            const requiredFields = ["aggregation_no", "aggregation_name"];// 必須の項目
-
-
-            // columns定義から各フィールドのmaxLengthをマッピングする
-            const maxLengthMap = {};
-            grid.config.columns.forEach(col => {
-                if (col.maxLength) {
-                    maxLengthMap[col.id] = col.maxLength;
-                }
-            });
-
-            // 実行前に前回のサーバーエラー赤枠をすべてクリアする
-            grid.data.serialize().forEach(row => {
-                requiredFields.forEach(field => {
-                    grid.removeCellCss(row.id, field, "required-error");
-                });
-            });
-
-
-
-            // フロントエンドでaggregationo_noの二重登録のチェック
-            const aggregationNoMap = {};
-            const aggregationNameMap = {};
-
-            grid.data.forEach(row => {
-                // フロントエンドの必須入力チェック
-                requiredFields.forEach(field => {
-                    const value = row[field];
-                    if (value === null || value === undefined || String(value).trim() === "") {
-                        grid.addCellCss(row.id, field, "required-error");
-                        mainMessage = "必須項目を入力してください。";
-                        hasError = true;
-                    }
-                });
-
-
-                // 文字数（有効桁数）チェック
-                requiredFields.forEach(field => {
-                    const value = String(row[field] || "").trim();
-                    const maxLen = maxLengthMap[field];
-                    if (value !== "" && maxLen && value.length > maxLen) {
-                        grid.addCellCss(row.id, field, "required-error");
-
-                        // ★ 列のIDからヘッダー設定を取得し、テキストを取り出す
-                        const column = grid.getColumn(field);
-                        let columnName = (column && column.header && column.header[0]) ? column.header[0].text : field;
-                        columnName = columnName.replace(/<[^>]*>/g, '').replace(/\*/g, '').trim();
-                        mainMessage = `「${columnName}」が最大文字数 ${maxLen}文字を超えています。`;
-                        hasError = true;
-                    }
-                });
-
-                // すでに同じaggregation_noが存在する場合、両方の行に赤枠を付与
-                const aggregationNo = String(row.aggregation_no || "").trim();
-                if (aggregationNo !== "") {
-                    if (aggregationNoMap[aggregationNo]) {
-                        grid.addCellCss(row.id, "aggregation_no", "required-error");
-                        grid.addCellCss(aggregationNoMap[aggregationNo], "aggregation_no", "required-error");
-                        mainMessage = "番号が重複しています。";
-                        hasError = true;
-                    } else {
-                        aggregationNoMap[aggregationNo] = row.id; // 行IDを記憶
-                    }
-                }
-
-
-                // すでに同じaggregation_Nameが存在する場合、両方の行に赤枠を付与
-                const aggregationName = String(row.aggregation_name || "").trim();
-                if (aggregationName !== "") {
-                    if (aggregationNameMap[aggregationName]) {
-                        grid.addCellCss(row.id, "aggregation_name", "required-error");
-                        grid.addCellCss(aggregationNameMap[aggregationName], "aggregation_name", "required-error");
-                        mainMessage = "名称が重複しています。";
-                        hasError = true;
-                    } else {
-                        aggregationNameMap[aggregationName] = row.id; // 行IDを記憶
-                    }
-                }
-            });
-            // エラーを表示する
-            if (hasError) {
-                dhx.message({
-                    text: mainMessage,
-                    expire: 3000,
-                    css: "dhx_widget--bg_danger",
-                });
-                return; // 中断で抜ける
-            }
-
-            // チェックが終了したら更新作業に移行する
-            grid.editEnd(); // selectFilterで隠れた行を内部で確定させるため必要
-            const allData = grid.data.findAll(() => true);  // gridの全データを取得
-
-            fetch("/aggregation/bulk_sync/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCookie('csrftoken')
-                },
-                body: JSON.stringify(allData)
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        const contentType = response.headers.get("content-type");
-                        if (contentType && contentType.includes("application/json")) {
-                            return response.json().then(errData => { throw errData; });
-                        } else {
-                            throw new Error(`サーバーエラーが発生しました (${response.status})`);
-                        }
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    dhx.message({
-                        text: "更新しました。",
-                        expire: 3000,
-                        css: "dhx_widget--bg_success",
-                    });
-                    // グリッドを強制的に再描画する
-                    fetch(`/aggregation/lists/${client_id}/`)
-                        .then(response => response.json())
-                        .then(data => {
-                            grid.data.parse(data); // data.aggregations (配列部分) を渡す
-                        })
-                        .catch(err => console.error("aggregationデータ取得失敗:", err));
-
-                })
-                .catch(err => {
-                    // エラーハンドラや .catch(err => { ... }) の中
-                    const responseData = err.response ? err.response.data : null;
-
-                    if (responseData && responseData.row_errors) {
-                        const rowErrors = responseData.row_errors; // サーバーから届いた行ごとのエラーオブジェクト
-                        let firstErrorMessage = "";
-
-                        // グリッドの全データをループ
-                        grid.data.forEach(row => {
-                            // この行（row.id）に対するエラーがサーバーから返ってきているか確認
-                            if (rowErrors[row.id]) {
-                                const errorFields = rowErrors[row.id];
-
-                                // 1. aggregation_name の重複エラーがある場合
-                                if (errorFields.aggregation_name) {
-                                    grid.addCellCss(row.id, "aggregation_name", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.aggregation_name;
-                                }
-
-                                // 2. aggregation_no の重複エラーがある場合
-                                if (errorFields.aggregation_no) {
-                                    grid.addCellCss(row.id, "aggregation_no", "required-error");
-                                    if (!firstErrorMessage) firstErrorMessage = errorFields.aggregation_no;
-                                }
-                            }
-                        });
-
-                        // 画面のメインメッセージ（トーストやアラートなど）に、最初のカスタムメッセージを表示する
-                        if (firstErrorMessage) {
-                            mainMessage = firstErrorMessage;
-                            // 例: alert(mainMessage); や UIライブラリの通知関数を呼ぶ
-                        }
-                    }
-                })
+        const newRowData = {
+            client: client_id // client列にclient_idをセット
         };
+        const newRow = grid.data.add(newRowData, 0); // 第2引数に「0」を指定して、グリッドの先頭に追加
+        // 追加した行へフォーカス
+        if (newRow) {
+            grid.editCell(newRow, "aggregation_no");
+        }
+    }
 
-        // DELETE: 4.5 削除ボタンの即時実行
-        grid.events.on("cellClick", (row, col) => {
-            if (col.id === "delete") {
-                if (confirm("削除しますか？")) {
-                    // 何も入力されていない行を削除する
-                    if (String(row.id).startsWith('u')) {
-                        grid.data.remove(row.id);
-                    } else
-                    // データベースのレコードを削除するためサーバーへ削除リクエスト
-                    {
-                        grid.data.remove(row.id);
-                        fetch(`/aggregation/detail/${row.id}/`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': getCookie('csrftoken')  // ここを追加
-                            },
-                            // body: JSON.stringify(sendingData)
 
-                        })
-                            .then(result => {
-                                dhx.message({
-                                    text: "削除しました",
-                                    css: "dhx_widget--bg_success",
-                                    expire: 3000
-                                });
-                            })
-                            .catch(err => {
-                                let errorMsg = "削除に失敗しました";
-                                dhx.message({
-                                    text: errorMsg,
-                                    css: "dhx_message--error",  // 赤いトースト
-                                    icon: "dxi dxi-delete-forever",
-                                    expire: 6000
-                                });
-                            })
-                    }
+    // RESET: 4.3 リセット処理 ---
+    function resetGrid() {
+        // 1. サーバーから最新のデータを取得
+        fetch(`/aggregation/lists/${client_id}/`)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`サーバーレスポンス異常: ${res.status}`);
                 }
+                return res.json();
+            })
+            .then(result => {
+                // 2. 新データを入れる直前に、古いデータをクリア
+                grid.data.removeAll();
+                // 3. 新しいデータをGridに反映
+                grid.data.parse(result);
+                // 実行前の赤枠をすべてクリアする
+                const requiredFields = ["aggregation_no", "aggregation_name"];
+                grid.data.forEach(row => {
+                    requiredFields.forEach(field => {
+                        grid.removeCellCss(row.id, field, "required-error");
+                    });
+                });
+                dhx.message({
+                    text: "リセットしました",
+                    status: "success",
+                    expire: 3000
+                });
+            })
+            .catch(err => {
+                // ユーザーに「更新には失敗したが、表示は古いデータのままであること」を伝える
+                if (typeof dhx !== "undefined" && dhx.message) {
+                    dhx.message({
+                        text: "最新データの取得に失敗しました。直前のデータを表示しています。",
+                        css: "dhx_widget--bg_error", // Suite 9 の標準エラー背景
+                        expire: 5000
+                    });
+                }
+            });
+    }
+
+
+    // UPDATE:  4.4 保存ボタンで一括更新処理 ---
+    function updateAll() {
+
+
+        const rowsToRemove = [];
+        let hasError = false;
+        let mainMessage = "";
+        const requiredFields = ["aggregation_no", "aggregation_name"];// 必須の項目
+
+
+        // columns定義から各フィールドのmaxLengthをマッピングする
+        const maxLengthMap = {};
+        grid.config.columns.forEach(col => {
+            if (col.maxLength) {
+                maxLengthMap[col.id] = col.maxLength;
             }
         });
 
-    </script>
+        // 実行前に前回のサーバーエラー赤枠をすべてクリアする
+        grid.data.serialize().forEach(row => {
+            requiredFields.forEach(field => {
+                grid.removeCellCss(row.id, field, "required-error");
+            });
+        });
+
+
+        // フロントエンドでaggregationo_noの二重登録のチェック
+        const aggregationNoMap = {};
+        const aggregationNameMap = {};
+
+        grid.data.forEach(row => {
+            // フロントエンドの必須入力チェック
+            requiredFields.forEach(field => {
+                const value = row[field];
+                if (value === null || value === undefined || String(value).trim() === "") {
+                    grid.addCellCss(row.id, field, "required-error");
+                    mainMessage = "必須項目を入力してください。";
+                    hasError = true;
+                }
+            });
+
+
+            // 文字数（有効桁数）チェック
+            requiredFields.forEach(field => {
+                const value = String(row[field] || "").trim();
+                const maxLen = maxLengthMap[field];
+                if (value !== "" && maxLen && value.length > maxLen) {
+                    grid.addCellCss(row.id, field, "required-error");
+
+                    // ★ 列のIDからヘッダー設定を取得し、テキストを取り出す
+                    const column = grid.getColumn(field);
+                    let columnName = (column && column.header && column.header[0]) ? column.header[0].text : field;
+                    columnName = columnName.replace(/<[^>]*>/g, '').replace(/\*/g, '').trim();
+                    mainMessage = `「${columnName}」が最大文字数 ${maxLen}文字を超えています。`;
+                    hasError = true;
+                }
+            });
+
+            // すでに同じaggregation_noが存在する場合、両方の行に赤枠を付与
+            const aggregationNo = String(row.aggregation_no || "").trim();
+            if (aggregationNo !== "") {
+                if (aggregationNoMap[aggregationNo]) {
+                    grid.addCellCss(row.id, "aggregation_no", "required-error");
+                    grid.addCellCss(aggregationNoMap[aggregationNo], "aggregation_no", "required-error");
+                    mainMessage = "番号が重複しています。";
+                    hasError = true;
+                } else {
+                    aggregationNoMap[aggregationNo] = row.id; // 行IDを記憶
+                }
+            }
+
+
+            // すでに同じaggregation_Nameが存在する場合、両方の行に赤枠を付与
+            const aggregationName = String(row.aggregation_name || "").trim();
+            if (aggregationName !== "") {
+                if (aggregationNameMap[aggregationName]) {
+                    grid.addCellCss(row.id, "aggregation_name", "required-error");
+                    grid.addCellCss(aggregationNameMap[aggregationName], "aggregation_name", "required-error");
+                    mainMessage = "名称が重複しています。";
+                    hasError = true;
+                } else {
+                    aggregationNameMap[aggregationName] = row.id; // 行IDを記憶
+                }
+            }
+        });
+        // エラーを表示する
+        if (hasError) {
+            dhx.message({
+                text: mainMessage,
+                expire: 3000,
+                css: "dhx_widget--bg_danger",
+            });
+            return; // 中断で抜ける
+        }
+
+        // チェックが終了したら更新作業に移行する
+        grid.editEnd(); // selectFilterで隠れた行を内部で確定させるため必要
+        const allData = grid.data.findAll(() => true);  // gridの全データを取得
+
+        fetch("/aggregation/bulk_sync/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie('csrftoken')
+            },
+            body: JSON.stringify(allData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        return response.json().then(errData => {
+                            throw errData;
+                        });
+                    } else {
+                        throw new Error(`サーバーエラーが発生しました (${response.status})`);
+                    }
+                }
+                return response.json();
+            })
+            .then(result => {
+                dhx.message({
+                    text: "更新しました。",
+                    expire: 3000,
+                    css: "dhx_widget--bg_success",
+                });
+                // グリッドを強制的に再描画する
+                fetch(`/aggregation/lists/${client_id}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        grid.data.parse(data); // data.aggregations (配列部分) を渡す
+                    })
+                    .catch(err => console.error("aggregationデータ取得失敗:", err));
+
+            })
+            .catch(err => {
+                // エラーハンドラや .catch(err => { ... }) の中
+                const responseData = err.response ? err.response.data : null;
+
+                if (responseData && responseData.row_errors) {
+                    const rowErrors = responseData.row_errors; // サーバーから届いた行ごとのエラーオブジェクト
+                    let firstErrorMessage = "";
+
+                    // グリッドの全データをループ
+                    grid.data.forEach(row => {
+                        // この行（row.id）に対するエラーがサーバーから返ってきているか確認
+                        if (rowErrors[row.id]) {
+                            const errorFields = rowErrors[row.id];
+
+                            // 1. aggregation_name の重複エラーがある場合
+                            if (errorFields.aggregation_name) {
+                                grid.addCellCss(row.id, "aggregation_name", "required-error");
+                                if (!firstErrorMessage) firstErrorMessage = errorFields.aggregation_name;
+                            }
+
+                            // 2. aggregation_no の重複エラーがある場合
+                            if (errorFields.aggregation_no) {
+                                grid.addCellCss(row.id, "aggregation_no", "required-error");
+                                if (!firstErrorMessage) firstErrorMessage = errorFields.aggregation_no;
+                            }
+                        }
+                    });
+
+                    // 画面のメインメッセージ（トーストやアラートなど）に、最初のカスタムメッセージを表示する
+                    if (firstErrorMessage) {
+                        mainMessage = firstErrorMessage;
+                        // 例: alert(mainMessage); や UIライブラリの通知関数を呼ぶ
+                    }
+                }
+            })
+    };
+
+    // DELETE: 4.5 削除ボタンの即時実行
+    grid.events.on("cellClick", (row, col) => {
+        if (col.id === "delete") {
+            if (confirm("削除しますか？")) {
+                // 何も入力されていない行を削除する
+                if (String(row.id).startsWith('u')) {
+                    grid.data.remove(row.id);
+                } else
+                    // データベースのレコードを削除するためサーバーへ削除リクエスト
+                {
+                    grid.data.remove(row.id);
+                    fetch(`/aggregation/detail/${row.id}/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')  // ここを追加
+                        },
+                        // body: JSON.stringify(sendingData)
+
+                    })
+                        .then(result => {
+                            dhx.message({
+                                text: "削除しました",
+                                css: "dhx_widget--bg_success",
+                                expire: 3000
+                            });
+                        })
+                        .catch(err => {
+                            let errorMsg = "削除に失敗しました";
+                            dhx.message({
+                                text: errorMsg,
+                                css: "dhx_message--error",  // 赤いトースト
+                                icon: "dxi dxi-delete-forever",
+                                expire: 6000
+                            });
+                        })
+                }
+            }
+        }
+    });
+
+</script>
 </body>
 
 {% endblock %}

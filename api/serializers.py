@@ -146,7 +146,7 @@ class TaskSerializer(serializers.ModelSerializer):
                   'quantity', 'unit',
                   'unit_display',
                   'price', 'amount',
-                  'markup_rate', 'aggregation', 'note',
+                  'markup_rate', 'calcu_cls', 'note',
                   'parent', 'sort_order',
                   )
 

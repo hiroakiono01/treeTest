@@ -255,3 +255,9 @@
 .hide-grid-checkbox .dhx_checkbox {
     display: none !important;
 }
+
+/* 編集ができない行のスタイル（薄い黄色・ベージュ系） */
+.dhx_grid-row.none-editable {
+    background-color: #f5f3e9 !important;
+    font-weight: bold;
+}
