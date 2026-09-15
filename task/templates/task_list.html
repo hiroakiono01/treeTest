@@ -1758,22 +1758,48 @@
             const formValues = calcForm.getValue();
             const markup = parseFloat(calcForm.getValue().common_markup) || 1.0;
             const roundType = formValues.round_type; // 💡 'floor', 'round', 'ceil' のいずれかが入る
-            const container = previewGrid.getRoot();
+            //const container = document.getElementById("grid_preview_container");
+            //const container = calcForm.getCell("grid_preview_container").getContainer();
 
-            if (!container) return;
+            //if (!container) return;
 
-            const isBudgetQtyChecked = container.querySelector("input[data-col='calc_budget_quantity']")?.checked || false;
-            const isBudgetPriceChecked = container.querySelector("input[data-col='calc_budget_price']")?.checked || false;
-            const isQtyChecked = container.querySelector("input[data-col='calc_quantity']")?.checked || false;
-            const isPriceChecked = container.querySelector("input[data-col='calc_price']")?.checked || false;
+            // const isBudgetQtyChecked = formValues.querySelector("input[data-col='calc_budget_quantity']")?.checked || false;
+            // const isBudgetPriceChecked = formValues.querySelector("input[data-col='calc_budget_price']")?.checked || false;
+            // const isQtyChecked = formValues.querySelector("input[data-col='calc_quantity']")?.checked || false;
+            // const isPriceChecked = formValues.querySelector("input[data-col='calc_price']")?.checked || false;
+            // ⭕ 修正：formValues からではなく、フォームの各アイテムから直接 checked 状態を取得する
+            // 💡 もしこれでも変わらない場合は、getItem("calc_budget_quantity") の名前が
+            //    フォーム定義（new dhx.Form）の「id」または「name」と一致しているか確認してください。
+            //    HTML要素を直接クエリして、現在のリアルなチェック状態を取得する
+            const isBudgetQtyChecked = document.querySelector("input[data-col='calc_budget_quantity']")?.checked
+                || document.querySelector("[name='calc_budget_quantity']")?.checked
+                || false;
 
+            const isBudgetPriceChecked = document.querySelector("input[data-col='calc_budget_price']")?.checked
+                || document.querySelector("[name='calc_budget_price']")?.checked
+                || false;
+
+            const isQtyChecked = document.querySelector("input[data-col='calc_quantity']")?.checked
+                || document.querySelector("[name='calc_quantity']")?.checked
+                || false;
+
+            const isPriceChecked = document.querySelector("input[data-col='calc_price']")?.checked
+                || document.querySelector("[name='calc_price']")?.checked
+                || false;
+            // 🐛 デバッグ用ログ：これで true / false が正しく取れているか確認
+            console.log("修正後のチェック判定:", {
+                isBudgetQtyChecked,
+                isBudgetPriceChecked,
+                isQtyChecked,
+                isPriceChecked
+            });
             // 💡 端数処理を行う共通関数を定義（今回は金額を整数にする例）
-            const applyRounding = (value, type) => {
-                if (type === "1") return Math.floor(value); // 切り捨て
-                if (type === "2") return Math.round(value); // 四捨五入
-                if (type === "3") return Math.ceil(value);  // 切り上げ
-                return value;
-            };
+            // const applyRounding = (value, type) => {
+            //     if (type === "1") return Math.floor(value); // 切り捨て
+            //     if (type === "2") return Math.round(value); // 四捨五入
+            //     if (type === "3") return Math.ceil(value);  // 切り上げ
+            //     return value;
+            // };
             previewGrid.data.forEach(item => {
                 let bQty = parseFloat(item.budget_quantity) || 0;
                 let bPrice = parseFloat(item.budget_price) || 0;
@@ -1800,7 +1826,7 @@
                     amount: amount
                 });
             });
-
+           // previewGrid.data.events.unblock();
             previewGrid.paint();
             alert("一括計算が完了しました。内容を確認し「確定して反映」ボタンを押してください。");
         }
