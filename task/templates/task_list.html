@@ -79,9 +79,9 @@
         type: "tree",
         columns: [
             {id: "id", header: [{text: "ID"}], hidden: true, isTreeColumn: false},
-            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: false,},
-            {id: "estimate", header: [{text: "工事番号"}], hidden: false,},
-            {id: "estimate_pk", header: [{text: "工事番号Id"}], hidden: false,},
+            {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
+            {id: "estimate", header: [{text: "工事番号"}], hidden: true,},
+            {id: "estimate_pk", header: [{text: "工事番号Id"}], hidden: true,},
             {id: "task_name", width: 200, header: [{text: "名称", align: "center"}], footer: [{text: "合計"}]},
             {id: "material_dimensions", width: 250, header: [{text: "材質・寸法", align: "center"}]},
             {
@@ -1177,7 +1177,7 @@
         // 5.5 --- editGrid ④ 下段に 編集用の通常editGrid を配置 ---
         editGrid = new dhx.Grid(null, {
             columns: [
-                {id: "id", header: [{text: "ID"}], hidden: false},
+                {id: "id", header: [{text: "ID"}], hidden: true},
                 {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
                 {id: "estimate_no", header: [{text: "工事番号"}], editable: true, hidden: true},
                 {id: "task_name", header: [{text: "名称"}], editable: true, width: 200, footer: [{text: "合計"}]},
@@ -1217,7 +1217,7 @@
                     numberMask: {customFormat: "#,##0"},
                 },
                 {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
-                {id: "parent", header: [{text: "parent"}], hidden: false},
+                {id: "parent", header: [{text: "parent"}], hidden: true},
                 {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
                 {
                     id: "actions",
