@@ -29,7 +29,7 @@ urlpatterns = [
     path('customer/', include('customer.urls')),
     path('segment/', include('segment.urls')),
     path('user/', include('user.urls')),
-    path('aggregation/', include('aggregation.urls')),
+    # path('aggregation/', include('aggregation.urls')),
     path('construction/', include('construction.urls')),
     path('estimate/', include('estimate.urls')),
     path('importEstimate/', include('importEstimate.urls')),
