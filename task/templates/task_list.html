@@ -181,6 +181,7 @@
         resizable: true // すべての列をマウス操作でリサイズ可能にする
         // autoEmptyRow: true
         //data: dataset // 階層構造を持つデータ
+
     });
 
 
@@ -232,7 +233,7 @@
 
     const dataset = new dhx.TreeCollection()
 
-    // 3.1 DRFからデータを一括で読み込み
+    // 3.1 Client, Estimate, 他の参照データを一括で取得
     async function loadInitialData() {
         try {
             // 3.1 現在のクライアントデータを取得（全ての基盤）
@@ -282,26 +283,8 @@
         }
     }
 
-    // 3.2 見積情報の取得（引数を無くし、外側の変数を使用）
-    // async function fetchEstimateInfo() {
-    //     try {
-    //         const res = await fetch(`/api/get_estimate_name/${clientId}/${estimateNo}/`);
-    //         const data = await res.json();
-    //         const estimateName = data['estimate_name'];
-    //         const estimateId = data['estimateId'];
-    //
-    //
-    //         const headerEstimateNameElem = document.getElementById("header_estimate_name");
-    //         if (headerEstimateNameElem) headerEstimateNameElem.textContent = estimateName;
-    //
-    //         const headerEstimateNoElem = document.getElementById("header_estimate_no");
-    //         if (headerEstimateNoElem) headerEstimateNoElem.textContent = estimateNo ? `(${estimateNo})` : '';
-    //     } catch (err) {
-    //         console.error("estimateデータ取得失敗:", err);
-    //     }
-    // }
 
-    // 3.3 Unit一覧を取得してGridおよびeditGridのプルダウンに反映
+    // 3.2 Unitの取得
     async function fetchCurrentUnits() {
         try {
             use_flg = "0"
@@ -338,7 +321,7 @@
     }
 
 
-    // 3.5 タスク一覧の取得
+    // 3.4 Taskの取得
     async function fetchTaskLists() {
         try {
             // console.log("estimateId", estimateId)
@@ -352,7 +335,7 @@
         }
     }
 
-    // 3.6 実行
+
     loadInitialData();
 
 
@@ -360,7 +343,7 @@
     // 4.  TREE GRID EVENT FUNCTION
     // ===================================================
 
-    // 4.1 treeGridのtoolbar 処理
+    // 4.1 treeGridのtoolbar
     toolbar.events.on("click", function (id) {
         if (id === "historyBack") {
             window.history.back();
@@ -391,7 +374,7 @@
         }
     })
 
-    // 4.2 treeGridにrootの新規行を作成する
+    // 4.2 treeGridに新規追加処理
     function addRow() {
         // rootの階層の処理するため階層を閉じる。
         collapseAll();
@@ -876,6 +859,7 @@
 
     }
 
+    // 4.14 sort_ordeの一括更新
     /**
      * 💡 追加：現在の並び順（インデックス）に基づいて sort_order を一括更新する共通関数
      */
@@ -928,6 +912,7 @@
     //     });
     // 3. 親の金額をボトムアップで自動計算する関数
     // updateAllParentAmounts
+    // 4.15 treeGridの親に子供の金額を集計する
     let isCalculatingAmounts = false;
 
     function updateAllParentAmounts(treeGrid) {
@@ -1039,7 +1024,7 @@
     // 5. editGridの処理
     // ==========================================
 
-    // 5 子要素のeditGridの処理
+    // 5.1 - editGridの処理
     treeGrid.events.on("cellClick", function (row, col,) {
         // use_flg = "9"
         // reloadCombo(use_flg)
@@ -1077,7 +1062,7 @@
             editWindow.destructor();
         }
 
-        // 5.1 --- editGrid ① ウィンドウ（Window）の初期化 ---
+        // 5.2 - editGrid Windowの初期化
         editWindow = new dhx.Window({
             title: `「${row.task_name || row.id}」を編集`,
             width: 1800,
@@ -1088,7 +1073,7 @@
             resizable: true // サイズ変更可能
         });
 
-        // 5.2 --- editGrid ② ウィンドウ内部を「上覧（ボタン）」「下覧（Grid）」の2行に分割するレイアウトを作る ---
+        // editGrid ② ウィンドウ内部を「上覧（ボタン）」「下覧（Grid）」の2行に分割するレイアウトを作る ---
         // HTML文字列（<div id="...">）を使わず、DHTMLXの機能で枠を組むためエラーが起きません
         const layout = new dhx.Layout(null, {
             rows: [
@@ -1101,7 +1086,7 @@
         editWindow.attach(layout);
         editWindow.show();
 
-        // 5.3 --- editGrid ③ 上段に Toolbar（ボタン群）を配置 ---
+        // 5.3 - editGrid Toolbar
         const toolbar = new dhx.Toolbar(null, {
             css: "dhx_widget--bg-white",
             data: [
@@ -1109,7 +1094,7 @@
                 {type: "spacer"},
                 {id: "moveRowsUp", type: "button", value: "上へ移動", icon: "dxi dxi-arrow-up", color: "primary",},
                 {id: "moveRowsDown", type: "button", value: "下へ移動", icon: "dxi dxi-arrow-down", color: "primary",},
-                {id: "calc_btn", type: "button", value: "一括計算", icon: "dxi dxi-function-variant", color: "primary",},
+                {id: "calcu_btn", type: "button", value: "一括計算", icon: "dxi dxi-function-variant", color: "primary",},
                 {type: "spacer"},
                 {id: "resetGrid", type: "button", value: "リセット", icon: "dxi dxi-undo", color: "secondary", circle: true,},
                 {id: "save", value: "変更を保存", type: "button", icon: "dxi dxi-vault", color: "success", circle: true,}
@@ -1117,7 +1102,7 @@
         });
         layout.getCell("toolbar_cell").attach(toolbar);
 
-        // 5.4 --- editGridのtoolbar ---
+
         toolbar.events.on("click", function (id) {
             if (id === "add") {
                 addRow();
@@ -1134,12 +1119,12 @@
             if (id === "resetGrid") {
                 resetGrid();
             }
-            if (id == "calc_btn") {
-                calc_btn();
+            if (id === "calcu_btn") {
+                calcu_btn();
             }
         })
 
-        // 5.5 --- editGrid ④ 下段に 編集用の通常editGrid を配置 ---
+        // 5.4 - editGridの準備
         editGrid = new dhx.Grid(null, {
             columns: [
                 {id: "id", header: [{text: "ID"}], hidden: true},
@@ -1251,14 +1236,14 @@
             // autoEmptyRow: true
         });
 
-        // 5.6 --- ワンクリックで入力ができる ---　
+        //  --- ワンクリックで入力ができる ---　
         editGrid.events.on("cellClick", function (row, column) {
             setTimeout(() => {
                 editGrid.editCell(row.id, column.id);
             }, 50);
         });
 
-        // 5.7 --- 外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります） ---
+        //  --- 外部ファイルの共通関数を呼び出す（これだけでEnter移動が有効になります） ---
         enableGridEnterNavigation(editGrid);
 
         layout.getCell("grid_cell").attach(editGrid);
@@ -1269,7 +1254,7 @@
             // 現在の値を反転させて更新
             editGrid.data.update(rowId, {checked: !rowData.checked});
         };
-// 💡 5. 【データ消失防止のダメ押し】描画を強制リフレッシュする
+// 💡 【データ消失防止のダメ押し】描画を強制リフレッシュする
 
         editGrid.paint();
         // editWindow.show();
@@ -1305,7 +1290,7 @@
         // 6. editGridのボタンイベントの実装（DHTMLX Toolbarのイベント機能を使用）
         // ==========================================
 
-        // 6.1 --- editGridに新たな行を追加 ---
+        // 6.1 - editGridに新たな行の追加処理
         function addRow() {
 
             const newId = "u" + Date.now();
@@ -1321,7 +1306,7 @@
             });
         }
 
-        // 6.2 --- editGrigに自動で行を追加する処理 ---
+        // 6.2 - editGrigに自動で行を追加する処理
         editGrid.events.on("beforeKeyDown", function (event, e) {
 
             if (e.keyCode === 13) {
@@ -1363,7 +1348,7 @@
             return true
         });
 
-        // 6.3 --- editGridの複数行を上に移動 ---
+        // 6.3 - editGridの複数行を上に移動
         function moveRowsUp() {
             // 1. 選択されているすべてのセルの情報を取得
             const selectedCells = editGrid.selection.getCells();
@@ -1414,7 +1399,7 @@
         }
 
 
-        // 6.4 --- editGridの複数行を下に移動 ---
+        // 6.4 - editGridの複数行を下に移動
         function moveRowsDown() {
             // 1. 選択されているすべてのセルの情報を取得
             const selectedCells = editGrid.selection.getCells();
@@ -1467,7 +1452,7 @@
         }
 
 
-        // 6.5 --- editGridの変更をtreeGridに反映させる ---
+        // 6.5 - editGridの変更をtreeGridに反映させる
         function saveRow() {
             editGrid.editEnd();
 
@@ -1493,7 +1478,7 @@
             }
         }
 
-        // 6.6 --- editGridのリセット処理 ---
+        // 6.6 - editGridのリセット処理
         function resetGrid() {
             // ユーザーに確認（キャンセルされたら処理を中断）
             if (!confirm("編集中の内容を破棄して、元の状態に戻しますか？")) return;
@@ -1516,7 +1501,7 @@
             editGrid.paint();
         }
 
-        // 6.7 --- editGridの値の自動計算
+        // 6.7 - editGridの値の自動計算
         editGrid.events.on("afterEditEnd", function (value, row, column) {
 
             // 1. 数量（budget_quantity=>quantity）のコピー処理
@@ -1587,7 +1572,7 @@
             }
         });
 
-        // 6.8 --- editGridを解放 ---
+        // 6.8 - editGridを解放
         editWindow.events.on("afterHide", function () {
             editWindow.destructor(); // ウィンドウと内包するレイアウト・グリッドを一括破棄
             editWindow = null;       // 変数をクリア
@@ -1616,11 +1601,7 @@
     // =================================================================
     // 7. 共通掛率入力用のウィンドウとフォームの作成
     // =================================================================
-
-    // ==========================================
-    // 7.1 〜 7.2 ポップアップウィンドウとフォームの定義（変更なし）
-    // ==========================================
-    // 7.1 計算のウインドウを準備
+    // 7.1 -- calcWindowの準備
     const calcWindow = new dhx.Window({
         title: "一括計算パラメーター設定",
         width: 1500,
@@ -1718,6 +1699,7 @@
     // ==========================================
     // 7.2 フォームのイベント処理 (クリックイベントに統一する書き方)
     // ==========================================
+    // 7.2 -- calcWindowの処理
     calcForm.events.on("click", (name) => {
         // ① キャンセルボタン
         if (name === "cancel_btn") {
@@ -1827,7 +1809,8 @@
     // =================================================================
     // 7.3 イベントの処理（ボタン押下によるウィンドウ表示）
     // =================================================================
-    function calc_btn() {
+    // 7.3 -- previewGridの準備と処理
+    function calcu_btn() {
 
         const selectedCells = editGrid.selection.getCells();
 

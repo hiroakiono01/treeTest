@@ -1,7 +1,7 @@
 import openpyxl
 from django.db import transaction
 
-from api.views import get_unit_pk, get_user_pk, get_aggr_pk
+from api.views import get_unit_pk, get_user_pk
 from app.models import Estimate, Task
 
 parentDic = {}
@@ -156,17 +156,36 @@ def first_sheet(worksheet, form):
             note = ""
         task_obj["note"] = note
 
-        aggregation_no = worksheet.cell(row=i + 27, column=36).value
-        clientPk = form.cleaned_data['client_pk']
-        aggregationPk = get_aggr_pk(clientPk, aggregation_no, None)
-        task_obj["aggregation"] = aggregationPk
+        # 計算区分
+        calcu_cls_no = worksheet.cell(row=i + 27, column=36).value
+        if calcu_cls_no == 1:
+            calcu_cls = "subTotal"
+        elif calcu_cls_no == 2:
+            calcu_cls = "midTotal"
+        elif calcu_cls_no == 3:
+            calcu_cls = "grandTotal"
+        elif calcu_cls_no == 99:
+            calcu_cls = "nonTaxAmount"
+        elif calcu_cls_no == 30:
+            calcu_cls = "consumptionTax"
+        elif calcu_cls_no == 40:
+            calcu_cls = "specialNote"
+        else:
+            calcu_cls = "null"
+        task_obj["calcu_cls"] = calcu_cls
+
+        # aggregation_no = worksheet.cell(row=i + 27, column=36).value
+        # clientPk = form.cleaned_data['client_pk']
+        # aggregationPk = get_aggr_pk(clientPk, aggregation_no, None)
+        # task_obj["aggregation"] = aggregationPk
 
         task_name = worksheet.cell(row=i + 27, column=2).value
+
         if task_name == '消費税':
             estimate_tax_amount = amount
-            clientPk = form.cleaned_data['client_pk']
-            aggregationPk = get_aggr_pk(clientPk, None, task_name)
-            task_obj["aggregation"] = aggregationPk
+            # clientPk = form.cleaned_data['client_pk']
+            # aggregationPk = get_aggr_pk(clientPk, None, task_name)
+            task_obj["calcu_cls"] = "consumptionTax"
         if task_name is None:
             task_name = ""
         task_obj["task_name"] = task_name
@@ -234,7 +253,8 @@ def write_task(task_obj):
         price=task_obj["price"],
         amount=task_obj["amount"],
         # markup_rate=task_obj["markup_rate"],
-        aggregation_id=task_obj["aggregation"],
+        # aggregation_id=task_obj["aggregation"],
+        calcu_cls=task_obj["calcu_cls"],
         note=task_obj["note"],
         parent_id=task_obj["parent"],
         # sort_order=task_obj["sort_order"],
@@ -292,10 +312,29 @@ def after_sheet(worksheet, form, estimate_new_id):
             note = ""
         task_obj["note"] = note
 
-        aggregation_no = worksheet.cell(row=i + 4, column=10).value
-        clientPk = form.cleaned_data['client_pk']
-        aggregationPk = get_aggr_pk(clientPk, aggregation_no, None)
-        task_obj["aggregation"] = aggregationPk
+        # aggregation_no = worksheet.cell(row=i + 4, column=10).value
+        # clientPk = form.cleaned_data['client_pk']
+        # aggregationPk = get_aggr_pk(clientPk, aggregation_no, None)
+        # task_obj["aggregation"] = aggregationPk
+
+        # 計算区分
+        calcu_cls_no = worksheet.cell(row=i + 4, column=10).value
+        if calcu_cls_no == 1:
+            calcu_cls = "subTotal"
+        elif calcu_cls_no == 2:
+            calcu_cls = "midTotal"
+        elif calcu_cls_no == 3:
+            calcu_cls = "grandTotal"
+        elif calcu_cls_no == 99:
+            calcu_cls = "nonTaxAmount"
+        elif calcu_cls_no == 30:
+            calcu_cls = "consumptionTax"
+        elif calcu_cls_no == 40:
+            calcu_cls = "specialNote"
+        else:
+            calcu_cls = "null"
+        task_obj["calcu_cls"] = calcu_cls
+
 
         # parent_task_name = worksheet.cell(row=2, column=2).value
         # print('parent_task_name', parent_task_name)
