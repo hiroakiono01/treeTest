@@ -771,6 +771,32 @@
                 }
             }
         }
+
+
+        // 変更された列が「計算区分 (calcu_cls)」の場合のみ処理を行う
+        if (column.id === "calcu_cls") {
+
+            // 1. 選択されたIDに対応する「表示文字(value)」を取得するためのマッピング
+            // ※列定義の options をそのまま利用するか、以下のように定義します
+            const optionsMap = {
+                "null": "",
+                "subTotal": "[小計]",
+                "midTotal": "[中計]",
+                "grandTotal": "[大計]",
+                "nonTaxAmount": "[税抜合計]",
+                "consumptionTax": "[消費税]",
+                "specialNote": "＊"
+            };
+
+            // 選択されたIDからvalueの文字列を取得（なければ空文字）
+            const selectedValue = optionsMap[value] || "";
+
+            // 2. 同じ行(row.id)の「task_name」と「material_dimensions」のデータを更新
+            treeGrid.data.update(row.id, {
+                task_name: selectedValue,       // 名称に [小計] などをセット
+                material_dimensions: ""         // 材質・寸法にブランクをセット
+            });
+        }
     });
 
 
@@ -1570,6 +1596,31 @@
                     }
                 }
             }
+
+            // 変更された列が「計算区分 (calcu_cls)」の場合のみ処理を行う
+            if (column.id === "calcu_cls") {
+
+                // 1. 選択されたIDに対応する「表示文字(value)」を取得するためのマッピング
+                // ※列定義の options をそのまま利用するか、以下のように定義します
+                const optionsMap = {
+                    "null": "",
+                    "subTotal": "[小計]",
+                    "midTotal": "[中計]",
+                    "grandTotal": "[大計]",
+                    "nonTaxAmount": "[税抜合計]",
+                    "consumptionTax": "[消費税]",
+                    "specialNote": "＊"
+                };
+
+                // 選択されたIDからvalueの文字列を取得（なければ空文字）
+                const selectedValue = optionsMap[value] || "";
+
+                // 2. 同じ行(row.id)の「task_name」と「material_dimensions」のデータを更新
+                editGrid.data.update(row.id, {
+                    task_name: selectedValue,       // 名称に [小計] などをセット
+                    material_dimensions: ""         // 材質・寸法にブランクをセット
+                });
+            }
         });
 
         // 6.8 - editGridを解放
@@ -1809,10 +1860,17 @@
     // =================================================================
     // 7.3 イベントの処理（ボタン押下によるウィンドウ表示）
     // =================================================================
-    // 7.3 -- previewGridの準備と処理
+    // 7.3 -- calcu_btn previewGridの準備と処理
     function calcu_btn() {
 
-        const selectedCells = editGrid.selection.getCells();
+        // 1. 選択されたセルを取得
+        const allSelectedCells = editGrid.selection.getCells();
+
+        // 2. editGrid.data.haveItems(row.id) が真になるレコードを除外（偽のものだけを残す）
+        const selectedCells = allSelectedCells.filter(cell => {
+            // cell.row や cell.row.id の階層構造は、お使いのライブラリ（editGrid）の仕様に合わせて調整してください
+            return !treeGrid.data.haveItems(cell.row.id);
+        });
 
         if (selectedCells.length === 0) {
             alert("行が選択されていません。計算対象の行を選択してください。");
