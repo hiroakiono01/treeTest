@@ -414,49 +414,49 @@
 
 
     // 4.3 treeGridに自動で行を追加する処理
-    treeGrid.events.on("cellClick", function (row, col, e) {
-        // console.log("1. cellClickが発生:", row.id, col.id);
-    });
-    treeGrid.events.on("beforeKeyDown", function (event, e) {
-
-        if (e.keyCode === 13) {
-            // console.log('event', e.keyCode)
-
-            // 現在選択（編集）されているセル情報を取得
-            const selection = treeGrid.selection.getCell();
-            if (!selection) return true;
-
-            const current_row = selection.row;
-            const current_col = selection.column;
-
-            // 全体の行配列と列配列を取得
-            const all_rows = treeGrid.data.map(item => item.id);
-            const all_cols = treeGrid.config.columns;
-
-            // 「最後の行」かつ「最後の列」であるか判定
-            const isLastRow = current_row.id === all_rows[all_rows.length - 1];
-            const isLastCol = current_col.id === all_cols[all_cols.length - 1].id;
-
-            if (isLastRow && isLastCol) {
-                // デフォルトのEnterキー挙動（フォーカスアウトや改行など）をキャンセル
-                event.preventDefault();
-                // 1. 新しい空の行を追加（ユニークIDを自動生成など）
-                const newRowId = "u" + Date.now();
-                treeGrid.data.add({id: newRowId, title: "", price: ""})
-
-                // 2. 画面を更新し、即座に新しい行の最初の列を選択・編集状態にする
-                setTimeout(() => {
-                    // const firstColId = all_cols[2].id;
-                    treeGrid.selection.setCell(newRowId, "estimate_no");
-                    //treeGrid.editCell(newRowId, firstColId);
-                }, 50)
-                return false;
-
-            }
-
-        }
-        return true
-    })
+    // treeGrid.events.on("cellClick", function (row, col, e) {
+    //     // console.log("1. cellClickが発生:", row.id, col.id);
+    // });
+    // treeGrid.events.on("beforeKeyDown", function (event, e) {
+    //
+    //     if (e.keyCode === 13) {
+    //         // console.log('event', e.keyCode)
+    //
+    //         // 現在選択（編集）されているセル情報を取得
+    //         const selection = treeGrid.selection.getCell();
+    //         if (!selection) return true;
+    //
+    //         const current_row = selection.row;
+    //         const current_col = selection.column;
+    //
+    //         // 全体の行配列と列配列を取得
+    //         const all_rows = treeGrid.data.map(item => item.id);
+    //         const all_cols = treeGrid.config.columns;
+    //
+    //         // 「最後の行」かつ「最後の列」であるか判定
+    //         const isLastRow = current_row.id === all_rows[all_rows.length - 1];
+    //         const isLastCol = current_col.id === all_cols[all_cols.length - 1].id;
+    //
+    //         if (isLastRow && isLastCol) {
+    //             // デフォルトのEnterキー挙動（フォーカスアウトや改行など）をキャンセル
+    //             event.preventDefault();
+    //             // 1. 新しい空の行を追加（ユニークIDを自動生成など）
+    //             const newRowId = "u" + Date.now();
+    //             treeGrid.data.add({id: newRowId, title: "", price: ""})
+    //
+    //             // 2. 画面を更新し、即座に新しい行の最初の列を選択・編集状態にする
+    //             setTimeout(() => {
+    //                 // const firstColId = all_cols[2].id;
+    //                 treeGrid.selection.setCell(newRowId, "estimate_no");
+    //                 //treeGrid.editCell(newRowId, firstColId);
+    //             }, 50)
+    //             return false;
+    //
+    //         }
+    //
+    //     }
+    //     return true
+    // })
 
     // 4.4 treeGridの行を上に移動させる
     function moveRowUp() {
@@ -783,8 +783,8 @@
                 "subTotal": "[小計]",
                 "midTotal": "[中計]",
                 "grandTotal": "[大計]",
-                "nonTaxAmount": "[税抜合計]",
-                "consumptionTax": "[消費税]",
+                "nonTaxAmount": "税抜合計]",
+                "consumptionTax": "消費税",
                 "specialNote": "＊"
             };
 
@@ -948,6 +948,7 @@
         // 計算中フラグをオンにする
         isCalculatingAmounts = true;
 
+
         try {
             // 特定のノードの下位にある合計額を計算する再帰関数
             function calculateNodeSum(nodeId) {
@@ -971,6 +972,7 @@
 
                             sumAmount += childSums.amount;
                             sumBudget += childSums.budget_amount;
+                            console.log("sumAmount",sumAmount)
 
                         });
                     }
@@ -978,6 +980,10 @@
                     const currentItem = treeGrid.data.getItem(nodeId);
 
                     // 両方の合計値を親ノードに反映
+                    /**
+                     * 小計の行に加算値を更新させる
+                     * @type {*&{amount: number, budget_amount: number}}
+                     */
                     const updatedItem = {
                         ...currentItem,
                         amount: sumAmount,
@@ -1024,6 +1030,7 @@
         if (column.id === "amount" || column.id === "budget_amount") {
             //console.log("★afterEditEnd イベント発生:", row.id || row);
             updateAllParentAmounts(treeGrid);
+            console.log("afterEditEnd")
         }
     });
 
@@ -1031,7 +1038,7 @@
     // 初回データ読み込み時
     treeGrid.data.events.on("load", function () {
         updateAllParentAmounts(treeGrid);
-        console.log("onload")
+        // console.log("onload")
     });
 
     // 編集が始まる直前に発生するイベント
@@ -1333,46 +1340,46 @@
         }
 
         // 6.2 - editGrigに自動で行を追加する処理
-        editGrid.events.on("beforeKeyDown", function (event, e) {
-
-            if (e.keyCode === 13) {
-                // console.log('event', e.keyCode)
-
-                // 現在選択（編集）されているセル情報を取得
-                const selection = editGrid.selection.getCell();
-                if (!selection) return true;
-
-                const current_row = selection.row;
-                const current_col = selection.column;
-
-                // 全体の行配列と列配列を取得
-                const all_rows = editGrid.data.map(item => item.id);
-                const all_cols = editGrid.config.columns;
-
-                // 「最後の行」かつ「最後の列」であるか判定
-                const isLastRow = current_row.id === all_rows[all_rows.length - 1];
-                const isLastCol = current_col.id === all_cols[all_cols.length - 1].id;
-
-                if (isLastRow && isLastCol) {
-                    // デフォルトのEnterキー挙動（フォーカスアウトや改行など）をキャンセル
-                    event.preventDefault();
-                    // 1. 新しい空の行を追加（ユニークIDを自動生成など）
-                    const newRowId = "row_" + Date.now();
-                    editGrid.data.add({id: newRowId, title: "", price: ""})
-
-                    // 2. 画面を更新し、即座に新しい行の最初の列を選択・編集状態にする
-                    setTimeout(() => {
-                        //const firstColId = all_cols[2].id;
-                        editGrid.selection.setCell(newRowId, "estimate_no");
-                        //treeGrid.editCell(newRowId, firstColId);
-                    }, 50)
-                    return false;
-
-                }
-
-            }
-            return true
-        });
+        // editGrid.events.on("beforeKeyDown", function (event, e) {
+        //
+        //     if (e.keyCode === 13) {
+        //         // console.log('event', e.keyCode)
+        //
+        //         // 現在選択（編集）されているセル情報を取得
+        //         const selection = editGrid.selection.getCell();
+        //         if (!selection) return true;
+        //
+        //         const current_row = selection.row;
+        //         const current_col = selection.column;
+        //
+        //         // 全体の行配列と列配列を取得
+        //         const all_rows = editGrid.data.map(item => item.id);
+        //         const all_cols = editGrid.config.columns;
+        //
+        //         // 「最後の行」かつ「最後の列」であるか判定
+        //         const isLastRow = current_row.id === all_rows[all_rows.length - 1];
+        //         const isLastCol = current_col.id === all_cols[all_cols.length - 1].id;
+        //
+        //         if (isLastRow && isLastCol) {
+        //             // デフォルトのEnterキー挙動（フォーカスアウトや改行など）をキャンセル
+        //             event.preventDefault();
+        //             // 1. 新しい空の行を追加（ユニークIDを自動生成など）
+        //             const newRowId = "row_" + Date.now();
+        //             editGrid.data.add({id: newRowId, title: "", price: ""})
+        //
+        //             // 2. 画面を更新し、即座に新しい行の最初の列を選択・編集状態にする
+        //             setTimeout(() => {
+        //                 //const firstColId = all_cols[2].id;
+        //                 editGrid.selection.setCell(newRowId, "estimate_no");
+        //                 //treeGrid.editCell(newRowId, firstColId);
+        //             }, 50)
+        //             return false;
+        //
+        //         }
+        //
+        //     }
+        //     return true
+        // });
 
         // 6.3 - editGridの複数行を上に移動
         function moveRowsUp() {
@@ -1607,8 +1614,8 @@
                     "subTotal": "[小計]",
                     "midTotal": "[中計]",
                     "grandTotal": "[大計]",
-                    "nonTaxAmount": "[税抜合計]",
-                    "consumptionTax": "[消費税]",
+                    "nonTaxAmount": "税抜合計",
+                    "consumptionTax": "消費税",
                     "specialNote": "＊"
                 };
 

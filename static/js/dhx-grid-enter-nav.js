@@ -16,7 +16,7 @@
 
 function enableGridEnterNavigation(grid) {
     grid.events.on("beforeKeyDown", function (event) {
-            console.log("event.keyCode", event.keyCode, "event.isComposing", event.isComposing)
+            // console.log("event.keyCode", event.keyCode, "event.isComposing", event.isComposing)
             //const selectedCell = grid.selection.getCell();
             // const currentColumn = selectedCell.column;
             // const currentRow = selectedCell.row;
@@ -46,7 +46,7 @@ function enableGridEnterNavigation(grid) {
 
             // 2. Enterキーが押された場合のみ処理
             if (event.keyCode === 13) {
-                console.log("event.keyCode", event.keyCode, "event.isComposing", event.isComposing)
+                // console.log("event.keyCode", event.keyCode, "event.isComposing", event.isComposing)
                 // 現在選択されているセルの情報を取得
                 const selectedCell = grid.selection.getCell();
                 if (!selectedCell || !selectedCell.row || !selectedCell.column) return;
