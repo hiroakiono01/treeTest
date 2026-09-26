@@ -77,7 +77,7 @@
     treeGrid = new dhx.Grid(null, {
         type: "tree",
         columns: [
-            {id: "id", header: [{text: "ID"}], hidden: true, isTreeColumn: false},
+            {id: "id", header: [{text: "ID"}], hidden: false, isTreeColumn: false},
             {id: "estimate_no_display", header: [{text: "工事名称"}], hidden: true,},
             {id: "estimate", header: [{text: "工事番号"}], hidden: true,},
             {id: "estimate_pk", header: [{text: "工事番号Id"}], hidden: true,},
@@ -133,8 +133,8 @@
 
             },
             {id: "note", header: [{text: "備考", align: "center"}], type: "string"},
-            {id: "parent", header: [{text: "parent"}], hidden: true},
-            {id: "sort_order", header: [{text: "sort_order"}], hidden: true},
+            {id: "parent", header: [{text: "parent"}], hidden: false},
+            {id: "sort_order", header: [{text: "sort_order"}], hidden: false},
             {id: "detail", header: [{text: "階層", align: "center"}], editable: false},
             {
                 id: "actions",
